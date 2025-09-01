@@ -1,5 +1,6 @@
-import React from "react";
 import { Chip, ChipProps } from "@mui/material";
+import React from "react";
+
 import { getStatusColor } from "../../utils/formatters";
 
 interface StatusChipProps extends Omit<ChipProps, "color"> {

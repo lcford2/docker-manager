@@ -1,7 +1,7 @@
-import subprocess
 import json
 import logging
-from typing import List, Dict, Any, Optional
+import subprocess
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,8 @@ class DockerCLIWrapper:
                 return {"success": True}
             else:
                 logger.error(
-                    f"Docker command failed: {' '.join(full_command)}, Error: {result.stderr}"
+                    f"Docker command failed: {' '.join(full_command)}, "
+                    f"Error: {result.stderr}"
                 )
                 return None
         except subprocess.TimeoutExpired:
@@ -202,7 +203,8 @@ class DockerCLIWrapper:
                             continue
 
                 logger.info(
-                    f"Successfully retrieved bulk stats for {len(stats_dict)} containers"
+                    f"Successfully retrieved bulk stats for {len(stats_dict)}"
+                    " containers"
                 )
                 return stats_dict
             else:

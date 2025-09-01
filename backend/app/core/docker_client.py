@@ -1,7 +1,8 @@
-import docker
-from docker.errors import DockerException, NotFound, APIError
-from typing import List, Dict, Any, Optional
 import logging
+from typing import Any, Dict, List, Optional
+
+import docker
+from docker.errors import APIError, DockerException, NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,8 @@ class DockerClientWrapper:
             api_client = APIClient(base_url=socket_path)
             version_info = api_client.version()
             logger.info(
-                f"Docker API version check successful: {version_info.get('Version', 'unknown')}"
+                "Docker API version check successful: "
+                f"{version_info.get('Version', 'unknown')}"
             )
 
             # If API client works, create full client

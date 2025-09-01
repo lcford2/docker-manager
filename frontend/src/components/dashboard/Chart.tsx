@@ -1,7 +1,17 @@
-import React from 'react';
-import { useTheme } from '@mui/material/styles';
-import { LineChart, Line, XAxis, YAxis, Label, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import Title from '../common/Title';
+import { useTheme } from "@mui/material/styles";
+import React from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Label,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
+
+import Title from "../common/Title";
 
 interface ChartDataPoint {
   time: string;
@@ -42,7 +52,7 @@ export default function Chart({ data }: ChartProps) {
               angle={270}
               position="left"
               style={{
-                textAnchor: 'middle',
+                textAnchor: "middle",
                 fill: theme.palette.text.primary,
                 ...theme.typography.body1,
               }}
@@ -70,4 +80,4 @@ export default function Chart({ data }: ChartProps) {
       </ResponsiveContainer>
     </React.Fragment>
   );
-} 
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { LoadingButton } from "@mui/lab";
 import {
   Dialog,
   DialogTitle,
@@ -11,7 +11,8 @@ import {
   Alert,
   LinearProgress,
 } from "@mui/material";
-import { LoadingButton } from "@mui/lab";
+import React, { useState } from "react";
+
 import { dockerAPI } from "../../services/api";
 
 interface PullImageModalProps {

@@ -1,14 +1,24 @@
-import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableRow, Link } from '@mui/material';
-import Title from '../common/Title';
-import { DockerContainer } from '../../types/docker';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Link,
+} from "@mui/material";
+import React from "react";
+import { Link as RouterLink } from "react-router-dom";
+
+import { DockerContainer } from "../../types/docker";
+import Title from "../common/Title";
 
 interface RunningContainersProps {
   containers: DockerContainer[];
 }
 
-export default function RunningContainers({ containers }: RunningContainersProps) {
+export default function RunningContainers({
+  containers,
+}: RunningContainersProps) {
   return (
     <React.Fragment>
       <Title>Running Containers</Title>
@@ -32,9 +42,14 @@ export default function RunningContainers({ containers }: RunningContainersProps
           ))}
         </TableBody>
       </Table>
-      <Link component={RouterLink} color="primary" to="/containers" sx={{ mt: 3 }}>
+      <Link
+        component={RouterLink}
+        color="primary"
+        to="/containers"
+        sx={{ mt: 3 }}
+      >
         See more containers
       </Link>
     </React.Fragment>
   );
-} 
+}

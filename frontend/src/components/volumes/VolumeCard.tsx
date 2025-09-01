@@ -1,4 +1,4 @@
-import React from "react";
+import { Delete, Storage as StorageIcon } from "@mui/icons-material";
 import {
   Card,
   CardContent,
@@ -9,10 +9,8 @@ import {
   useTheme,
   IconButton,
 } from "@mui/material";
-import {
-  Delete,
-  Storage as StorageIcon,
-} from "@mui/icons-material";
+import React from "react";
+
 import { VolumeCardProps } from "../../types/docker";
 import {
   formatDateTime,
@@ -75,98 +73,98 @@ const VolumeCard: React.FC<VolumeCardProps> = React.memo(
               flexDirection: "column",
             }}
           >
-              {/* Header with volume name */}
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <StorageIcon sx={{ mr: 1, color: "primary.main" }} />
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  sx={{
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    flex: 1,
-                  }}
-                  title={volume.name}
-                >
-                  {volume.name}
-                </Typography>
-              </Box>
+            {/* Header with volume name */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <StorageIcon sx={{ mr: 1, color: "primary.main" }} />
+              <Typography
+                variant="h6"
+                component="h3"
+                sx={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                }}
+                title={volume.name}
+              >
+                {volume.name}
+              </Typography>
+            </Box>
 
-              {/* Status and Driver */}
-              <Box sx={{ mb: 2 }}>
-                {isInUse && (
-                  <Chip
-                    label="In Use"
-                    size="small"
-                    color="success"
-                    sx={{ mb: 1, mr: 1 }}
-                  />
-                )}
+            {/* Status and Driver */}
+            <Box sx={{ mb: 2 }}>
+              {isInUse && (
                 <Chip
-                  label={getVolumeDriverDisplay(volume.driver)}
+                  label="In Use"
                   size="small"
-                  variant="outlined"
-                  sx={{ mb: 1 }}
+                  color="success"
+                  sx={{ mb: 1, mr: 1 }}
                 />
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                >
-                  Scope: {volume.scope || "local"}
-                </Typography>
-              </Box>
+              )}
+              <Chip
+                label={getVolumeDriverDisplay(volume.driver)}
+                size="small"
+                variant="outlined"
+                sx={{ mb: 1 }}
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                Scope: {volume.scope || "local"}
+              </Typography>
+            </Box>
 
-              {/* Volume Details */}
-              <Box sx={{ mb: 2, flex: 1 }}>
-                <Grid container spacing={1}>
-                  <Grid size={12}>
-                    <Typography variant="caption" color="text.secondary">
-                      Created: {formatDateTime(volume.created)}
-                    </Typography>
-                  </Grid>
-                  <Grid size={12}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        display: "block",
-                      }}
-                      title={volume.mountpoint}
-                    >
-                      Mount: {volume.mountpoint || "Not available"}
-                    </Typography>
-                  </Grid>
-                  <Grid size={12}>
-                    <Typography variant="caption" color="text.secondary">
-                      Labels: {formatLabels(volume.labels)}
-                    </Typography>
-                  </Grid>
+            {/* Volume Details */}
+            <Box sx={{ mb: 2, flex: 1 }}>
+              <Grid container spacing={1}>
+                <Grid size={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Created: {formatDateTime(volume.created)}
+                  </Typography>
                 </Grid>
-              </Box>
+                <Grid size={12}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "block",
+                    }}
+                    title={volume.mountpoint}
+                  >
+                    Mount: {volume.mountpoint || "Not available"}
+                  </Typography>
+                </Grid>
+                <Grid size={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Labels: {formatLabels(volume.labels)}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
 
-              {/* Action Buttons */}
-              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                <IconButton
-                  size="small"
-                  onClick={handleRemove}
-                  sx={{
-                    backgroundColor: "error.main",
-                    color: "white",
-                    "&:hover": {
-                      backgroundColor: "error.dark",
-                    },
-                  }}
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Box>
+            {/* Action Buttons */}
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+              <IconButton
+                size="small"
+                onClick={handleRemove}
+                sx={{
+                  backgroundColor: "error.main",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "error.dark",
+                  },
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Box>
           </CardContent>
         </Card>
       );
@@ -291,9 +289,7 @@ const VolumeCard: React.FC<VolumeCardProps> = React.memo(
                 minWidth: 100,
               }}
             >
-              {isInUse && (
-                <Chip label="In Use" size="small" color="success" />
-              )}
+              {isInUse && <Chip label="In Use" size="small" color="success" />}
               <Box sx={{ display: "flex", gap: 1, marginLeft: "auto" }}>
                 <IconButton
                   size="small"

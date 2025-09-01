@@ -1,11 +1,11 @@
-import { 
-  EnhancedChartDataPoint, 
-  ChartEngineType, 
+import {
+  EnhancedChartDataPoint,
+  ChartEngineType,
   ChartEngineCapabilities,
   ChartEngineConfig,
   EnhancedChartConfig,
-  ChartPerformanceMetrics 
-} from './ChartTypes';
+  ChartPerformanceMetrics,
+} from "./ChartTypes";
 
 export interface ChartEngineProps {
   data: EnhancedChartDataPoint[];
@@ -58,14 +58,14 @@ export abstract class ChartEngine {
     // Penalize if approaching data limits
     const dataRatio = dataPoints / capabilities.maxDataPoints;
     if (dataRatio > 0.8) {
-      score *= (1 - dataRatio);
+      score *= 1 - dataRatio;
     }
 
     // Adjust for feature support
-    if (features.includes('animation') && !capabilities.supportsAnimation) {
+    if (features.includes("animation") && !capabilities.supportsAnimation) {
       score *= 0.7;
     }
-    if (features.includes('interaction') && !capabilities.supportsInteraction) {
+    if (features.includes("interaction") && !capabilities.supportsInteraction) {
       score *= 0.8;
     }
 
@@ -75,7 +75,10 @@ export abstract class ChartEngine {
   /**
    * Update performance metrics
    */
-  protected updatePerformanceMetrics(renderTime: number, dataPoints: number): void {
+  protected updatePerformanceMetrics(
+    renderTime: number,
+    dataPoints: number,
+  ): void {
     this.performanceMetrics = {
       ...this.performanceMetrics,
       renderTime,
@@ -122,9 +125,9 @@ export class ChartEngineManager {
    * Select the best engine for current requirements
    */
   selectEngine(
-    dataPoints: number, 
+    dataPoints: number,
     features: string[] = [],
-    forceEngine?: ChartEngineType
+    forceEngine?: ChartEngineType,
   ): ChartEngine | null {
     if (forceEngine && this.engines.has(forceEngine)) {
       const engine = this.engines.get(forceEngine)!;
@@ -148,7 +151,10 @@ export class ChartEngineManager {
     }
 
     // Try fallback engines if preferred doesn't work or auto-switch is enabled
-    if (!bestEngine || (this.config.autoSwitch && bestScore < this.config.performanceThreshold)) {
+    if (
+      !bestEngine ||
+      (this.config.autoSwitch && bestScore < this.config.performanceThreshold)
+    ) {
       for (const engineType of this.config.fallbackOrder) {
         const engine = this.engines.get(engineType);
         if (engine && engine.canHandle(dataPoints, features)) {
@@ -191,7 +197,7 @@ export class ChartEngineManager {
    */
   updatePerformanceMetrics(metrics: ChartPerformanceMetrics): void {
     this.performanceHistory.push(metrics);
-    
+
     // Keep only last 100 measurements
     if (this.performanceHistory.length > 100) {
       this.performanceHistory = this.performanceHistory.slice(-100);
@@ -211,8 +217,11 @@ export class ChartEngineManager {
     if (this.performanceHistory.length < 10) return false;
 
     const recentMetrics = this.performanceHistory.slice(-10);
-    const avgRenderTime = recentMetrics.reduce((sum, m) => sum + m.renderTime, 0) / recentMetrics.length;
-    const avgFps = recentMetrics.reduce((sum, m) => sum + m.fps, 0) / recentMetrics.length;
+    const avgRenderTime =
+      recentMetrics.reduce((sum, m) => sum + m.renderTime, 0) /
+      recentMetrics.length;
+    const avgFps =
+      recentMetrics.reduce((sum, m) => sum + m.fps, 0) / recentMetrics.length;
 
     // Switch if performance is consistently poor
     return avgRenderTime > 50 || avgFps < 20;
@@ -223,10 +232,10 @@ export class ChartEngineManager {
    */
   private extractFeatures(): string[] {
     const features: string[] = [];
-    
-    if (this.config.autoSwitch) features.push('autoSwitch');
+
+    if (this.config.autoSwitch) features.push("autoSwitch");
     // Add more feature detection based on config
-    
+
     return features;
   }
 
@@ -240,7 +249,9 @@ export class ChartEngineManager {
   /**
    * Get engine capabilities
    */
-  getEngineCapabilities(engineType: ChartEngineType): ChartEngineCapabilities | null {
+  getEngineCapabilities(
+    engineType: ChartEngineType,
+  ): ChartEngineCapabilities | null {
     const engine = this.engines.get(engineType);
     return engine ? engine.getCapabilities() : null;
   }
@@ -256,7 +267,7 @@ export class ChartEngineManager {
    * Destroy all engines
    */
   destroy(): void {
-    this.engines.forEach(engine => engine.destroy());
+    this.engines.forEach((engine) => engine.destroy());
     this.engines.clear();
     this.currentEngine = null;
     this.performanceHistory = [];
@@ -273,28 +284,28 @@ export class EngineDetection {
 
     // Check for Recharts
     try {
-      require('recharts');
-      available.push('recharts');
+      require("recharts");
+      available.push("recharts");
     } catch (e) {
       // Recharts not available
     }
 
     // Check for Chart.js
     try {
-      require('chart.js');
-      available.push('chartjs');
+      require("chart.js");
+      available.push("chartjs");
     } catch (e) {
       // Chart.js not available
     }
 
     // Canvas is always available in browser
-    if (typeof HTMLCanvasElement !== 'undefined') {
-      available.push('canvas');
+    if (typeof HTMLCanvasElement !== "undefined") {
+      available.push("canvas");
     }
 
     // WebGL detection
     if (this.isWebGLAvailable()) {
-      available.push('webgl');
+      available.push("webgl");
     }
 
     return available;
@@ -305,8 +316,9 @@ export class EngineDetection {
    */
   static isWebGLAvailable(): boolean {
     try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
       return gl !== null;
     } catch (e) {
       return false;
@@ -316,18 +328,20 @@ export class EngineDetection {
   /**
    * Get device performance characteristics
    */
-  static getDeviceCapabilities(): { 
-    memory: number; 
-    cores: number; 
-    isMobile: boolean; 
+  static getDeviceCapabilities(): {
+    memory: number;
+    cores: number;
+    isMobile: boolean;
     supportsWebGL: boolean;
   } {
     const nav = navigator as any;
-    
+
     return {
       memory: nav.deviceMemory || 4, // GB, default to 4GB if unknown
       cores: nav.hardwareConcurrency || 4,
-      isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+      isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      ),
       supportsWebGL: this.isWebGLAvailable(),
     };
   }
@@ -340,21 +354,25 @@ export class EngineDetection {
     const available = this.detectAvailableEngines();
 
     // High-end devices with lots of data
-    if (capabilities.memory >= 8 && dataPoints > 1000 && available.includes('webgl')) {
-      return 'webgl';
+    if (
+      capabilities.memory >= 8 &&
+      dataPoints > 1000 &&
+      available.includes("webgl")
+    ) {
+      return "webgl";
     }
 
     // Medium data loads
-    if (dataPoints > 500 && available.includes('chartjs')) {
-      return 'chartjs';
+    if (dataPoints > 500 && available.includes("chartjs")) {
+      return "chartjs";
     }
 
     // Default to Recharts for smaller data sets
-    if (available.includes('recharts')) {
-      return 'recharts';
+    if (available.includes("recharts")) {
+      return "recharts";
     }
 
     // Fallback to canvas
-    return 'canvas';
+    return "canvas";
   }
-} 
+}

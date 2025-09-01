@@ -1,16 +1,17 @@
 import asyncio
 import logging
-from typing import Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Dict
+
 from sqlalchemy import and_, func
 
 from app.core.database import SessionLocal
 from app.models.docker_models import (
+    ContainerMetrics,
     DockerContainer,
     DockerImage,
-    DockerVolume,
     DockerNetwork,
-    ContainerMetrics,
+    DockerVolume,
     NetworkMetrics,
     SystemSnapshot,
 )
@@ -69,8 +70,8 @@ class DataRetentionService:
 
             if total_deleted > 0:
                 logger.info(
-                    f"Cleanup completed: {container_metrics_deleted} container metrics, "
-                    f"{network_metrics_deleted} network metrics, "
+                    f"Cleanup completed: {container_metrics_deleted} container "
+                    f"metrics, {network_metrics_deleted} network metrics, "
                     f"{system_snapshots_deleted} system snapshots deleted"
                 )
             else:
@@ -110,9 +111,9 @@ class DataRetentionService:
 
             if total_deleted > 0:
                 logger.info(
-                    f"Inactive resources cleanup completed: {containers_deleted} containers, "
-                    f"{images_deleted} images, {volumes_deleted} volumes, "
-                    f"{networks_deleted} networks deleted"
+                    f"Inactive resources cleanup completed: {containers_deleted} "
+                    f"containers, {images_deleted} images, {volumes_deleted} "
+                    f"volumes, {networks_deleted} networks deleted"
                 )
             else:
                 logger.debug("No inactive resources to cleanup")

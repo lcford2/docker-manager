@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { ViewModule, ViewList } from "@mui/icons-material";
 import {
   Grid2 as Grid,
   Box,
@@ -6,9 +6,11 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ViewModule, ViewList } from "@mui/icons-material";
-import ImageCard from "./ImageCard";
+import React, { useState, useEffect } from "react";
+
 import { ImageGridProps, ViewMode } from "../../types/docker";
+
+import ImageCard from "./ImageCard";
 
 const ImageGrid: React.FC<ImageGridProps> = React.memo(
   ({ images, onImageClick, onImageRemove, selectedImage }) => {
@@ -50,7 +52,7 @@ const ImageGrid: React.FC<ImageGridProps> = React.memo(
     }
 
     return (
-      <Box sx={{ width: '100%' }}>
+      <Box sx={{ width: "100%" }}>
         {/* Header with title and view toggle */}
         <Box
           sx={{

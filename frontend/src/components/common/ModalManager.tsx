@@ -1,6 +1,6 @@
-import React from "react";
-import { Modal, Box, IconButton, useTheme, useMediaQuery } from "@mui/material";
 import { Close } from "@mui/icons-material";
+import { Modal, Box, IconButton, useTheme, useMediaQuery } from "@mui/material";
+import React from "react";
 
 interface ModalManagerProps {
   open: boolean;

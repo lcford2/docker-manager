@@ -2,9 +2,10 @@
  * State management utilities for handling dashboard data updates
  */
 
-import { ContainerStatsWithHistory } from "../types/metrics";
-import { mergeSystemStats } from "./dataComparison";
 import { DockerContainer, DockerStatus } from "../types/docker";
+import { ContainerStatsWithHistory } from "../types/metrics";
+
+import { mergeSystemStats } from "./dataComparison";
 
 export interface SystemStats {
   containers_running: number;
@@ -101,7 +102,8 @@ export class DashboardStateManager {
     if (!update.data.containers) return false;
 
     // Check if container data has meaningful changes
-    const currentContainers = this.currentState.containers as ContainerStatsWithHistory[];
+    const currentContainers = this.currentState
+      .containers as ContainerStatsWithHistory[];
     const newContainers = update.data.containers as ContainerStatsWithHistory[];
 
     if (

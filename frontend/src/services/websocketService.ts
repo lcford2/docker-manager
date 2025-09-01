@@ -1,10 +1,10 @@
-import { ReconnectionStrategy } from "../utils/reconnectionStrategy";
 import {
   WebSocketMessage,
   WebSocketConnectionStatus,
   WebSocketConnectionState,
   WebSocketSubscription,
 } from "../types/websocket";
+import { ReconnectionStrategy } from "../utils/reconnectionStrategy";
 
 export interface WebSocketServiceConfig {
   url: string;

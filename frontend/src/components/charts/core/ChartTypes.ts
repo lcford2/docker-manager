@@ -4,14 +4,14 @@ export interface EnhancedChartDataPoint {
   cpu: number;
   memory: number;
   metadata?: {
-    source: 'websocket' | 'rest' | 'cached';
-    quality: 'high' | 'medium' | 'low';
+    source: "websocket" | "rest" | "cached";
+    quality: "high" | "medium" | "low";
     interpolated?: boolean;
   };
 }
 
 export interface ChartTimeConfig {
-  precision: 'second' | 'minute' | 'hour';
+  precision: "second" | "minute" | "hour";
   format: string;
   timezone?: string;
   includeSeconds: boolean;
@@ -47,7 +47,7 @@ export interface ChartEngineConfig {
   performanceThreshold: number;
 }
 
-export type ChartEngineType = 'recharts' | 'chartjs' | 'canvas' | 'webgl';
+export type ChartEngineType = "recharts" | "chartjs" | "canvas" | "webgl";
 
 export interface ChartThemeConfig {
   name: string;
@@ -84,7 +84,7 @@ export interface ChartInteractionConfig {
     touch: boolean;
   };
   export: {
-    formats: ('png' | 'svg' | 'csv' | 'json')[];
+    formats: ("png" | "svg" | "csv" | "json")[];
     includeMetadata: boolean;
   };
 }
@@ -135,17 +135,17 @@ export interface ChartState {
   selectedTimeRange: TimeRange;
   zoomLevel: number;
   panOffset: { x: number; y: number };
-  connectionStatus: 'connected' | 'disconnected' | 'reconnecting' | 'error';
+  connectionStatus: "connected" | "disconnected" | "reconnecting" | "error";
 }
 
 export interface TimeRange {
   start: number;
   end: number;
-  preset?: '5m' | '1h' | '6h' | '24h' | 'custom';
+  preset?: "5m" | "1h" | "6h" | "24h" | "custom";
 }
 
 export interface ChartDataAggregation {
-  method: 'average' | 'max' | 'min' | 'sum';
+  method: "average" | "max" | "min" | "sum";
   windowSize: number;
   overlap: number;
 }
@@ -154,7 +154,7 @@ export interface WebSocketEnhancedMessage {
   type: string;
   data: any;
   timestamp: number;
-  compression?: 'gzip' | 'lz4' | 'none';
+  compression?: "gzip" | "lz4" | "none";
   batch?: boolean;
   sequence?: number;
 }
@@ -162,8 +162,8 @@ export interface WebSocketEnhancedMessage {
 // Default configurations
 export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
   time: {
-    precision: 'second',
-    format: 'HH:mm:ss',
+    precision: "second",
+    format: "HH:mm:ss",
     includeSeconds: true,
   },
   // Data management - heavily reduced for better performance
@@ -184,30 +184,30 @@ export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
   },
   // Engine configuration
   engine: {
-    preferred: 'canvas' as ChartEngineType, // Changed from 'recharts' to 'canvas' for better performance
-    fallbackOrder: ['canvas', 'recharts', 'chartjs'],
+    preferred: "canvas" as ChartEngineType, // Changed from 'recharts' to 'canvas' for better performance
+    fallbackOrder: ["canvas", "recharts", "chartjs"],
     autoSwitch: true,
     performanceThreshold: 30,
   },
   theme: {
-    name: 'default',
+    name: "default",
     colors: {
-      cpu: '#1976d2',
-      memory: '#dc004e',
-      grid: '#e0e0e0',
-      background: '#ffffff',
-      text: '#333333',
-      warning: '#ff9800',
-      critical: '#f44336',
+      cpu: "#1976d2",
+      memory: "#dc004e",
+      grid: "#e0e0e0",
+      background: "#ffffff",
+      text: "#333333",
+      warning: "#ff9800",
+      critical: "#f44336",
     },
     gradients: {
-      cpu: ['#1976d2', '#42a5f5'],
-      memory: ['#dc004e', '#e91e63'],
+      cpu: ["#1976d2", "#42a5f5"],
+      memory: ["#dc004e", "#e91e63"],
     },
     animations: {
       enabled: false, // Disable animations for better performance
       duration: 150, // Reduced duration when enabled
-      easing: 'ease-in-out',
+      easing: "ease-in-out",
     },
   },
   interaction: {
@@ -223,7 +223,7 @@ export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
       touch: true,
     },
     export: {
-      formats: ['png', 'csv'],
+      formats: ["png", "csv"],
       includeMetadata: true,
     },
   },
@@ -246,4 +246,4 @@ export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
     connectionStatus: true,
     performanceMetrics: false,
   },
-}; 
+};

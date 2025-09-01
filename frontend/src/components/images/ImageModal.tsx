@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,6 +9,8 @@ import {
   Chip,
   Divider,
 } from "@mui/material";
+import React from "react";
+
 import { ImageModalProps } from "../../types/docker";
 import {
   formatBytes,

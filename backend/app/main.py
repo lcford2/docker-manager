@@ -1,13 +1,14 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
-import logging
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api import auth, containers, images, networks, system, volumes, websocket
 from app.core.config import settings
-from app.core.database import engine, Base
-from app.api import auth, containers, volumes, images, networks, websocket, system
+from app.core.database import Base, engine
 from app.services.background_tasks import background_manager
 from app.services.retention_service import retention_service
 

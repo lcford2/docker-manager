@@ -1,9 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
+
 from app.core.config import settings
 
-# Create engine with larger connection pool for background tasks and WebSocket connections
+# Create engine with larger connection pool for background tasks and
+# WebSocket connections
 engine = create_engine(
     settings.DATABASE_URL,
     pool_size=30,  # Increased for background tasks

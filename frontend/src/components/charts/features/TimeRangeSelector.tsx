@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { AccessTime, DateRange } from "@mui/icons-material";
 import {
   Box,
   ButtonGroup,
@@ -11,12 +11,13 @@ import {
   Chip,
   Typography,
   Divider,
-} from '@mui/material';
+} from "@mui/material";
+import React, { useState, useCallback } from "react";
 // import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 // import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 // import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { AccessTime, DateRange } from '@mui/icons-material';
-import { TimeRange } from '../core/ChartTypes';
+
+import { TimeRange } from "../core/ChartTypes";
 
 export interface TimeRangeSelectorProps {
   selectedRange: TimeRange;
@@ -26,16 +27,16 @@ export interface TimeRangeSelectorProps {
   maxRange?: TimeRange;
 }
 
-const PRESET_RANGES: Array<{ 
-  key: TimeRange['preset']; 
-  label: string; 
+const PRESET_RANGES: Array<{
+  key: TimeRange["preset"];
+  label: string;
   duration: number; // milliseconds
   icon?: React.ReactNode;
 }> = [
-  { key: '5m', label: '5 Minutes', duration: 5 * 60 * 1000 },
-  { key: '1h', label: '1 Hour', duration: 60 * 60 * 1000 },
-  { key: '6h', label: '6 Hours', duration: 6 * 60 * 60 * 1000 },
-  { key: '24h', label: '24 Hours', duration: 24 * 60 * 60 * 1000 },
+  { key: "5m", label: "5 Minutes", duration: 5 * 60 * 1000 },
+  { key: "1h", label: "1 Hour", duration: 60 * 60 * 1000 },
+  { key: "6h", label: "6 Hours", duration: 6 * 60 * 60 * 1000 },
+  { key: "24h", label: "24 Hours", duration: 24 * 60 * 60 * 1000 },
 ];
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -47,10 +48,10 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 }) => {
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [customStart, setCustomStart] = useState<Date | null>(
-    new Date(selectedRange.start)
+    new Date(selectedRange.start),
   );
   const [customEnd, setCustomEnd] = useState<Date | null>(
-    new Date(selectedRange.end)
+    new Date(selectedRange.end),
   );
 
   // Calculate relative time range for presets
@@ -61,25 +62,28 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   }, []);
 
   // Handle preset range selection
-  const handlePresetSelect = useCallback((preset: TimeRange['preset']) => {
-    const presetData = PRESET_RANGES.find(r => r.key === preset);
-    if (!presetData) return;
+  const handlePresetSelect = useCallback(
+    (preset: TimeRange["preset"]) => {
+      const presetData = PRESET_RANGES.find((r) => r.key === preset);
+      if (!presetData) return;
 
-    const range = {
-      ...calculatePresetRange(presetData.duration),
-      preset,
-    };
+      const range = {
+        ...calculatePresetRange(presetData.duration),
+        preset,
+      };
 
-    // Check against max range if provided
-    if (maxRange && range.start < maxRange.start) {
-      range.start = maxRange.start;
-    }
-    if (maxRange && range.end > maxRange.end) {
-      range.end = maxRange.end;
-    }
+      // Check against max range if provided
+      if (maxRange && range.start < maxRange.start) {
+        range.start = maxRange.start;
+      }
+      if (maxRange && range.end > maxRange.end) {
+        range.end = maxRange.end;
+      }
 
-    onRangeChange(range);
-  }, [calculatePresetRange, onRangeChange, maxRange]);
+      onRangeChange(range);
+    },
+    [calculatePresetRange, onRangeChange, maxRange],
+  );
 
   // Handle custom range
   const handleCustomRangeApply = useCallback(() => {
@@ -89,7 +93,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     const end = customEnd.getTime();
 
     if (start >= end) {
-      alert('Start time must be before end time');
+      alert("Start time must be before end time");
       return;
     }
 
@@ -100,7 +104,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     const range: TimeRange = {
       start: finalStart,
       end: finalEnd,
-      preset: 'custom',
+      preset: "custom",
     };
 
     onRangeChange(range);
@@ -132,15 +136,17 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   // Get current range label
   const getCurrentRangeLabel = useCallback(() => {
-    if (selectedRange.preset && selectedRange.preset !== 'custom') {
-      const preset = PRESET_RANGES.find(r => r.key === selectedRange.preset);
-      return preset?.label || 'Unknown';
+    if (selectedRange.preset && selectedRange.preset !== "custom") {
+      const preset = PRESET_RANGES.find((r) => r.key === selectedRange.preset);
+      return preset?.label || "Unknown";
     }
     return formatDuration(selectedRange.start, selectedRange.end);
   }, [selectedRange, formatDuration]);
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+    <Box
+      sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
+    >
       {/* Current Range Display */}
       <Chip
         icon={<AccessTime />}
@@ -155,9 +161,11 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         {PRESET_RANGES.map((preset) => (
           <Button
             key={preset.key}
-            variant={selectedRange.preset === preset.key ? 'contained' : 'outlined'}
+            variant={
+              selectedRange.preset === preset.key ? "contained" : "outlined"
+            }
             onClick={() => handlePresetSelect(preset.key)}
-            sx={{ minWidth: 'auto', px: 1 }}
+            sx={{ minWidth: "auto", px: 1 }}
           >
             {preset.label}
           </Button>
@@ -167,7 +175,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
       {/* Custom Range Button */}
       {showCustomRange && (
         <Button
-          variant={selectedRange.preset === 'custom' ? 'contained' : 'outlined'}
+          variant={selectedRange.preset === "custom" ? "contained" : "outlined"}
           onClick={handleCustomRangeOpen}
           startIcon={<DateRange />}
           size="small"
@@ -186,83 +194,94 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         fullWidth
       >
         <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <DateRange />
             <Typography variant="h6">Select Custom Time Range</Typography>
           </Box>
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                label="Start Time"
-                type="datetime-local"
-                value={customStart ? customStart.toISOString().slice(0, 16) : ''}
-                onChange={(e) => setCustomStart(e.target.value ? new Date(e.target.value) : null)}
-                fullWidth
-                variant="outlined"
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  max: customEnd ? customEnd.toISOString().slice(0, 16) : undefined,
-                  min: maxRange ? new Date(maxRange.start).toISOString().slice(0, 16) : undefined,
-                }}
-              />
-              
-              <TextField
-                label="End Time"
-                type="datetime-local"
-                value={customEnd ? customEnd.toISOString().slice(0, 16) : ''}
-                onChange={(e) => setCustomEnd(e.target.value ? new Date(e.target.value) : null)}
-                fullWidth
-                variant="outlined"
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  min: customStart ? customStart.toISOString().slice(0, 16) : undefined,
-                  max: maxRange ? new Date(maxRange.end).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-                }}
-              />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <TextField
+              label="Start Time"
+              type="datetime-local"
+              value={customStart ? customStart.toISOString().slice(0, 16) : ""}
+              onChange={(e) =>
+                setCustomStart(e.target.value ? new Date(e.target.value) : null)
+              }
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                max: customEnd
+                  ? customEnd.toISOString().slice(0, 16)
+                  : undefined,
+                min: maxRange
+                  ? new Date(maxRange.start).toISOString().slice(0, 16)
+                  : undefined,
+              }}
+            />
 
-              <Divider />
+            <TextField
+              label="End Time"
+              type="datetime-local"
+              value={customEnd ? customEnd.toISOString().slice(0, 16) : ""}
+              onChange={(e) =>
+                setCustomEnd(e.target.value ? new Date(e.target.value) : null)
+              }
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                min: customStart
+                  ? customStart.toISOString().slice(0, 16)
+                  : undefined,
+                max: maxRange
+                  ? new Date(maxRange.end).toISOString().slice(0, 16)
+                  : new Date().toISOString().slice(0, 16),
+              }}
+            />
 
-              {/* Duration Display */}
-              {customStart && customEnd && (
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Duration: {formatDuration(customStart.getTime(), customEnd.getTime())}
-                  </Typography>
-                </Box>
-              )}
+            <Divider />
 
-              {/* Quick Presets in Dialog */}
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Quick Presets from Now:
+            {/* Duration Display */}
+            {customStart && customEnd && (
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Duration:{" "}
+                  {formatDuration(customStart.getTime(), customEnd.getTime())}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {PRESET_RANGES.map((preset) => (
-                    <Button
-                      key={preset.key}
-                      size="small"
-                      variant="outlined"
-                      onClick={() => {
-                        const range = calculatePresetRange(preset.duration);
-                        setCustomStart(new Date(range.start));
-                        setCustomEnd(new Date(range.end));
-                      }}
-                    >
-                      Last {preset.label}
-                    </Button>
-                  ))}
-                </Box>
+              </Box>
+            )}
+
+            {/* Quick Presets in Dialog */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Quick Presets from Now:
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {PRESET_RANGES.map((preset) => (
+                  <Button
+                    key={preset.key}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      const range = calculatePresetRange(preset.duration);
+                      setCustomStart(new Date(range.start));
+                      setCustomEnd(new Date(range.end));
+                    }}
+                  >
+                    Last {preset.label}
+                  </Button>
+                ))}
               </Box>
             </Box>
+          </Box>
         </DialogContent>
-        
+
         <DialogActions>
-          <Button onClick={() => setCustomDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button 
+          <Button onClick={() => setCustomDialogOpen(false)}>Cancel</Button>
+          <Button
             onClick={handleCustomRangeApply}
             variant="contained"
             disabled={!customStart || !customEnd}
@@ -275,4 +294,4 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   );
 };
 
-export default TimeRangeSelector; 
+export default TimeRangeSelector;

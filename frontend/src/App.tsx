@@ -1,14 +1,15 @@
+import { Box, ThemeProvider, CssBaseline } from "@mui/material";
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { Box, ThemeProvider, CssBaseline } from "@mui/material";
-import Dashboard from "./components/dashboard/Dashboard";
-import Login from "./components/auth/Login";
+
 import AuthGuard from "./components/auth/AuthGuard";
+import Login from "./components/auth/Login";
 import Layout from "./components/common/Layout";
-import ImagesPage from "./components/images/ImagesPage";
-import VolumesPage from "./components/volumes/VolumesPage";
-import NetworksPage from "./components/networks/NetworksPage";
 import ContainersPage from "./components/containers/ContainersPage";
+import Dashboard from "./components/dashboard/Dashboard";
+import ImagesPage from "./components/images/ImagesPage";
+import NetworksPage from "./components/networks/NetworksPage";
+import VolumesPage from "./components/volumes/VolumesPage";
 import { WebSocketProvider } from "./contexts/WebSocketContext";
 import theme from "./theme";
 

@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import {
+  PlayArrow,
+  Stop,
+  Refresh,
+  Timeline,
+  Delete,
+  RestartAlt,
+} from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import {
   Box,
   Typography,
@@ -11,15 +19,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import {
-  PlayArrow,
-  Stop,
-  Refresh,
-  Timeline,
-  Delete,
-  RestartAlt,
-} from "@mui/icons-material";
-import { LoadingButton } from "@mui/lab";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -30,12 +30,13 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import ModalManager from "../common/ModalManager";
+
 import { dockerAPI } from "../../services/api";
 import {
   ContainerStatsWithHistory,
   ContainerMetricsPoint,
 } from "../../types/metrics";
+import ModalManager from "../common/ModalManager";
 
 interface ContainerMetricsModalProps {
   open: boolean;

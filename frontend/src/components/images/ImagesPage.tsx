@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { Refresh, Add, Search } from "@mui/icons-material";
 import {
   Box,
   Typography,
@@ -8,13 +8,15 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
-import { Refresh, Add, Search } from "@mui/icons-material";
+import React, { useState, useEffect, useCallback } from "react";
+
 import { dockerAPI } from "../../services/api";
+import { DockerImage } from "../../types/docker";
+import ConfirmDialog from "../common/ConfirmDialog";
+
 import ImageGrid from "./ImageGrid";
 import ImageModal from "./ImageModal";
 import PullImageModal from "./PullImageModal";
-import ConfirmDialog from "../common/ConfirmDialog";
-import { DockerImage } from "../../types/docker";
 
 const ImagesPage: React.FC = () => {
   const [images, setImages] = useState<DockerImage[]>([]);

@@ -1,4 +1,4 @@
-import React from "react";
+import { PlayArrow, Stop, Pause, Warning } from "@mui/icons-material";
 import {
   Card,
   CardContent,
@@ -9,9 +9,11 @@ import {
   Grid2 as Grid,
   useTheme,
 } from "@mui/material";
-import { PlayArrow, Stop, Pause, Warning } from "@mui/icons-material";
-import MetricSparkline from "./MetricSparkline";
+import React from "react";
+
 import { ContainerCardProps } from "../../types/metrics";
+
+import MetricSparkline from "./MetricSparkline";
 
 const ContainerCard: React.FC<ContainerCardProps> = React.memo(
   ({ container, onDetailsClick, isSelected = false, layout = "grid" }) => {

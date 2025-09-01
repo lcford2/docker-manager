@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { ViewModule, ViewList } from "@mui/icons-material";
 import {
   Grid2 as Grid,
   Box,
@@ -6,9 +6,11 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ViewModule, ViewList } from "@mui/icons-material";
-import ContainerCard from "./ContainerCard";
+import React, { useState, useEffect } from "react";
+
 import { ContainerGridProps, ViewMode } from "../../types/metrics";
+
+import ContainerCard from "./ContainerCard";
 
 const ContainerGrid: React.FC<ContainerGridProps> = React.memo(
   ({ containers, onContainerClick, selectedContainer }) => {

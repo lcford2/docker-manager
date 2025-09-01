@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { ViewModule, ViewList } from "@mui/icons-material";
 import {
   Grid2 as Grid,
   Box,
@@ -6,9 +6,11 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ViewModule, ViewList } from "@mui/icons-material";
-import VolumeCard from "./VolumeCard";
+import React, { useState, useEffect } from "react";
+
 import { VolumeGridProps, ViewMode } from "../../types/docker";
+
+import VolumeCard from "./VolumeCard";
 
 const VolumeGrid: React.FC<VolumeGridProps> = React.memo(
   ({ volumes, onVolumeClick, onVolumeRemove, selectedVolume }) => {

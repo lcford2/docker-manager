@@ -1,12 +1,14 @@
-from fastapi import WebSocket
-from typing import List, Dict
 import json
 import logging
 from datetime import datetime, timezone
-from app.services.docker_service import DockerService
-from app.services.docker_database_service import docker_database_service
-from app.models.docker_types import WebSocketMessage
+from typing import Dict, List
+
 from dateutil import parser
+from fastapi import WebSocket
+
+from app.models.docker_types import WebSocketMessage
+from app.services.docker_database_service import docker_database_service
+from app.services.docker_service import DockerService
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +73,10 @@ class ConnectionManager:
             # Format for WebSocket message
             current_stats = {
                 "containers_running": system_data["containers"]["running"],
-                "containers_paused": 0,  # TODO: Add paused status tracking if needed
+                "containers_paused": 0,  # TODO: Add paused status tracking
                 "containers_stopped": system_data["containers"]["stopped"],
                 "images": system_data["resources"]["images"],
-                "server_version": "Unknown",  # Could be added to system snapshot if needed
+                "server_version": "Unknown",  # Could be added to system snapshot
                 "total_memory": system_data["usage"]["total_memory_bytes"],
                 "cpus": 0,  # Could be added to system info if needed
             }
@@ -265,7 +267,9 @@ class ConnectionManager:
             }
 
     async def send_container_stats(self):
-        """Send enhanced container statistics with uptime and sparkline data to all connected clients"""
+        """Send enhanced container statistics with uptime and sparkline
+        data to all connected clients.
+        """
         try:
             stats_data = await self._generate_container_stats_data()
 

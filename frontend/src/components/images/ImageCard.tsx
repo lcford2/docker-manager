@@ -1,4 +1,4 @@
-import React from "react";
+import { Delete, Image as ImageIcon } from "@mui/icons-material";
 import {
   Card,
   CardContent,
@@ -9,7 +9,8 @@ import {
   useTheme,
   IconButton,
 } from "@mui/material";
-import { Delete, Image as ImageIcon } from "@mui/icons-material";
+import React from "react";
+
 import { ImageCardProps } from "../../types/docker";
 import {
   formatBytes,
@@ -71,85 +72,85 @@ const ImageCard: React.FC<ImageCardProps> = React.memo(
           >
             {/* Header with image name */}
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <ImageIcon sx={{ mr: 1, color: "primary.main" }} />
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  sx={{
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    flex: 1,
-                  }}
-                  title={displayName}
-                >
-                  {displayName}
-                </Typography>
-              </Box>
+              <ImageIcon sx={{ mr: 1, color: "primary.main" }} />
+              <Typography
+                variant="h6"
+                component="h3"
+                sx={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                }}
+                title={displayName}
+              >
+                {displayName}
+              </Typography>
+            </Box>
 
-              {/* Tags and Status */}
-              <Box sx={{ mb: 2 }}>
-                {isDangling && (
-                  <Chip
-                    label="Dangling"
-                    size="small"
-                    color="warning"
-                    sx={{ mb: 1 }}
-                  />
-                )}
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                >
-                  ID: {image.id.substring(0, 12)}
-                </Typography>
-              </Box>
-
-              {/* Image Details */}
-              <Box sx={{ mb: 2, flex: 1 }}>
-                <Grid container spacing={1}>
-                  <Grid size={12}>
-                    <Typography variant="caption" color="text.secondary">
-                      Size: {formatBytes(image.size)}
-                    </Typography>
-                  </Grid>
-                  <Grid size={12}>
-                    <Typography variant="caption" color="text.secondary">
-                      Created: {formatDateTime(image.created)}
-                    </Typography>
-                  </Grid>
-                  {image.virtual_size && image.virtual_size !== image.size && (
-                    <Grid size={12}>
-                      <Typography variant="caption" color="text.secondary">
-                        Virtual Size: {formatBytes(image.virtual_size)}
-                      </Typography>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-
-              {/* Action Buttons */}
-              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                <IconButton
+            {/* Tags and Status */}
+            <Box sx={{ mb: 2 }}>
+              {isDangling && (
+                <Chip
+                  label="Dangling"
                   size="small"
-                  onClick={handleRemove}
-                  sx={{
-                    backgroundColor: "error.main",
-                    color: "white",
-                    "&:hover": {
-                      backgroundColor: "error.dark",
-                    },
-                  }}
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Box>
-            </CardContent>
-          </Card>
-        );
+                  color="warning"
+                  sx={{ mb: 1 }}
+                />
+              )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
+                ID: {image.id.substring(0, 12)}
+              </Typography>
+            </Box>
+
+            {/* Image Details */}
+            <Box sx={{ mb: 2, flex: 1 }}>
+              <Grid container spacing={1}>
+                <Grid size={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Size: {formatBytes(image.size)}
+                  </Typography>
+                </Grid>
+                <Grid size={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Created: {formatDateTime(image.created)}
+                  </Typography>
+                </Grid>
+                {image.virtual_size && image.virtual_size !== image.size && (
+                  <Grid size={12}>
+                    <Typography variant="caption" color="text.secondary">
+                      Virtual Size: {formatBytes(image.virtual_size)}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+
+            {/* Action Buttons */}
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+              <IconButton
+                size="small"
+                onClick={handleRemove}
+                sx={{
+                  backgroundColor: "error.main",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "error.dark",
+                  },
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Box>
+          </CardContent>
+        </Card>
+      );
     }
 
     // List view layout (horizontal layout)

@@ -1,9 +1,11 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 import json
 import logging
-from app.services.websocket_service import manager
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
 from app.core.security import verify_token
 from app.services.auth_service import AuthService
+from app.services.websocket_service import manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

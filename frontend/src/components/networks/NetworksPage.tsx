@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { Refresh, Add, Search } from "@mui/icons-material";
 import {
   Box,
   Typography,
@@ -8,7 +8,8 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
-import { Refresh, Add, Search } from "@mui/icons-material";
+import React, { useState, useEffect, useCallback } from "react";
+
 import { dockerAPI } from "../../services/api";
 import { DockerNetwork } from "../../types/docker";
 

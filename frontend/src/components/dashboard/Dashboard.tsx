@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { ViewInAr, Storage, Image, NetworkCheck } from "@mui/icons-material";
 import {
   Box,
   Grid2 as Grid,
@@ -6,19 +6,21 @@ import {
   Container,
   CircularProgress,
 } from "@mui/material";
-import { dockerAPI } from "../../services/api";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+
 import { useSharedWebSocket } from "../../hooks/useSharedWebSocket";
+import { dockerAPI } from "../../services/api";
+import { DockerContainer } from "../../types/docker";
 import { ContainerStatsWithHistory } from "../../types/metrics";
 import {
   DashboardStateManager,
   DashboardState,
 } from "../../utils/stateManagement";
-import EnhancedResourceChart from '../charts/enhanced/EnhancedResourceChart';
-import SystemSummary from './SystemSummary';
-import RunningContainers from './RunningContainers';
-import { DockerContainer } from "../../types/docker";
-import StatCard from './StatCard';
-import { ViewInAr, Storage, Image, NetworkCheck } from "@mui/icons-material";
+import EnhancedResourceChart from "../charts/enhanced/EnhancedResourceChart";
+
+import RunningContainers from "./RunningContainers";
+import StatCard from "./StatCard";
+import SystemSummary from "./SystemSummary";
 
 interface ChartDataPoint {
   time: string;
@@ -68,17 +70,30 @@ const Dashboard: React.FC = React.memo(() => {
           timestamp: Date.now(),
         });
 
-        const totalCpu = containerStats.reduce((acc, c) => acc + (c.cpu_percent || 0), 0);
-        const totalMemory = containerStats.reduce((acc, c) => acc + (c.memory_percent || 0), 0);
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const totalCpu = containerStats.reduce(
+          (acc, c) => acc + (c.cpu_percent || 0),
+          0,
+        );
+        const totalMemory = containerStats.reduce(
+          (acc, c) => acc + (c.memory_percent || 0),
+          0,
+        );
+        const timestamp = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
 
-        setChartData(prevData => {
-          const newData = [...prevData, { 
-            time: timestamp, 
-            cpu: totalCpu, 
-            memory: totalMemory,
-            timestamp: Date.now() // Add timestamp for enhanced chart
-          }];
+        setChartData((prevData) => {
+          const newData = [
+            ...prevData,
+            {
+              time: timestamp,
+              cpu: totalCpu,
+              memory: totalMemory,
+              timestamp: Date.now(), // Add timestamp for enhanced chart
+            },
+          ];
           if (newData.length > MAX_CHART_DATA_POINTS) {
             return newData.slice(newData.length - MAX_CHART_DATA_POINTS);
           }
@@ -209,27 +224,27 @@ const Dashboard: React.FC = React.memo(() => {
           <Paper
             sx={{
               p: 2,
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               height: 240,
             }}
           >
-            <EnhancedResourceChart 
-              data={chartData.map(point => ({
+            <EnhancedResourceChart
+              data={chartData.map((point) => ({
                 timestamp: point.timestamp || Date.now(),
                 time: point.time,
                 cpu: point.cpu,
                 memory: point.memory,
                 metadata: {
-                  source: 'websocket' as const,
-                  quality: 'high' as const,
-                  interpolated: false
-                }
+                  source: "websocket" as const,
+                  quality: "high" as const,
+                  interpolated: false,
+                },
               }))}
               config={{
                 time: {
-                  precision: 'second',
-                  format: 'HH:mm:ss',
+                  precision: "second",
+                  format: "HH:mm:ss",
                   includeSeconds: true,
                 },
                 features: {
@@ -238,16 +253,18 @@ const Dashboard: React.FC = React.memo(() => {
                   thresholdLines: true,
                   connectionStatus: true,
                   performanceMetrics: false,
-                }
+                },
               }}
               showControls={true}
               showTimeSelector={true}
-              showPerformanceMetrics={process.env.NODE_ENV === 'development'}
+              showPerformanceMetrics={process.env.NODE_ENV === "development"}
               enableLiveUpdates={true}
               enableExport={true}
               enableFullscreen={true}
-              onError={(error) => console.error('Chart error:', error)}
-              onPerformanceUpdate={(metrics) => console.debug('Chart performance:', metrics)}
+              onError={(error) => console.error("Chart error:", error)}
+              onPerformanceUpdate={(metrics) =>
+                console.debug("Chart performance:", metrics)
+              }
             />
           </Paper>
         </Grid>
@@ -256,15 +273,15 @@ const Dashboard: React.FC = React.memo(() => {
           <Paper
             sx={{
               p: 2,
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               height: 240,
             }}
           >
             <SystemSummary dockerStatus={dashboardState.dockerStatus} />
           </Paper>
         </Grid>
-      {/* Stat Cards */}
+        {/* Stat Cards */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="Containers"
@@ -303,8 +320,14 @@ const Dashboard: React.FC = React.memo(() => {
         </Grid>
         {/* Running Containers */}
         <Grid size={{ xs: 12 }}>
-          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }}>
-            <RunningContainers containers={dashboardState.containers.filter(c => 'image' in c) as DockerContainer[]} />
+          <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
+            <RunningContainers
+              containers={
+                dashboardState.containers.filter(
+                  (c) => "image" in c,
+                ) as DockerContainer[]
+              }
+            />
           </Paper>
         </Grid>
       </Grid>

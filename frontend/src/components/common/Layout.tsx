@@ -1,4 +1,12 @@
-import React from "react";
+import {
+  Dashboard,
+  ViewInAr,
+  Storage,
+  Image,
+  NetworkCheck,
+  Logout,
+  Menu as MenuIcon,
+} from "@mui/icons-material";
 import {
   Box,
   Drawer,
@@ -13,15 +21,7 @@ import {
   ListItemText,
   IconButton,
 } from "@mui/material";
-import {
-  Dashboard,
-  ViewInAr,
-  Storage,
-  Image,
-  NetworkCheck,
-  Logout,
-  Menu as MenuIcon,
-} from "@mui/icons-material";
+import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const drawerWidth = 240;
@@ -150,12 +150,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         component="main"
         sx={{
           backgroundColor: (theme) =>
-            theme.palette.mode === 'light'
+            theme.palette.mode === "light"
               ? theme.palette.grey[100]
               : theme.palette.grey[900],
           flexGrow: 1,
-          height: '100vh',
-          overflow: 'auto',
+          height: "100vh",
+          overflow: "auto",
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
         }}

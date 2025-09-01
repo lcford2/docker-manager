@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, Typography, Box } from "@mui/material";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface StatCardProps {
   title: string;
@@ -10,7 +10,13 @@ interface StatCardProps {
   path: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = 'primary.main', path }) => {
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon,
+  color = "primary.main",
+  path,
+}) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -20,9 +26,9 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = 'primar
   return (
     <Card
       sx={{
-        cursor: 'pointer',
-        '&:hover': {
-          backgroundColor: 'action.hover',
+        cursor: "pointer",
+        "&:hover": {
+          backgroundColor: "action.hover",
         },
       }}
       onClick={handleClick}
@@ -44,4 +50,4 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = 'primar
   );
 };
 
-export default StatCard; 
+export default StatCard;

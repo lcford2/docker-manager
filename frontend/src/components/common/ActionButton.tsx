@@ -1,6 +1,6 @@
-import React from "react";
-import { Button, ButtonProps } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
+import { Button, ButtonProps } from "@mui/material";
+import React from "react";
 
 interface ActionButtonProps extends Omit<ButtonProps, "loading" | "action"> {
   loading?: boolean;

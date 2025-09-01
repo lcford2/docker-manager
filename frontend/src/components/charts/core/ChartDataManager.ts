@@ -1,9 +1,9 @@
-import { 
-  EnhancedChartDataPoint, 
-  ChartDataBufferConfig, 
+import {
+  EnhancedChartDataPoint,
+  ChartDataBufferConfig,
   ChartTimeConfig,
-  DEFAULT_CHART_CONFIG 
-} from './ChartTypes';
+  DEFAULT_CHART_CONFIG,
+} from "./ChartTypes";
 
 export class ChartDataManager {
   private dataBuffer: EnhancedChartDataPoint[] = [];
@@ -14,7 +14,7 @@ export class ChartDataManager {
 
   constructor(
     dataConfig: Partial<ChartDataBufferConfig> = {},
-    timeConfig: Partial<ChartTimeConfig> = {}
+    timeConfig: Partial<ChartTimeConfig> = {},
   ) {
     this.config = { ...DEFAULT_CHART_CONFIG.data, ...dataConfig };
     this.timeConfig = { ...DEFAULT_CHART_CONFIG.time, ...timeConfig };
@@ -23,7 +23,11 @@ export class ChartDataManager {
   /**
    * Add new data point with deduplication and aggregation
    */
-  addDataPoint(cpu: number, memory: number, source: 'websocket' | 'rest' | 'cached' = 'websocket'): EnhancedChartDataPoint | null {
+  addDataPoint(
+    cpu: number,
+    memory: number,
+    source: "websocket" | "rest" | "cached" = "websocket",
+  ): EnhancedChartDataPoint | null {
     const now = Date.now();
     const timestamp = this.roundTimestamp(now);
     const formattedTime = this.formatTimestamp(timestamp);
@@ -56,7 +60,9 @@ export class ChartDataManager {
   /**
    * Add data point directly to buffer
    */
-  private addToBuffer(dataPoint: EnhancedChartDataPoint): EnhancedChartDataPoint {
+  private addToBuffer(
+    dataPoint: EnhancedChartDataPoint,
+  ): EnhancedChartDataPoint {
     this.dataBuffer.push(dataPoint);
     this.lastDataPoint = dataPoint;
 
@@ -71,9 +77,13 @@ export class ChartDataManager {
   /**
    * Add to aggregation buffer and process if window is full
    */
-  private addToAggregationBuffer(dataPoint: EnhancedChartDataPoint): EnhancedChartDataPoint | null {
-    const windowKey = Math.floor(dataPoint.timestamp / this.config.aggregationWindow).toString();
-    
+  private addToAggregationBuffer(
+    dataPoint: EnhancedChartDataPoint,
+  ): EnhancedChartDataPoint | null {
+    const windowKey = Math.floor(
+      dataPoint.timestamp / this.config.aggregationWindow,
+    ).toString();
+
     if (!this.aggregationBuffer.has(windowKey)) {
       this.aggregationBuffer.set(windowKey, []);
     }
@@ -100,18 +110,26 @@ export class ChartDataManager {
   /**
    * Aggregate data points within a time window
    */
-  private aggregateWindowData(windowData: EnhancedChartDataPoint[], windowStart: number): EnhancedChartDataPoint {
-    const avgCpu = windowData.reduce((sum, point) => sum + point.cpu, 0) / windowData.length;
-    const avgMemory = windowData.reduce((sum, point) => sum + point.memory, 0) / windowData.length;
-    
+  private aggregateWindowData(
+    windowData: EnhancedChartDataPoint[],
+    windowStart: number,
+  ): EnhancedChartDataPoint {
+    const avgCpu =
+      windowData.reduce((sum, point) => sum + point.cpu, 0) / windowData.length;
+    const avgMemory =
+      windowData.reduce((sum, point) => sum + point.memory, 0) /
+      windowData.length;
+
     return {
       timestamp: windowStart + this.config.aggregationWindow / 2,
-      time: this.formatTimestamp(windowStart + this.config.aggregationWindow / 2),
+      time: this.formatTimestamp(
+        windowStart + this.config.aggregationWindow / 2,
+      ),
       cpu: Math.round(avgCpu * 100) / 100,
       memory: Math.round(avgMemory * 100) / 100,
       metadata: {
-        source: 'websocket',
-        quality: 'high',
+        source: "websocket",
+        quality: "high",
         interpolated: false,
       },
     };
@@ -122,11 +140,11 @@ export class ChartDataManager {
    */
   private roundTimestamp(timestamp: number): number {
     switch (this.timeConfig.precision) {
-      case 'minute':
+      case "minute":
         return Math.floor(timestamp / 60000) * 60000;
-      case 'hour':
+      case "hour":
         return Math.floor(timestamp / 3600000) * 3600000;
-      case 'second':
+      case "second":
       default:
         return Math.floor(timestamp / 1000) * 1000;
     }
@@ -137,18 +155,18 @@ export class ChartDataManager {
    */
   private formatTimestamp(timestamp: number): string {
     const date = new Date(timestamp);
-    
+
     if (this.timeConfig.includeSeconds) {
-      return date.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
     }
-    
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit'
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 
@@ -168,7 +186,7 @@ export class ChartDataManager {
    * Sanitize numeric values
    */
   private sanitizeValue(value: number): number {
-    if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+    if (typeof value !== "number" || isNaN(value) || !isFinite(value)) {
       return 0;
     }
     return Math.max(0, Math.min(100, Math.round(value * 100) / 100));
@@ -177,17 +195,26 @@ export class ChartDataManager {
   /**
    * Assess data quality based on values
    */
-  private assessDataQuality(cpu: number, memory: number): 'high' | 'medium' | 'low' {
-    if (typeof cpu !== 'number' || typeof memory !== 'number' || 
-        isNaN(cpu) || isNaN(memory) || !isFinite(cpu) || !isFinite(memory)) {
-      return 'low';
+  private assessDataQuality(
+    cpu: number,
+    memory: number,
+  ): "high" | "medium" | "low" {
+    if (
+      typeof cpu !== "number" ||
+      typeof memory !== "number" ||
+      isNaN(cpu) ||
+      isNaN(memory) ||
+      !isFinite(cpu) ||
+      !isFinite(memory)
+    ) {
+      return "low";
     }
-    
+
     if (cpu < 0 || cpu > 100 || memory < 0 || memory > 100) {
-      return 'medium';
+      return "medium";
     }
-    
-    return 'high';
+
+    return "high";
   }
 
   /**
@@ -201,8 +228,8 @@ export class ChartDataManager {
    * Get data points within time range
    */
   getDataInRange(startTime: number, endTime: number): EnhancedChartDataPoint[] {
-    return this.dataBuffer.filter(point => 
-      point.timestamp >= startTime && point.timestamp <= endTime
+    return this.dataBuffer.filter(
+      (point) => point.timestamp >= startTime && point.timestamp <= endTime,
     );
   }
 
@@ -247,7 +274,10 @@ export class ChartDataManager {
   /**
    * Update configuration
    */
-  updateConfig(dataConfig: Partial<ChartDataBufferConfig>, timeConfig?: Partial<ChartTimeConfig>): void {
+  updateConfig(
+    dataConfig: Partial<ChartDataBufferConfig>,
+    timeConfig?: Partial<ChartTimeConfig>,
+  ): void {
     this.config = { ...this.config, ...dataConfig };
     if (timeConfig) {
       this.timeConfig = { ...this.timeConfig, ...timeConfig };
@@ -262,11 +292,11 @@ export class ChartDataManager {
   /**
    * Export data in various formats
    */
-  exportData(format: 'json' | 'csv'): string {
+  exportData(format: "json" | "csv"): string {
     switch (format) {
-      case 'csv':
+      case "csv":
         return this.exportToCsv();
-      case 'json':
+      case "json":
       default:
         return JSON.stringify(this.dataBuffer, null, 2);
     }
@@ -276,17 +306,17 @@ export class ChartDataManager {
    * Export data to CSV format
    */
   private exportToCsv(): string {
-    const headers = ['timestamp', 'time', 'cpu', 'memory', 'source', 'quality'];
-    const rows = this.dataBuffer.map(point => [
+    const headers = ["timestamp", "time", "cpu", "memory", "source", "quality"];
+    const rows = this.dataBuffer.map((point) => [
       point.timestamp,
       point.time,
       point.cpu,
       point.memory,
-      point.metadata?.source || '',
-      point.metadata?.quality || '',
+      point.metadata?.source || "",
+      point.metadata?.quality || "",
     ]);
 
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
+    return [headers, ...rows].map((row) => row.join(",")).join("\n");
   }
 
   /**
@@ -296,27 +326,27 @@ export class ChartDataManager {
     if (this.dataBuffer.length < 2) return;
 
     const interpolatedData: EnhancedChartDataPoint[] = [];
-    
+
     for (let i = 0; i < this.dataBuffer.length - 1; i++) {
       const current = this.dataBuffer[i];
       const next = this.dataBuffer[i + 1];
-      
+
       interpolatedData.push(current);
-      
+
       const gap = next.timestamp - current.timestamp;
       if (gap > maxGapMs) {
         const steps = Math.floor(gap / 1000); // Interpolate every second
-        
+
         for (let step = 1; step < steps; step++) {
           const ratio = step / steps;
           const interpolatedPoint: EnhancedChartDataPoint = {
-            timestamp: current.timestamp + (gap * ratio),
-            time: this.formatTimestamp(current.timestamp + (gap * ratio)),
+            timestamp: current.timestamp + gap * ratio,
+            time: this.formatTimestamp(current.timestamp + gap * ratio),
             cpu: current.cpu + (next.cpu - current.cpu) * ratio,
             memory: current.memory + (next.memory - current.memory) * ratio,
             metadata: {
-              source: 'websocket',
-              quality: 'medium',
+              source: "websocket",
+              quality: "medium",
               interpolated: true,
             },
           };
@@ -324,10 +354,10 @@ export class ChartDataManager {
         }
       }
     }
-    
+
     // Add the last point
     interpolatedData.push(this.dataBuffer[this.dataBuffer.length - 1]);
-    
+
     this.dataBuffer = interpolatedData.slice(-this.config.maxDataPoints);
   }
 
@@ -336,8 +366,8 @@ export class ChartDataManager {
    */
   private cleanupOldAggregationWindows(): void {
     const now = Date.now();
-    const cutoffTime = now - (this.config.aggregationWindow * 10); // Keep only last 10 windows
-    
+    const cutoffTime = now - this.config.aggregationWindow * 10; // Keep only last 10 windows
+
     this.aggregationBuffer.forEach((windowData, windowKey) => {
       const windowStart = parseInt(windowKey) * this.config.aggregationWindow;
       if (windowStart < cutoffTime) {
@@ -345,6 +375,4 @@ export class ChartDataManager {
       }
     });
   }
-
-
-} 
+}

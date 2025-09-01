@@ -33,21 +33,25 @@ A comprehensive web application for managing Docker containers, images, volumes,
 ### Installation
 
 1. Clone and navigate to the project:
+
 ```bash
 cd docker-manager
 ```
 
 2. Start the application:
+
 ```bash
 docker-compose up -d
 ```
 
 3. Initialize the admin user:
+
 ```bash
 curl -X POST http://localhost:6500/api/auth/init-admin
 ```
 
 4. Access the application:
+
 - Open http://localhost:8088 in your browser
 - Login with: `admin` / `admin123`
 
@@ -67,7 +71,7 @@ pip install -r requirements.txt
 cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 6500
 
-# Install frontend dependencies  
+# Install frontend dependencies
 cd frontend
 npm install
 
@@ -96,6 +100,7 @@ Copy `.env` and modify as needed:
 ## API Documentation
 
 Once running, visit:
+
 - Swagger UI: http://localhost:6500/docs
 - ReDoc: http://localhost:6500/redoc
 
@@ -110,6 +115,7 @@ Once running, visit:
 ## Monitoring
 
 The application provides:
+
 - Real-time container resource usage
 - Docker daemon health status
 - WebSocket connection monitoring
@@ -119,6 +125,7 @@ The application provides:
 ## Development
 
 ### Backend Structure
+
 ```
 backend/
 ├── app/
@@ -129,6 +136,7 @@ backend/
 ```
 
 ### Frontend Structure
+
 ```
 frontend/
 ├── src/
@@ -157,6 +165,7 @@ frontend/
 ### Logs
 
 View service logs:
+
 ```bash
 # All services
 docker-compose logs -f
@@ -175,4 +184,4 @@ docker-compose logs -f frontend
 
 ## License
 
-MIT License - see LICENSE file for details. 
+MIT License - see LICENSE file for details.

@@ -1,4 +1,5 @@
-import React, { useMemo, useCallback, useEffect, useRef } from 'react';
+import { useTheme } from "@mui/material/styles";
+import React, { useMemo, useCallback, useEffect, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -11,16 +12,16 @@ import {
   ReferenceLine,
   Area,
   AreaChart,
-} from 'recharts';
-import { useTheme } from '@mui/material/styles';
-import { ChartEngine, ChartEngineProps } from '../core/ChartEngine';
-import { 
-  ChartEngineCapabilities, 
-  ChartEngineType, 
+} from "recharts";
+
+import { ChartEngine, ChartEngineProps } from "../core/ChartEngine";
+import {
+  ChartEngineCapabilities,
+  ChartEngineType,
   EnhancedChartConfig,
-  EnhancedChartDataPoint 
-} from '../core/ChartTypes';
-import { PerformanceMonitor } from '../optimization/PerformanceMonitor';
+  EnhancedChartDataPoint,
+} from "../core/ChartTypes";
+import { PerformanceMonitor } from "../optimization/PerformanceMonitor";
 
 export class RechartsEngine extends ChartEngine {
   private performanceMonitor: PerformanceMonitor;
@@ -31,7 +32,7 @@ export class RechartsEngine extends ChartEngine {
   }
 
   getEngineType(): ChartEngineType {
-    return 'recharts';
+    return "recharts";
   }
 
   getCapabilities(): ChartEngineCapabilities {
@@ -83,7 +84,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
     // Simple performance metrics - just measure data processing time
     const startTime = performance.now();
     const processingTime = performance.now() - startTime;
-    
+
     // Get actual memory usage
     const getMemoryUsage = (): number => {
       const perf = performance as any;
@@ -92,16 +93,16 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
       }
       return 0;
     };
-    
+
     const metrics = {
       renderTime: processingTime, // Just the actual data processing time
       memoryUsage: getMemoryUsage(), // Get real memory usage
       dataPoints: data.length,
       fps: 60, // Default to smooth rate since we're not actually measuring frames
       lastUpdate: Date.now(),
-      engine: 'recharts' as const,
+      engine: "recharts" as const,
     };
-    
+
     // Only report significant changes to avoid spam
     if (data.length > 0) {
       onPerformanceUpdate?.(metrics);
@@ -112,7 +113,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
   const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    return data.map(point => ({
+    return data.map((point) => ({
       ...point,
       // Ensure numeric values for better chart rendering
       cpu: Number(point.cpu) || 0,
@@ -127,7 +128,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
   const yAxisDomain = useMemo(() => {
     if (processedData.length === 0) return [0, 100];
 
-    const allValues = processedData.flatMap(d => [d.cpu, d.memory]);
+    const allValues = processedData.flatMap((d) => [d.cpu, d.memory]);
     const minValue = Math.min(...allValues);
     const maxValue = Math.max(...allValues);
 
@@ -140,84 +141,98 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
   }, [processedData]);
 
   // Format X-axis tick labels
-  const formatXAxisTick = useCallback((value: string) => {
-    if (config.time.includeSeconds) {
-      return value; // Already formatted with seconds
-    }
-    // Remove seconds if not needed
-    return value.split(':').slice(0, 2).join(':');
-  }, [config.time.includeSeconds]);
+  const formatXAxisTick = useCallback(
+    (value: string) => {
+      if (config.time.includeSeconds) {
+        return value; // Already formatted with seconds
+      }
+      // Remove seconds if not needed
+      return value.split(":").slice(0, 2).join(":");
+    },
+    [config.time.includeSeconds],
+  );
 
   // Custom tooltip
-  const CustomTooltip = useCallback(({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
+  const CustomTooltip = useCallback(
+    ({ active, payload, label }: any) => {
+      if (!active || !payload || !payload.length) return null;
 
-    return (
-      <div style={{
-        backgroundColor: theme.palette.background.paper,
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
-        padding: theme.spacing(1),
-        boxShadow: theme.shadows[4],
-      }}>
-        <p style={{ margin: 0, fontWeight: 'bold', marginBottom: 4 }}>
-          {label}
-        </p>
-        {payload.map((entry: any, index: number) => (
-          <p key={index} style={{ 
-            margin: 0, 
-            color: entry.color,
-            fontSize: '0.875rem' 
-          }}>
-            {entry.name}: {entry.value.toFixed(1)}%
+      return (
+        <div
+          style={{
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: theme.shape.borderRadius,
+            padding: theme.spacing(1),
+            boxShadow: theme.shadows[4],
+          }}
+        >
+          <p style={{ margin: 0, fontWeight: "bold", marginBottom: 4 }}>
+            {label}
           </p>
-        ))}
-      </div>
-    );
-  }, [theme]);
+          {payload.map((entry: any, index: number) => (
+            <p
+              key={index}
+              style={{
+                margin: 0,
+                color: entry.color,
+                fontSize: "0.875rem",
+              }}
+            >
+              {entry.name}: {entry.value.toFixed(1)}%
+            </p>
+          ))}
+        </div>
+      );
+    },
+    [theme],
+  );
 
   // Threshold lines configuration
   const thresholdLines = useMemo(() => {
     const lines = [];
-    
+
     if (config.features.thresholdLines) {
       // Warning threshold at 70%
       lines.push(
-        <ReferenceLine 
-          key="warning" 
-          y={70} 
+        <ReferenceLine
+          key="warning"
+          y={70}
           stroke={config.theme.colors.warning}
           strokeDasharray="5 5"
           label={{ value: "Warning", position: "insideTopRight" }}
-        />
+        />,
       );
-      
+
       // Critical threshold at 90%
       lines.push(
-        <ReferenceLine 
-          key="critical" 
-          y={90} 
+        <ReferenceLine
+          key="critical"
+          y={90}
           stroke={config.theme.colors.critical}
           strokeDasharray="5 5"
           label={{ value: "Critical", position: "insideTopRight" }}
-        />
+        />,
       );
     }
-    
+
     return lines;
   }, [config.features.thresholdLines, config.theme.colors]);
 
   // Animation configuration
-  const animationConfig = useMemo(() => ({
-    isAnimationActive: config.theme.animations.enabled,
-    animationDuration: config.theme.animations.duration,
-  }), [config.theme.animations]);
+  const animationConfig = useMemo(
+    () => ({
+      isAnimationActive: config.theme.animations.enabled,
+      animationDuration: config.theme.animations.duration,
+    }),
+    [config.theme.animations],
+  );
 
   // Chart component selection based on configuration
   const ChartComponent = config.theme.gradients ? AreaChart : LineChart;
 
   return (
-    <div ref={chartRef} style={{ width: '100%', height: '100%' }}>
+    <div ref={chartRef} style={{ width: "100%", height: "100%" }}>
       <ResponsiveContainer width="100%" height="100%">
         <ChartComponent
           data={processedData}
@@ -228,12 +243,12 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
             bottom: 20,
           }}
         >
-          <CartesianGrid 
-            strokeDasharray="3 3" 
+          <CartesianGrid
+            strokeDasharray="3 3"
             stroke={config.theme.colors.grid}
             opacity={0.2}
           />
-          
+
           <XAxis
             dataKey="time"
             stroke={theme.palette.text.secondary}
@@ -242,23 +257,20 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
             minTickGap={50}
             tickCount={5}
           />
-          
+
           <YAxis
             stroke={theme.palette.text.secondary}
             domain={yAxisDomain}
             tickCount={4}
             label={{
-              value: 'Usage (%)',
+              value: "Usage (%)",
               angle: -90,
-              position: 'insideLeft',
+              position: "insideLeft",
             }}
           />
-          
-          <Tooltip 
-            content={<CustomTooltip />}
-            animationDuration={0}
-          />
-          
+
+          <Tooltip content={<CustomTooltip />} animationDuration={0} />
+
           <Legend />
 
           {thresholdLines}
@@ -267,15 +279,31 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
             <>
               <defs>
                 <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={config.theme.colors.cpu} stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor={config.theme.colors.cpu} stopOpacity={0.1}/>
+                  <stop
+                    offset="5%"
+                    stopColor={config.theme.colors.cpu}
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={config.theme.colors.cpu}
+                    stopOpacity={0.1}
+                  />
                 </linearGradient>
                 <linearGradient id="memoryGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={config.theme.colors.memory} stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor={config.theme.colors.memory} stopOpacity={0.1}/>
+                  <stop
+                    offset="5%"
+                    stopColor={config.theme.colors.memory}
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={config.theme.colors.memory}
+                    stopOpacity={0.1}
+                  />
                 </linearGradient>
               </defs>
-              
+
               <Area
                 type="monotone"
                 dataKey="cpu"
@@ -287,7 +315,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
                 name="CPU %"
                 {...animationConfig}
               />
-              
+
               <Area
                 type="monotone"
                 dataKey="memory"
@@ -312,7 +340,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
                 isAnimationActive={false}
                 connectNulls={false}
               />
-              
+
               <Line
                 type="linear"
                 dataKey="memory"
@@ -331,4 +359,4 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
   );
 };
 
-export default RechartsEngine; 
+export default RechartsEngine;

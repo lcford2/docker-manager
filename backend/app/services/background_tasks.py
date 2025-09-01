@@ -1,14 +1,14 @@
 import asyncio
 import logging
-from typing import Set
 from datetime import datetime
+from typing import Set
 
 from app.services.docker_collection_service import (
     container_collector,
     image_collector,
-    volume_collector,
     network_collector,
     system_collector,
+    volume_collector,
 )
 from app.services.websocket_service import manager as websocket_manager
 
@@ -184,16 +184,19 @@ class BackgroundTaskManager:
         while not self.shutdown_event.is_set():
             try:
                 start_time = datetime.now()
-                
+
                 # Only broadcast if there are connected clients
                 if websocket_manager.active_connections:
                     # Send container stats to all connected clients
                     await websocket_manager.send_container_stats()
-                    # Send system stats to all connected clients  
+                    # Send system stats to all connected clients
                     await websocket_manager.send_system_stats()
-                    
+
                     duration = (datetime.now() - start_time).total_seconds()
-                    logger.debug(f"WebSocket broadcast completed in {duration:.2f}s to {len(websocket_manager.active_connections)} clients")
+                    logger.debug(
+                        f"WebSocket broadcast completed in {duration:.2f}s to "
+                        f"{len(websocket_manager.active_connections)} clients"
+                    )
                 else:
                     logger.debug("No WebSocket clients connected - skipping broadcast")
 
@@ -223,10 +226,13 @@ class BackgroundTaskManager:
                             # Remove failed task
                             self.running_tasks.discard(task)
 
-                            # Restart task based on its name (this is a simplified approach)
-                            # In a real implementation, you might want more sophisticated task identification
+                            # Restart task based on its name
+                            # this is a simplified approach
+                            # In a real implementation,
+                            # you might want more sophisticated task identification
                             logger.warning(
-                                "Task restart logic not fully implemented - manual restart required"
+                                "Task restart logic not fully implemented - "
+                                "manual restart required"
                             )
 
                 # Wait before next health check

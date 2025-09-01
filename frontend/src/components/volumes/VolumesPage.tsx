@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { Refresh, Add, Search } from "@mui/icons-material";
 import {
   Box,
   Typography,
@@ -8,13 +8,15 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
-import { Refresh, Add, Search } from "@mui/icons-material";
+import React, { useState, useEffect, useCallback } from "react";
+
 import { dockerAPI } from "../../services/api";
 import { DockerVolume } from "../../types/docker";
+import ConfirmDialog from "../common/ConfirmDialog";
+
+import CreateVolumeModal from "./CreateVolumeModal";
 import VolumeGrid from "./VolumeGrid";
 import VolumeModal from "./VolumeModal";
-import CreateVolumeModal from "./CreateVolumeModal";
-import ConfirmDialog from "../common/ConfirmDialog";
 
 const VolumesPage: React.FC = () => {
   const [volumes, setVolumes] = useState<DockerVolume[]>([]);

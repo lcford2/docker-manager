@@ -14,4 +14,4 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- The tables will be created by SQLAlchemy, but we can add indexes for performance
--- This script ensures the database is ready for the application 
+-- This script ensures the database is ready for the application

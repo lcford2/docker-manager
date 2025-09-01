@@ -1,7 +1,10 @@
-import { ChartPerformanceMetrics, ChartPerformanceConfig } from '../core/ChartTypes';
+import {
+  ChartPerformanceMetrics,
+  ChartPerformanceConfig,
+} from "../core/ChartTypes";
 
 export interface PerformanceAlert {
-  type: 'warning' | 'critical';
+  type: "warning" | "critical";
   message: string;
   timestamp: number;
   metric: keyof ChartPerformanceMetrics;
@@ -31,7 +34,7 @@ export class PerformanceMonitor {
   private lastFrameTime: number = 0;
   private isProfilingEnabled: boolean = false;
   private profilingStartTime: number = 0;
-  
+
   // Performance thresholds - updated for realistic modern browser usage
   private readonly THRESHOLDS = {
     renderTime: { warning: 16, critical: 100 }, // ms - increased critical threshold
@@ -49,9 +52,9 @@ export class PerformanceMonitor {
   /**
    * Start performance profiling for a render cycle
    */
-  startProfiling(label: string = 'chart-render'): void {
+  startProfiling(label: string = "chart-render"): void {
     if (!this.isProfilingEnabled) return;
-    
+
     this.profilingStartTime = performance.now();
     if (performance.mark) {
       performance.mark(`${label}-start`);
@@ -62,9 +65,9 @@ export class PerformanceMonitor {
    * End performance profiling and record metrics
    */
   endProfiling(
-    dataPoints: number, 
+    dataPoints: number,
     engine: string,
-    label: string = 'chart-render'
+    label: string = "chart-render",
   ): ChartPerformanceMetrics {
     const endTime = performance.now();
     const renderTime = endTime - this.profilingStartTime;
@@ -116,14 +119,26 @@ export class PerformanceMonitor {
    * Check performance thresholds and generate alerts
    */
   private checkThresholds(metrics: ChartPerformanceMetrics): void {
-    this.checkThreshold('renderTime', metrics.renderTime, this.THRESHOLDS.renderTime);
-    this.checkThreshold('memoryUsage', metrics.memoryUsage, this.THRESHOLDS.memoryUsage);
-    this.checkThreshold('fps', metrics.fps, this.THRESHOLDS.fps, true); // Lower is worse for FPS
-    
+    this.checkThreshold(
+      "renderTime",
+      metrics.renderTime,
+      this.THRESHOLDS.renderTime,
+    );
+    this.checkThreshold(
+      "memoryUsage",
+      metrics.memoryUsage,
+      this.THRESHOLDS.memoryUsage,
+    );
+    this.checkThreshold("fps", metrics.fps, this.THRESHOLDS.fps, true); // Lower is worse for FPS
+
     // Check memory growth rate
     const memoryGrowthRate = this.calculateMemoryGrowthRate();
     if (memoryGrowthRate !== null) {
-      this.checkThreshold('memoryUsage', memoryGrowthRate, this.THRESHOLDS.memoryGrowth);
+      this.checkThreshold(
+        "memoryUsage",
+        memoryGrowthRate,
+        this.THRESHOLDS.memoryGrowth,
+      );
     }
   }
 
@@ -134,15 +149,19 @@ export class PerformanceMonitor {
     metric: keyof ChartPerformanceMetrics,
     value: number,
     thresholds: { warning: number; critical: number },
-    invertLogic: boolean = false
+    invertLogic: boolean = false,
   ): void {
-    const isAboveWarning = invertLogic ? value < thresholds.warning : value > thresholds.warning;
-    const isAboveCritical = invertLogic ? value < thresholds.critical : value > thresholds.critical;
+    const isAboveWarning = invertLogic
+      ? value < thresholds.warning
+      : value > thresholds.warning;
+    const isAboveCritical = invertLogic
+      ? value < thresholds.critical
+      : value > thresholds.critical;
 
     if (isAboveCritical) {
-      this.addAlert('critical', metric, value, thresholds.critical);
+      this.addAlert("critical", metric, value, thresholds.critical);
     } else if (isAboveWarning) {
-      this.addAlert('warning', metric, value, thresholds.warning);
+      this.addAlert("warning", metric, value, thresholds.warning);
     }
   }
 
@@ -150,13 +169,13 @@ export class PerformanceMonitor {
    * Add performance alert
    */
   private addAlert(
-    type: 'warning' | 'critical',
+    type: "warning" | "critical",
     metric: keyof ChartPerformanceMetrics,
     value: number,
-    threshold: number
+    threshold: number,
   ): void {
     const message = this.generateAlertMessage(type, metric, value, threshold);
-    
+
     const alert: PerformanceAlert = {
       type,
       message,
@@ -174,7 +193,7 @@ export class PerformanceMonitor {
     }
 
     // Log critical alerts
-    if (type === 'critical') {
+    if (type === "critical") {
       console.warn(`Chart Performance Alert: ${message}`);
     }
   }
@@ -186,29 +205,29 @@ export class PerformanceMonitor {
     type: string,
     metric: keyof ChartPerformanceMetrics,
     value: number,
-    threshold: number
+    threshold: number,
   ): string {
     const metricLabels = {
-      renderTime: 'Render time',
-      memoryUsage: 'Memory usage',
-      fps: 'Frame rate',
-      dataPoints: 'Data points',
-      lastUpdate: 'Last update',
-      engine: 'Engine',
+      renderTime: "Render time",
+      memoryUsage: "Memory usage",
+      fps: "Frame rate",
+      dataPoints: "Data points",
+      lastUpdate: "Last update",
+      engine: "Engine",
     };
 
     const metricUnits = {
-      renderTime: 'ms',
-      memoryUsage: 'MB',
-      fps: 'fps',
-      dataPoints: '',
-      lastUpdate: '',
-      engine: '',
+      renderTime: "ms",
+      memoryUsage: "MB",
+      fps: "fps",
+      dataPoints: "",
+      lastUpdate: "",
+      engine: "",
     };
 
     const label = metricLabels[metric] || metric;
-    const unit = metricUnits[metric] || '';
-    
+    const unit = metricUnits[metric] || "";
+
     return `${label} ${type}: ${value.toFixed(1)}${unit} (threshold: ${threshold}${unit})`;
   }
 
@@ -217,7 +236,7 @@ export class PerformanceMonitor {
    */
   private calculateFPS(renderTime: number): number {
     if (renderTime <= 0) return 60; // Default to 60 FPS for instant renders
-    
+
     // Calculate theoretical FPS but cap at 60 (browser limit)
     const theoreticalFPS = 1000 / renderTime;
     return Math.min(Math.round(theoreticalFPS), 60);
@@ -228,7 +247,7 @@ export class PerformanceMonitor {
    */
   private updateFrameTimings(renderTime: number): void {
     this.frameTimings.push(renderTime);
-    
+
     // Keep only last 60 frame timings (for average calculation)
     if (this.frameTimings.length > 60) {
       this.frameTimings = this.frameTimings.slice(-60);
@@ -240,7 +259,7 @@ export class PerformanceMonitor {
    */
   private getAverageFrameTime(): number {
     if (this.frameTimings.length === 0) return 0;
-    
+
     const sum = this.frameTimings.reduce((acc, time) => acc + time, 0);
     return sum / this.frameTimings.length;
   }
@@ -259,7 +278,13 @@ export class PerformanceMonitor {
   /**
    * Get detailed memory information
    */
-  private getDetailedMemoryInfo(): { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } | undefined {
+  private getDetailedMemoryInfo():
+    | {
+        usedJSHeapSize: number;
+        totalJSHeapSize: number;
+        jsHeapSizeLimit: number;
+      }
+    | undefined {
     const perf = performance as any;
     if (perf.memory) {
       return {
@@ -281,7 +306,9 @@ export class PerformanceMonitor {
     if (recent.length < 2) return null;
 
     const timeSpan = recent[recent.length - 1].timestamp - recent[0].timestamp;
-    const memoryDiff = recent[recent.length - 1].metrics.memoryUsage - recent[0].metrics.memoryUsage;
+    const memoryDiff =
+      recent[recent.length - 1].metrics.memoryUsage -
+      recent[0].metrics.memoryUsage;
 
     if (timeSpan <= 0) return null;
 
@@ -293,22 +320,25 @@ export class PerformanceMonitor {
    * Setup Performance Observer for additional metrics
    */
   private setupPerformanceObserver(): void {
-    if (typeof PerformanceObserver === 'undefined') return;
+    if (typeof PerformanceObserver === "undefined") return;
 
     try {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         for (const entry of entries) {
-          if (entry.name.includes('chart-render')) {
+          if (entry.name.includes("chart-render")) {
             // Additional processing for chart-specific performance entries
             this.processPerformanceEntry(entry);
           }
         }
       });
 
-      observer.observe({ entryTypes: ['measure', 'navigation', 'paint'] });
+      observer.observe({ entryTypes: ["measure", "navigation", "paint"] });
     } catch (error) {
-      console.warn('Performance Observer not supported or failed to initialize:', error);
+      console.warn(
+        "Performance Observer not supported or failed to initialize:",
+        error,
+      );
     }
   }
 
@@ -317,7 +347,9 @@ export class PerformanceMonitor {
    */
   private processPerformanceEntry(entry: PerformanceEntry): void {
     if (this.isProfilingEnabled) {
-      console.debug(`Performance entry: ${entry.name} took ${entry.duration}ms`);
+      console.debug(
+        `Performance entry: ${entry.name} took ${entry.duration}ms`,
+      );
     }
   }
 
@@ -330,7 +362,10 @@ export class PerformanceMonitor {
     alerts: PerformanceAlert[];
     recommendations: string[];
   } {
-    const current = this.snapshots.length > 0 ? this.snapshots[this.snapshots.length - 1].metrics : null;
+    const current =
+      this.snapshots.length > 0
+        ? this.snapshots[this.snapshots.length - 1].metrics
+        : null;
     const averages = this.calculateAverages();
     const recommendations = this.generateRecommendations(current, averages);
 
@@ -356,7 +391,7 @@ export class PerformanceMonitor {
         fps: acc.fps + snapshot.metrics.fps,
         dataPoints: acc.dataPoints + snapshot.metrics.dataPoints,
       }),
-      { renderTime: 0, memoryUsage: 0, fps: 0, dataPoints: 0 }
+      { renderTime: 0, memoryUsage: 0, fps: 0, dataPoints: 0 },
     );
 
     return {
@@ -372,24 +407,36 @@ export class PerformanceMonitor {
    */
   private generateRecommendations(
     current: ChartPerformanceMetrics | null,
-    averages: Partial<ChartPerformanceMetrics>
+    averages: Partial<ChartPerformanceMetrics>,
   ): string[] {
     const recommendations: string[] = [];
 
     if (current && averages.renderTime && averages.renderTime > 20) {
-      recommendations.push('Consider reducing data points or switching to a more performant chart engine');
+      recommendations.push(
+        "Consider reducing data points or switching to a more performant chart engine",
+      );
     }
 
     if (current && averages.memoryUsage && averages.memoryUsage > 50) {
-      recommendations.push('Memory usage is high - consider implementing data compression or reducing buffer size');
+      recommendations.push(
+        "Memory usage is high - consider implementing data compression or reducing buffer size",
+      );
     }
 
     if (current && averages.fps && averages.fps < 30) {
-      recommendations.push('Low frame rate detected - disable animations or reduce update frequency');
+      recommendations.push(
+        "Low frame rate detected - disable animations or reduce update frequency",
+      );
     }
 
-    if (this.alerts.filter(a => a.type === 'critical' && Date.now() - a.timestamp < 60000).length > 0) {
-      recommendations.push('Critical performance issues detected - consider switching chart engine or reducing features');
+    if (
+      this.alerts.filter(
+        (a) => a.type === "critical" && Date.now() - a.timestamp < 60000,
+      ).length > 0
+    ) {
+      recommendations.push(
+        "Critical performance issues detected - consider switching chart engine or reducing features",
+      );
     }
 
     return recommendations;
@@ -430,15 +477,17 @@ export class PerformanceMonitor {
    * Get recent alerts
    */
   getRecentAlerts(minutes: number = 5): PerformanceAlert[] {
-    const cutoff = Date.now() - (minutes * 60 * 1000);
-    return this.alerts.filter(alert => alert.timestamp > cutoff);
+    const cutoff = Date.now() - minutes * 60 * 1000;
+    return this.alerts.filter((alert) => alert.timestamp > cutoff);
   }
 
   /**
    * Check if performance is acceptable
    */
   isPerformanceAcceptable(): boolean {
-    const recentCriticalAlerts = this.getRecentAlerts(1).filter(a => a.type === 'critical');
+    const recentCriticalAlerts = this.getRecentAlerts(1).filter(
+      (a) => a.type === "critical",
+    );
     return recentCriticalAlerts.length === 0;
   }
-} 
+}

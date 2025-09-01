@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { Search, Refresh } from "@mui/icons-material";
 import {
   Box,
   Typography,
@@ -7,11 +7,13 @@ import {
   CircularProgress,
   Button,
 } from "@mui/material";
-import { Search, Refresh } from "@mui/icons-material";
-import ContainerGrid from "./ContainerGrid";
-import ContainerMetricsModal from "./ContainerMetricsModal";
+import React, { useState, useCallback, useEffect } from "react";
+
 import { useSharedWebSocket } from "../../hooks/useSharedWebSocket";
 import { ContainerStatsWithHistory } from "../../types/metrics";
+
+import ContainerGrid from "./ContainerGrid";
+import ContainerMetricsModal from "./ContainerMetricsModal";
 
 const ContainersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
