@@ -1,0 +1,71 @@
+---
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: docker_manager
+      POSTGRES_USER: docker_manager
+      POSTGRES_PASSWORD: docker_manager
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - 5532:5432
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U docker_manager]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://docker_manager:docker_manager@postgres:5432/docker_manager
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@dockermanager.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./backend:/app
+    ports:
+    - 6500:6500
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:6500/api/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+    - 3050:80
+    depends_on:
+    - backend
+    environment:
+      REACT_APP_API_URL: http://localhost:6500
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+    - 8088:80
+    depends_on:
+    - frontend
+    - backend
+    volumes:
+    - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+
+volumes :
+  postgres_data:
+
+networks:
+  default:
+    name: docker-manager-network
