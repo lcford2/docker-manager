@@ -2,17 +2,16 @@ import { Search, Refresh } from "@mui/icons-material";
 import {
   Box,
   Typography,
-  TextField,
-  InputAdornment,
+  Input,
   CircularProgress,
   Button,
-} from "@mui/material";
+} from "@mui/joy";
 import React, { useState, useCallback, useEffect } from "react";
 
 import { useSharedWebSocket } from "../../hooks/useSharedWebSocket";
 import { ContainerStatsWithHistory } from "../../types/metrics";
 
-import ContainerGrid from "./ContainerGrid";
+import ContainersTable from "./ContainersTable";
 import ContainerMetricsModal from "./ContainerMetricsModal";
 
 const ContainersPage: React.FC = () => {
@@ -87,7 +86,7 @@ const ContainersPage: React.FC = () => {
         minHeight="400px"
       >
         <CircularProgress />
-        <Typography variant="body1" sx={{ ml: 2 }}>
+        <Typography level="body-lg" sx={{ ml: 2 }}>
           {!isConnected
             ? "Connecting to container metrics..."
             : "Loading container data..."}
@@ -107,14 +106,14 @@ const ContainersPage: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography level="h2" component="h1">
           Docker Containers
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
+            startDecorator={<Refresh />}
             onClick={handleRefresh}
           >
             Refresh
@@ -124,35 +123,28 @@ const ContainersPage: React.FC = () => {
 
       {/* Search */}
       <Box sx={{ mb: 3 }}>
-        <TextField
+        <Input
           fullWidth
           placeholder="Search containers by name, ID, or status..."
           value={searchTerm}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setSearchTerm(e.target.value)
           }
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
+          startDecorator={<Search />}
         />
       </Box>
 
       {/* WebSocket Error */}
       {wsError && (
         <Box sx={{ mb: 2 }}>
-          <Typography color="error">Connection error: {wsError}</Typography>
+          <Typography color="danger">Connection error: {wsError}</Typography>
         </Box>
       )}
 
-      {/* Container Metrics Grid */}
-      <ContainerGrid
+      {/* Container Metrics Table */}
+      <ContainersTable
         containers={filteredContainers}
         onContainerClick={handleContainerClick}
-        selectedContainer={selectedContainer}
       />
 
       {/* Container Metrics Modal */}

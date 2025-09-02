@@ -1,13 +1,13 @@
 import { PlayArrow, Pause, Fullscreen, GetApp } from "@mui/icons-material";
 import {
   Box,
-  Paper,
+  Sheet,
   Alert,
   CircularProgress,
   Typography,
   IconButton,
   Tooltip,
-} from "@mui/material";
+} from "@mui/joy";
 import React, {
   useState,
   useEffect,
@@ -34,11 +34,18 @@ import { PerformanceMonitor } from "../optimization/PerformanceMonitor";
 
 export interface EnhancedResourceChartProps {
   // Data props
-  data?: EnhancedChartDataPoint[];
+  initialData?: EnhancedChartDataPoint[];
+  newDataPoints?: EnhancedChartDataPoint[];
   onDataUpdate?: (cpu: number, memory: number) => void;
 
   // Configuration
   config?: Partial<EnhancedChartConfig>;
+
+  // Theme colors
+  gridColor?: string;
+  textColor?: string;
+  cpuColor?: string;
+  memoryColor?: string;
 
   // Callbacks
   onPerformanceUpdate?: (metrics: ChartPerformanceMetrics) => void;
@@ -59,10 +66,17 @@ export interface EnhancedResourceChartProps {
   enableFullscreen?: boolean;
 }
 
+const MAX_DATA_POINTS = 300; // Limit the number of data points to keep in memory for performance
+
 const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
-  data = [],
+  initialData = [],
+  newDataPoints = [],
   onDataUpdate,
   config = {},
+  gridColor,
+  textColor,
+  cpuColor,
+  memoryColor,
   onPerformanceUpdate,
   onError,
   onStateChange,
@@ -81,8 +95,18 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
     () => ({
       ...DEFAULT_CHART_CONFIG,
       ...config,
+      theme: {
+        ...DEFAULT_CHART_CONFIG.theme,
+        colors: {
+          ...DEFAULT_CHART_CONFIG.theme.colors,
+          grid: gridColor || DEFAULT_CHART_CONFIG.theme.colors.grid,
+          text: textColor || DEFAULT_CHART_CONFIG.theme.colors.text,
+          cpu: cpuColor || DEFAULT_CHART_CONFIG.theme.colors.cpu,
+          memory: memoryColor || DEFAULT_CHART_CONFIG.theme.colors.memory,
+        },
+      },
     }),
-    [config],
+    [config, gridColor, textColor, cpuColor, memoryColor],
   );
 
   // State management
@@ -100,6 +124,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
     connectionStatus: "connected",
   });
 
+  const [displayData, setDisplayData] = useState<EnhancedChartDataPoint[]>(initialData);
   const [currentMetrics, setCurrentMetrics] =
     useState<ChartPerformanceMetrics | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -150,9 +175,25 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
     };
   }, [chartConfig]); // Include chartConfig dependency as required
 
+  // Effect to handle incoming new data points
+  useEffect(() => {
+    if (newDataPoints.length > 0 && !chartState.isPaused) {
+      setDisplayData(prevData => {
+        const updatedData = [...prevData, ...newDataPoints];
+        if (updatedData.length > MAX_DATA_POINTS) {
+          return updatedData.slice(updatedData.length - MAX_DATA_POINTS);
+        }
+        return updatedData;
+      });
+    }
+  }, [newDataPoints, chartState.isPaused]);
+
   // Processed chart data with performance optimization
   const processedData = useMemo(() => {
     if (!dataManagerRef.current) return [];
+
+    // Use the component's internal state for display
+    dataManagerRef.current.setData(displayData);
 
     // Get raw data and limit to reduce computation
     const rawData = dataManagerRef.current.getDataInRange(
@@ -167,7 +208,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
     }
 
     return rawData;
-  }, [chartState.selectedTimeRange]);
+  }, [displayData, chartState.selectedTimeRange]);
 
   // Add external data - use ref to track processed data to prevent infinite loops
   const processedDataRef = useRef<Set<number>>(new Set());
@@ -175,6 +216,9 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
   useEffect(() => {
     if (!dataManagerRef.current) return;
 
+    // This logic might need to be re-evaluated or removed, as data is now managed internally.
+    // For now, let's keep it disabled to avoid conflicts with the new state management.
+    /*
     // Batch process data points to reduce overhead
     const newPoints = data.filter(
       (point) => !processedDataRef.current.has(point.timestamp),
@@ -200,7 +244,8 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
         oldTimestamps.forEach((ts) => processedDataRef.current.delete(ts));
       }
     }
-  }, [data]);
+    */
+  }, []);
 
   // Performance monitoring with throttling and automatic optimization
   const lastPerformanceUpdate = useRef<number>(0);
@@ -331,7 +376,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
   };
 
   return (
-    <Paper
+    <Sheet
       sx={{
         width: width || "100%",
         height: isFullscreen ? "100vh" : height,
@@ -360,7 +405,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
         >
           {/* Title and Status */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography variant="h6" component="h2">
+            <Typography level="title-lg" component="h2">
               {title}
             </Typography>
 
@@ -372,8 +417,8 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
                 borderRadius: "50%",
                 backgroundColor:
                   chartState.connectionStatus === "connected"
-                    ? "success.main"
-                    : "error.main",
+                    ? "success"
+                    : "danger",
               }}
             />
           </Box>
@@ -393,7 +438,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
               {/* Play/Pause */}
               {enableLiveUpdates && (
                 <Tooltip title={chartState.isPaused ? "Resume" : "Pause"}>
-                  <IconButton onClick={handlePlayPause} size="small">
+                  <IconButton onClick={handlePlayPause} size="sm">
                     {chartState.isPaused ? <PlayArrow /> : <Pause />}
                   </IconButton>
                 </Tooltip>
@@ -402,7 +447,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
               {/* Export */}
               {enableExport && (
                 <Tooltip title="Export Data">
-                  <IconButton onClick={handleExport} size="small">
+                  <IconButton onClick={handleExport} size="sm">
                     <GetApp />
                   </IconButton>
                 </Tooltip>
@@ -411,7 +456,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
               {/* Fullscreen */}
               {enableFullscreen && (
                 <Tooltip title="Toggle Fullscreen">
-                  <IconButton onClick={handleFullscreen} size="small">
+                  <IconButton onClick={handleFullscreen} size="sm">
                     <Fullscreen />
                   </IconButton>
                 </Tooltip>
@@ -423,7 +468,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
 
       {/* Error Display */}
       {chartState.error && (
-        <Alert severity="error" sx={{ m: 2 }}>
+        <Alert color="danger" sx={{ m: 2 }}>
           {chartState.error}
         </Alert>
       )}
@@ -453,10 +498,10 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
             p: 1,
             borderTop: 1,
             borderColor: "divider",
-            backgroundColor: "background.default",
+            backgroundColor: "background.body",
           }}
         >
-          <Typography variant="caption" color="text.secondary">
+          <Typography level="body-xs" color="neutral">
             Engine: {currentMetrics.engine} | Render:{" "}
             {currentMetrics.renderTime.toFixed(1)}ms | FPS: {currentMetrics.fps}{" "}
             | Points: {currentMetrics.dataPoints} | Memory:{" "}
@@ -464,7 +509,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
           </Typography>
         </Box>
       )}
-    </Paper>
+    </Sheet>
   );
 };
 

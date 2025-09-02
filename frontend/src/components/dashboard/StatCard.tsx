@@ -1,4 +1,5 @@
-import { Card, CardContent, Typography, Box } from "@mui/material";
+import { Card, Typography, Box } from "@mui/joy";
+import { ColorPaletteProp } from "@mui/joy/styles";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -6,7 +7,7 @@ interface StatCardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
-  color?: string;
+  color?: ColorPaletteProp;
   path: string;
 }
 
@@ -14,7 +15,7 @@ const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   icon,
-  color = "primary.main",
+  color = "primary",
   path,
 }) => {
   const navigate = useNavigate();
@@ -25,27 +26,40 @@ const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <Card
+      variant="outlined"
       sx={{
         cursor: "pointer",
         "&:hover": {
-          backgroundColor: "action.hover",
+          boxShadow: 'md',
+          borderColor: 'neutral.outlinedHoverBorder',
         },
       }}
       onClick={handleClick}
     >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box>
-            <Typography color="textSecondary" gutterBottom>
-              {title}
-            </Typography>
-            <Typography variant="h4" component="div">
-              {value}
-            </Typography>
-          </Box>
-          <Box color={color}>{icon}</Box>
+      <Box display="flex" alignItems="center">
+        <Box
+          sx={{
+            mr: 2,
+            p: 1.5,
+            borderRadius: "50%",
+            backgroundColor: `${color}.softBg`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: `${color}.solidColor`,
+          }}
+        >
+          {icon}
         </Box>
-      </CardContent>
+        <Box>
+          <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+            {title}
+          </Typography>
+          <Typography level="h2">
+            {value}
+          </Typography>
+        </Box>
+      </Box>
     </Card>
   );
 };

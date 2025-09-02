@@ -1,11 +1,9 @@
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Link,
-} from "@mui/material";
+  Sheet,
+  Button,
+  Typography,
+} from "@mui/joy";
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -20,36 +18,37 @@ export default function RunningContainers({
   containers,
 }: RunningContainersProps) {
   return (
-    <React.Fragment>
+    <Sheet variant="outlined" sx={{ p: 2, borderRadius: 'sm' }}>
       <Title>Running Containers</Title>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Image</TableCell>
-            <TableCell>State</TableCell>
-            <TableCell>Status</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
+      <Table size="sm">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Image</th>
+            <th>State</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
           {containers.map((container) => (
-            <TableRow key={container.id}>
-              <TableCell>{container.name}</TableCell>
-              <TableCell>{container.image}</TableCell>
-              <TableCell>{container.state}</TableCell>
-              <TableCell>{container.status}</TableCell>
-            </TableRow>
+            <tr key={container.id}>
+              <td>{container.name}</td>
+              <td>{container.image}</td>
+              <td>{container.state}</td>
+              <td>{container.status}</td>
+            </tr>
           ))}
-        </TableBody>
+        </tbody>
       </Table>
-      <Link
+      <Button
         component={RouterLink}
         color="primary"
         to="/containers"
         sx={{ mt: 3 }}
+        variant="outlined"
       >
         See more containers
-      </Link>
-    </React.Fragment>
+      </Button>
+    </Sheet>
   );
 }

@@ -1,4 +1,6 @@
-import { Box, ThemeProvider, CssBaseline } from "@mui/material";
+import { Box } from "@mui/joy";
+import CssBaseline from "@mui/joy/CssBaseline";
+import { CssVarsProvider } from "@mui/joy/styles";
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
@@ -11,7 +13,6 @@ import ImagesPage from "./components/images/ImagesPage";
 import NetworksPage from "./components/networks/NetworksPage";
 import VolumesPage from "./components/volumes/VolumesPage";
 import { WebSocketProvider } from "./contexts/WebSocketContext";
-import theme from "./theme";
 
 const App: React.FC = () => {
   const token = localStorage.getItem("token") || "";
@@ -24,7 +25,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <CssVarsProvider defaultMode="dark">
       <CssBaseline />
       <WebSocketProvider config={wsConfig}>
         <Box sx={{ display: "flex", minHeight: "100vh", width: "100vw" }}>
@@ -93,7 +94,7 @@ const App: React.FC = () => {
           </Routes>
         </Box>
       </WebSocketProvider>
-    </ThemeProvider>
+    </CssVarsProvider>
   );
 };
 

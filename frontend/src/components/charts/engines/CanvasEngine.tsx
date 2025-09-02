@@ -1,4 +1,4 @@
-import { useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/joy/styles";
 import React, { useRef, useEffect, useCallback, useMemo } from "react";
 
 import { ChartEngine, ChartEngineProps } from "../core/ChartEngine";
@@ -333,7 +333,7 @@ const CanvasChart: React.FC<CanvasChartProps> = ({
     }
 
     // Draw axes
-    ctx.strokeStyle = theme.palette.text.secondary;
+    ctx.strokeStyle = theme.palette.text.tertiary;
     ctx.lineWidth = 1;
 
     // Y-axis
@@ -349,7 +349,7 @@ const CanvasChart: React.FC<CanvasChartProps> = ({
     ctx.stroke();
 
     // Draw labels
-    ctx.fillStyle = theme.palette.text.secondary;
+    ctx.fillStyle = theme.palette.text.tertiary;
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
 

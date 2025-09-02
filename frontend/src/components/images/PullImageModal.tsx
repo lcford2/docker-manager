@@ -1,16 +1,19 @@
-import { LoadingButton } from "@mui/lab";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Box,
-  Typography,
   Alert,
+  Box,
+  Button,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormLabel,
+  Input,
   LinearProgress,
-} from "@mui/material";
+  Modal,
+  ModalClose,
+  ModalDialog,
+  Typography,
+} from "@mui/joy";
 import React, { useState } from "react";
 
 import { dockerAPI } from "../../services/api";
@@ -61,59 +64,60 @@ const PullImageModal: React.FC<PullImageModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Pull Docker Image</DialogTitle>
+    <Modal open={open} onClose={handleClose}>
+      <ModalDialog>
+        <DialogTitle>Pull Docker Image</DialogTitle>
+        <ModalClose />
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} sx={{ pt: 2 }}>
+            <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
+              Enter the name of the Docker image you want to pull. Include the
+              tag if needed (e.g., nginx:latest).
+            </Typography>
 
-      <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ pt: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Enter the name of the Docker image you want to pull. Include the tag
-            if needed (e.g., nginx:latest).
-          </Typography>
+            <FormControl sx={{ mt: 1 }}>
+              <FormLabel>Image Name</FormLabel>
+              <Input
+                autoFocus
+                placeholder="e.g., nginx:latest, ubuntu:20.04"
+                value={imageName}
+                onChange={(e) => setImageName(e.target.value)}
+                disabled={loading}
+              />
+            </FormControl>
 
-          <TextField
-            autoFocus
-            fullWidth
-            label="Image Name"
-            placeholder="e.g., nginx:latest, ubuntu:20.04"
-            value={imageName}
-            onChange={(e) => setImageName(e.target.value)}
-            disabled={loading}
-            margin="normal"
-            helperText="Format: [registry/]repository[:tag]"
-          />
+            {error && (
+              <Alert color="danger" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
+            {loading && (
+              <Box sx={{ mt: 2 }}>
+                <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
+                  Pulling image...
+                </Typography>
+                <LinearProgress />
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
 
-          {loading && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Pulling image...
-              </Typography>
-              <LinearProgress />
-            </Box>
-          )}
-        </Box>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <LoadingButton
-          onClick={handleSubmit}
-          loading={loading}
-          variant="contained"
-          disabled={!imageName.trim()}
-        >
-          Pull Image
-        </LoadingButton>
-      </DialogActions>
-    </Dialog>
+        <DialogActions>
+          <Button onClick={handleClose} disabled={loading} variant="plain">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            loading={loading}
+            variant="solid"
+            disabled={!imageName.trim()}
+          >
+            Pull Image
+          </Button>
+        </DialogActions>
+      </ModalDialog>
+    </Modal>
   );
 };
 

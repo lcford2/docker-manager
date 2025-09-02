@@ -57,6 +57,21 @@ class ImageInfo(BaseModel):
     virtual_size: int
 
 
+class ImageBulkDeleteRequest(BaseModel):
+    image_ids: list[str]
+    force: bool = False
+
+
+class FailedImageDelete(BaseModel):
+    image_id: str
+    error: str
+
+
+class ImageBulkDeleteResponse(BaseModel):
+    deleted: list[str]
+    failed: list[FailedImageDelete]
+
+
 class NetworkInfo(BaseModel):
     id: str
     name: str

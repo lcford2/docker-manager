@@ -123,6 +123,14 @@ export const dockerAPI = {
     return response.data;
   },
 
+  bulkRemoveImages: async (imageIds: string[], force: boolean = false) => {
+    const response = await api.post("/images/bulk-delete", {
+      image_ids: imageIds,
+      force: force,
+    });
+    return response.data;
+  },
+
   inspectImage: async (imageId: string) => {
     const response = await api.get(`/images/${imageId}/inspect`);
     return response.data;

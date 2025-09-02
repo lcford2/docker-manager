@@ -1,0 +1,74 @@
+sequenceDiagram
+    participant FE as Frontend (Browser)
+    participant BE as Backend (FastAPI)
+    participant DB as Database
+    participant Docker as Docker Engine
+
+    title Docker Manager Communication Flow
+
+    %% 1. Initial Load and REST API Communication
+    rect rgb(240, 248, 255)
+        note over FE, BE: Initial Page Load & Data Fetching (REST API)
+        FE->>BE: GET /api/containers (Initial data)
+        BE->>DB: Query for cached container list
+        DB-->>BE: Return container data
+        BE-->>FE: Respond with container list
+
+        FE->>BE: GET /api/system/info
+        BE->>Docker: Get system info
+        Docker-->>BE: Return info
+        BE-->>FE: Respond with system info
+    end
+
+    %% 2. WebSocket Connection
+    rect rgb(255, 250, 240)
+        note over FE, BE: WebSocket Connection Setup
+        FE->>BE: Establish WebSocket connection (/api/ws/connect?token=...)
+        BE-->>FE: WebSocket connection accepted
+        note over BE: Sends initial data upon connection
+        BE->>DB: Query for latest stats
+        DB-->>BE: Return stats
+        BE-->>FE: Push initial `container_stats` & `system_stats`
+    end
+
+    %% 3. Periodic Updates (High Frequency)
+    rect rgb(230, 255, 230)
+        note over FE, BE: Periodic Updates via WebSocket
+        loop Every 5 seconds
+            BE->>BE: Background task triggers broadcast
+            BE->>DB: Fetch latest container & system stats
+            DB-->>BE: Return latest data
+            BE-->>FE: Broadcast `container_stats` & `system_stats`
+            FE->>FE: Update UI with new stats
+        end
+    end
+
+    %% 4. Backend Data Collection (Lower Frequency)
+    rect rgb(235, 235, 235)
+        note over BE, DB: Backend Data Collection Loops
+        loop Every 10-60 seconds
+            BE->>Docker: Collect data (containers, images, etc.)
+            Docker-->>BE: Return data
+            BE->>DB: Store collected data for faster access
+            DB-->>BE: Confirm write
+        end
+        note right of BE: This populates the data<br/>that the 5s broadcast loop sends.
+    end
+
+    %% 5. Event-Driven Updates
+    rect rgb(255, 240, 255)
+        note over BE, Docker: Real-time Event-Driven Updates
+        Docker->>BE: Emit event (e.g., container stopped)
+        BE-->>FE: Push real-time event via WebSocket
+        FE->>FE: Update UI based on event
+    end
+
+    %% 6. User-Initiated Action
+    rect rgb(240, 240, 255)
+        note over FE, Docker: User-Initiated Action (REST API)
+        FE->>FE: User clicks "Start Container"
+        FE->>BE: POST /api/containers/{id}/start
+        BE->>Docker: Execute "start" command for container
+        Docker-->>BE: Confirm action success
+        BE-->>FE: Respond with 200 OK
+    end

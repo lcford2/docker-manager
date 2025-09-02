@@ -1,8 +1,7 @@
-import { LoadingButton } from "@mui/lab";
-import { Button, ButtonProps } from "@mui/material";
+import { Button, ButtonProps } from "@mui/joy";
 import React from "react";
 
-interface ActionButtonProps extends Omit<ButtonProps, "loading" | "action"> {
+interface ActionButtonProps extends Omit<ButtonProps, "action"> {
   loading?: boolean;
   action: string;
   onActionClick: () => void;
@@ -31,16 +30,16 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 
   if (loading) {
     return (
-      <LoadingButton loading variant="outlined" size="small" {...buttonProps}>
+      <Button loading variant="outlined" size="sm" {...buttonProps}>
         {loadingText || `${action}ing...`}
-      </LoadingButton>
+      </Button>
     );
   }
 
   return (
     <Button
       variant="outlined"
-      size="small"
+      size="sm"
       onClick={handleClick}
       {...buttonProps}
     >

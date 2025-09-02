@@ -1,12 +1,13 @@
 import {
-  Box,
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
   Alert,
-} from "@mui/material";
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Sheet,
+  Typography,
+} from "@mui/joy";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -36,68 +37,69 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
+    <Box
+      sx={{
+        marginTop: 8,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Sheet
+        variant="outlined"
         sx={{
-          marginTop: 8,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          p: 4,
+          width: "100%",
+          maxWidth: 400,
+          borderRadius: "sm",
         }}
       >
-        <Paper elevation={3} sx={{ padding: 4, width: "100%" }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
-            Docker Manager
-          </Typography>
-          <Typography component="h2" variant="h6" align="center" gutterBottom>
-            Sign In
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="username"
-              label="Username"
+        <Typography level="h4" component="h1" sx={{ textAlign: 'center', mb: 1 }}>
+          Docker Manager
+        </Typography>
+        <Typography level="h4" component="h2" sx={{ textAlign: 'center', mb: 2 }}>
+          Sign In
+        </Typography>
+        {error && (
+          <Alert color="danger" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          <FormControl required>
+            <FormLabel>Username</FormLabel>
+            <Input
               name="username"
               autoComplete="username"
               autoFocus
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
             />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
+          </FormControl>
+          <FormControl required sx={{ mt: 2 }}>
+            <FormLabel>Password</FormLabel>
+            <Input
               name="password"
-              label="Password"
               type="password"
-              id="password"
               autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              {loading ? "Signing In..." : "Sign In"}
-            </Button>
-          </Box>
-          <Typography variant="body2" color="text.secondary" align="center">
-            Default credentials: admin / admin123
-          </Typography>
-        </Paper>
-      </Box>
-    </Container>
+          </FormControl>
+          <Button
+            type="submit"
+            fullWidth
+            sx={{ mt: 3, mb: 2 }}
+            loading={loading}
+          >
+            Sign In
+          </Button>
+        </Box>
+        <Typography level="body-sm" color="neutral" sx={{ textAlign: 'center' }}>
+          Default credentials: admin / admin123
+        </Typography>
+      </Sheet>
+    </Box>
   );
 };
 

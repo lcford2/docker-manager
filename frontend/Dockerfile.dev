@@ -1,0 +1,15 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Expose the default port for Create React App
+EXPOSE 3000
+
+# Start the development server
+CMD ["npm", "start"]

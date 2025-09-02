@@ -225,6 +225,14 @@ export class ChartDataManager {
   }
 
   /**
+   * Directly sets the data buffer. Used for initializing the chart with existing data.
+   */
+  setData(data: EnhancedChartDataPoint[]): void {
+    this.dataBuffer = data.slice(-this.config.maxDataPoints);
+    this.lastDataPoint = data.length > 0 ? data[data.length - 1] : null;
+  }
+
+  /**
    * Get data points within time range
    */
   getDataInRange(startTime: number, endTime: number): EnhancedChartDataPoint[] {

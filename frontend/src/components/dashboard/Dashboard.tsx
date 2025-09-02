@@ -1,11 +1,12 @@
 import { ViewInAr, Storage, Image, NetworkCheck } from "@mui/icons-material";
 import {
   Box,
-  Grid2 as Grid,
-  Paper,
+  Grid,
+  Sheet,
   Container,
   CircularProgress,
-} from "@mui/material";
+} from "@mui/joy";
+import { useTheme } from "@mui/joy/styles";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
 import { useSharedWebSocket } from "../../hooks/useSharedWebSocket";
@@ -34,6 +35,7 @@ const MAX_CHART_DATA_POINTS = 30; // Keep the last 30 data points (e.g., 5 minut
 const Dashboard: React.FC = React.memo(() => {
   // Initialize state manager
   const stateManagerRef = useRef<DashboardStateManager | null>(null);
+  const theme = useTheme();
 
   const [dashboardState, setDashboardState] = useState<DashboardState>({
     systemStats: {
@@ -51,6 +53,7 @@ const Dashboard: React.FC = React.memo(() => {
   });
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [newChartPoint, setNewChartPoint] = useState<ChartDataPoint | null>(null);
 
   // Initialize state manager once
   if (!stateManagerRef.current) {
@@ -84,21 +87,21 @@ const Dashboard: React.FC = React.memo(() => {
           second: "2-digit",
         });
 
+        const newPoint: ChartDataPoint = {
+          time: timestamp,
+          cpu: totalCpu,
+          memory: totalMemory,
+          timestamp: Date.now(),
+        };
+
         setChartData((prevData) => {
-          const newData = [
-            ...prevData,
-            {
-              time: timestamp,
-              cpu: totalCpu,
-              memory: totalMemory,
-              timestamp: Date.now(), // Add timestamp for enhanced chart
-            },
-          ];
+          const newData = [...prevData, newPoint];
           if (newData.length > MAX_CHART_DATA_POINTS) {
             return newData.slice(newData.length - MAX_CHART_DATA_POINTS);
           }
           return newData;
         });
+        setNewChartPoint(newPoint);
 
         setDashboardState(updatedState);
         console.log("Dashboard updated with WebSocket container data");
@@ -220,8 +223,8 @@ const Dashboard: React.FC = React.memo(() => {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Grid container spacing={3}>
         {/* Chart */}
-        <Grid size={{ xs: 12, md: 8, lg: 9 }}>
-          <Paper
+        <Grid xs={12} md={8} lg={9}>
+          <Sheet
             sx={{
               p: 2,
               display: "flex",
@@ -230,7 +233,7 @@ const Dashboard: React.FC = React.memo(() => {
             }}
           >
             <EnhancedResourceChart
-              data={chartData.map((point) => ({
+              initialData={chartData.map((point) => ({
                 timestamp: point.timestamp || Date.now(),
                 time: point.time,
                 cpu: point.cpu,
@@ -241,6 +244,17 @@ const Dashboard: React.FC = React.memo(() => {
                   interpolated: false,
                 },
               }))}
+              newDataPoints={newChartPoint ? [{
+                timestamp: newChartPoint.timestamp || Date.now(),
+                time: newChartPoint.time,
+                cpu: newChartPoint.cpu,
+                memory: newChartPoint.memory,
+                metadata: {
+                  source: "websocket" as const,
+                  quality: "high" as const,
+                  interpolated: false,
+                },
+              }] : []}
               config={{
                 time: {
                   precision: "second",
@@ -255,6 +269,10 @@ const Dashboard: React.FC = React.memo(() => {
                   performanceMetrics: false,
                 },
               }}
+              gridColor={theme.palette.divider}
+              textColor={theme.palette.text.secondary}
+              cpuColor={theme.palette.primary.mainChannel}
+              memoryColor={theme.palette.primary.softColor}
               showControls={true}
               showTimeSelector={true}
               showPerformanceMetrics={process.env.NODE_ENV === "development"}
@@ -266,11 +284,11 @@ const Dashboard: React.FC = React.memo(() => {
                 console.debug("Chart performance:", metrics)
               }
             />
-          </Paper>
+          </Sheet>
         </Grid>
         {/* System Summary */}
-        <Grid size={{ xs: 12, md: 4, lg: 3 }}>
-          <Paper
+        <Grid xs={12} md={4} lg={3}>
+          <Sheet
             sx={{
               p: 2,
               display: "flex",
@@ -279,48 +297,48 @@ const Dashboard: React.FC = React.memo(() => {
             }}
           >
             <SystemSummary dockerStatus={dashboardState.dockerStatus} />
-          </Paper>
+          </Sheet>
         </Grid>
         {/* Stat Cards */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Containers"
             value={dashboardState.systemStats.containers_total}
             icon={<ViewInAr fontSize="large" />}
             path="/containers"
-            color="primary.main"
+            color="primary"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Images"
             value={dashboardState.systemStats.images}
             icon={<Image fontSize="large" />}
             path="/images"
-            color="secondary.main"
+            color="warning"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Volumes"
             value={dashboardState.systemStats.volumes}
             icon={<Storage fontSize="large" />}
             path="/volumes"
-            color="success.main"
+            color="success"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Networks"
             value={dashboardState.systemStats.networks}
             icon={<NetworkCheck fontSize="large" />}
             path="/networks"
-            color="info.main"
+            color="primary"
           />
         </Grid>
         {/* Running Containers */}
-        <Grid size={{ xs: 12 }}>
-          <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
+        <Grid xs={12}>
+          <Sheet sx={{ p: 2, display: "flex", flexDirection: "column" }}>
             <RunningContainers
               containers={
                 dashboardState.containers.filter(
@@ -328,7 +346,7 @@ const Dashboard: React.FC = React.memo(() => {
                 ) as DockerContainer[]
               }
             />
-          </Paper>
+          </Sheet>
         </Grid>
       </Grid>
     </Container>

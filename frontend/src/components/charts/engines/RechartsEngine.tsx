@@ -1,4 +1,4 @@
-import { useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/joy/styles";
 import React, { useMemo, useCallback, useEffect, useRef } from "react";
 import {
   LineChart,
@@ -160,11 +160,11 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
       return (
         <div
           style={{
-            backgroundColor: theme.palette.background.paper,
+            backgroundColor: theme.palette.background.surface,
             border: `1px solid ${theme.palette.divider}`,
-            borderRadius: theme.shape.borderRadius,
+            borderRadius: theme.radius.sm,
             padding: theme.spacing(1),
-            boxShadow: theme.shadows[4],
+            boxShadow: theme.shadow.md,
           }}
         >
           <p style={{ margin: 0, fontWeight: "bold", marginBottom: 4 }}>
@@ -222,8 +222,8 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
   // Animation configuration
   const animationConfig = useMemo(
     () => ({
-      isAnimationActive: config.theme.animations.enabled,
       animationDuration: config.theme.animations.duration,
+      isAnimationActive: false, // Explicitly disable animation for performance
     }),
     [config.theme.animations],
   );
@@ -251,7 +251,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
 
           <XAxis
             dataKey="time"
-            stroke={theme.palette.text.secondary}
+            stroke={theme.palette.text.tertiary}
             tickFormatter={formatXAxisTick}
             interval="preserveStartEnd"
             minTickGap={50}
@@ -259,7 +259,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
           />
 
           <YAxis
-            stroke={theme.palette.text.secondary}
+            stroke={theme.palette.text.tertiary}
             domain={yAxisDomain}
             tickCount={4}
             label={{
@@ -314,6 +314,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
                 dot={false}
                 name="CPU %"
                 {...animationConfig}
+                isAnimationActive={false}
               />
 
               <Area
@@ -326,6 +327,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
                 dot={false}
                 name="Memory %"
                 {...animationConfig}
+                isAnimationActive={false}
               />
             </>
           ) : (

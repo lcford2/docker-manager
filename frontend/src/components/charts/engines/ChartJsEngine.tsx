@@ -1,4 +1,4 @@
-import { useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/joy/styles";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -211,12 +211,12 @@ const ChartJsChart: React.FC<ChartJsChartProps> = ({
           },
         },
         tooltip: {
-          backgroundColor: theme.palette.background.paper,
+          backgroundColor: theme.palette.background.surface,
           titleColor: theme.palette.text.primary,
           bodyColor: theme.palette.text.primary,
           borderColor: theme.palette.divider,
           borderWidth: 1,
-          cornerRadius: theme.shape.borderRadius,
+          cornerRadius: parseInt(theme.radius.sm, 10),
           displayColors: true,
           callbacks: {
             label: (context) => {

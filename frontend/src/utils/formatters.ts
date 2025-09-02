@@ -2,6 +2,8 @@
  * Utility functions for formatting data across Docker resource pages
  */
 
+import { ColorPaletteProp } from "@mui/joy";
+
 /**
  * Format bytes to human readable format
  */
@@ -70,7 +72,7 @@ export const formatImageTag = (repository: string, tag: string): string => {
 export const getStatusColor = (
   status: string,
   type: "container" | "image" | "volume" | "network",
-): "success" | "error" | "warning" | "info" | "default" => {
+): ColorPaletteProp => {
   const normalizedStatus = status.toLowerCase();
 
   switch (type) {
@@ -80,18 +82,18 @@ export const getStatusColor = (
           return "success";
         case "stopped":
         case "exited":
-          return "error";
+          return "danger";
         case "paused":
           return "warning";
         case "restarting":
-          return "info";
+          return "primary";
         default:
-          return "default";
+          return "neutral";
       }
 
     case "image":
       // Images don't have traditional status, but we can use this for other indicators
-      return "info";
+      return "primary";
 
     case "volume":
       switch (normalizedStatus) {
@@ -100,7 +102,7 @@ export const getStatusColor = (
         case "unused":
           return "warning";
         default:
-          return "info";
+          return "primary";
       }
 
     case "network":
@@ -108,13 +110,13 @@ export const getStatusColor = (
         case "active":
           return "success";
         case "inactive":
-          return "error";
+          return "danger";
         default:
-          return "info";
+          return "primary";
       }
 
     default:
-      return "default";
+      return "neutral";
   }
 };
 

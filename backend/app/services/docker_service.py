@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.docker_cli import docker_cli_client
 from app.models.docker_types import SystemInfo
@@ -89,13 +89,16 @@ class DockerService:
             logger.error(f"Error getting images: {e}")
             raise
 
-    def remove_image(self, image_id: str, force: bool = False) -> bool:
+    def remove_image(
+        self, image_id: str, force: bool = False
+    ) -> Tuple[bool, Optional[str]]:
         """Remove an image"""
         try:
-            return self.client.remove_image(image_id, force)
+            self.client.remove_image(image_id, force)
+            return True, None
         except Exception as e:
             logger.error(f"Error removing image: {e}")
-            return False
+            return False, str(e)
 
     def get_networks(self) -> List[Dict[str, Any]]:
         """Get list of networks"""

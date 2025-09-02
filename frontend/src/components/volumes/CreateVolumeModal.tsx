@@ -1,19 +1,20 @@
-import { LoadingButton } from "@mui/lab";
 import {
-  Dialog,
+  Box,
+  Button,
+  Modal,
+  ModalDialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Box,
-  Typography,
-  Alert,
+  Stack,
+  Input,
+  FormLabel,
   FormControl,
-  InputLabel,
+  FormHelperText,
+  Alert,
   Select,
-  MenuItem,
-} from "@mui/material";
+  Option,
+} from "@mui/joy";
+import { Report } from "@mui/icons-material";
 import React, { useState } from "react";
 
 import { dockerAPI } from "../../services/api";
@@ -66,7 +67,6 @@ const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({
       return;
     }
 
-    // Validate volume name (Docker naming rules)
     const nameRegex = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
     if (!nameRegex.test(volumeName)) {
       setError(
@@ -98,77 +98,77 @@ const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Create Docker Volume</DialogTitle>
-
-      <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ pt: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Create a new Docker volume for persistent data storage.
-          </Typography>
-
-          <TextField
-            autoFocus
-            fullWidth
-            label="Volume Name"
-            placeholder="my-volume"
-            value={volumeName}
-            onChange={(e) => setVolumeName(e.target.value)}
-            disabled={loading}
-            margin="normal"
-            required
-            helperText="Name must start with a letter or number and can contain letters, numbers, periods, hyphens and underscores"
-          />
-
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Driver</InputLabel>
-            <Select
-              value={driver}
-              onChange={(e) => setDriver(e.target.value)}
-              disabled={loading}
-              label="Driver"
-            >
-              <MenuItem value="local">Local</MenuItem>
-              <MenuItem value="nfs">NFS</MenuItem>
-              <MenuItem value="cifs">CIFS</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            fullWidth
-            label="Labels (Optional)"
-            placeholder="env=production,team=backend"
-            value={labels}
-            onChange={(e) => setLabels(e.target.value)}
-            disabled={loading}
-            margin="normal"
-            multiline
-            rows={2}
-            helperText="Format: key1=value1,key2=value2 (comma-separated key=value pairs)"
-          />
-
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
-        </Box>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <LoadingButton
-          onClick={handleSubmit}
-          loading={loading}
-          variant="contained"
-          disabled={!volumeName.trim()}
-        >
-          Create Volume
-        </LoadingButton>
-      </DialogActions>
-    </Dialog>
+    <Modal open={open} onClose={handleClose}>
+      <ModalDialog>
+        <DialogTitle>Create Docker Volume</DialogTitle>
+        <DialogContent>
+          Create a new Docker volume for persistent data storage.
+        </DialogContent>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            <FormControl required>
+              <FormLabel>Volume Name</FormLabel>
+              <Input
+                autoFocus
+                value={volumeName}
+                onChange={(e) => setVolumeName(e.target.value)}
+                disabled={loading}
+              />
+              <FormHelperText>
+                Name must start with a letter or number and can contain letters,
+                numbers, periods, hyphens and underscores.
+              </FormHelperText>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Driver</FormLabel>
+              <Select
+                value={driver}
+                onChange={(_, newValue) => setDriver(newValue || "local")}
+                disabled={loading}
+              >
+                <Option value="local">Local</Option>
+                <Option value="nfs">NFS</Option>
+                <Option value="cifs">CIFS</Option>
+              </Select>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Labels (Optional)</FormLabel>
+              <Input
+                placeholder="env=production,team=backend"
+                value={labels}
+                onChange={(e) => setLabels(e.target.value)}
+                disabled={loading}
+              />
+              <FormHelperText>
+                Format: key1=value1,key2=value2
+              </FormHelperText>
+            </FormControl>
+            {error && (
+              <Alert color="danger" startDecorator={<Report />}>
+                {error}
+              </Alert>
+            )}
+            <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+              <Button
+                variant="plain"
+                color="neutral"
+                onClick={handleClose}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                loading={loading}
+                disabled={!volumeName.trim()}
+              >
+                Create Volume
+              </Button>
+            </Box>
+          </Stack>
+        </form>
+      </ModalDialog>
+    </Modal>
   );
 };
 

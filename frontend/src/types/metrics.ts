@@ -22,6 +22,7 @@ export interface SparklineData {
 export interface ContainerStatsWithHistory {
   id: string;
   name: string;
+  image?: string; // Add optional image property
   status: string;
   uptime: string;
   uptime_seconds: number;

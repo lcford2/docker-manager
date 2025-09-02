@@ -7,20 +7,7 @@ import {
   Logout,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import {
-  Box,
-  Drawer,
-  AppBar,
-  Toolbar,
-  List,
-  Typography,
-  Divider,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
-} from "@mui/material";
+import { Box, IconButton, List, ListItem, ListItemButton, ListItemDecorator, Sheet, Typography } from "@mui/joy";
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -53,106 +40,78 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Docker Manager
-        </Typography>
-      </Toolbar>
-      <Divider />
+    <Sheet
+      variant="outlined"
+      sx={{
+        height: '100dvh',
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
+      <Typography level="title-lg">Docker Manager</Typography>
       <List>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
+          <ListItem key={item.text}>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => navigate(item.path)}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemDecorator>{item.icon}</ListItemDecorator>
+              {item.text}
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-      <Divider />
+      <Box sx={{ flexGrow: 1 }} />
       <List>
-        <ListItem disablePadding>
+        <ListItem>
           <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
+            <ListItemDecorator>
               <Logout />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
+            </ListItemDecorator>
+            Logout
           </ListItemButton>
         </ListItem>
       </List>
-    </div>
+    </Sheet>
   );
 
   return (
     <Box sx={{ display: "flex", width: "100%" }}>
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Docker Container Management
-          </Typography>
-        </Toolbar>
-      </AppBar>
       <Box
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+        {/* Mobile drawer */}
+        <Sheet
           sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
+            display: { xs: 'block', sm: 'none' },
+            position: 'fixed',
+            zIndex: 1200,
+            width: mobileOpen ? drawerWidth : 0,
+            height: '100dvh',
+            transition: 'width 0.2s',
+            overflow: 'hidden',
           }}
         >
           {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
+        </Sheet>
+        {/* Desktop drawer */}
+        <Sheet
           sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
+            display: { xs: 'none', sm: 'block' },
+            width: drawerWidth,
+            height: '100dvh',
           }}
-          open
         >
           {drawer}
-        </Drawer>
+        </Sheet>
       </Box>
       <Box
         component="main"
         sx={{
-          backgroundColor: (theme) =>
-            theme.palette.mode === "light"
-              ? theme.palette.grey[100]
-              : theme.palette.grey[900],
           flexGrow: 1,
           height: "100vh",
           overflow: "auto",
@@ -160,7 +119,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           width: { sm: `calc(100% - ${drawerWidth}px)` },
         }}
       >
-        <Toolbar />
+        <Sheet
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 3,
+            display: { sm: 'none' },
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography level="title-lg">Docker Manager</Typography>
+          <IconButton onClick={handleDrawerToggle}>
+            <MenuIcon />
+          </IconButton>
+        </Sheet>
         {children}
       </Box>
     </Box>

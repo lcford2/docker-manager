@@ -1,13 +1,13 @@
-import { Refresh, Add, Search } from "@mui/icons-material";
+import { Refresh, Add, Search, Report } from "@mui/icons-material";
 import {
   Box,
   Typography,
   Alert,
   CircularProgress,
   Button,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
+  Input,
+  IconButton,
+} from "@mui/joy";
 import React, { useState, useEffect, useCallback } from "react";
 
 import { dockerAPI } from "../../services/api";
@@ -15,7 +15,7 @@ import { DockerVolume } from "../../types/docker";
 import ConfirmDialog from "../common/ConfirmDialog";
 
 import CreateVolumeModal from "./CreateVolumeModal";
-import VolumeGrid from "./VolumeGrid";
+import VolumesTable from "./VolumesTable";
 import VolumeModal from "./VolumeModal";
 
 const VolumesPage: React.FC = () => {
@@ -144,21 +144,21 @@ const VolumesPage: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography level="h2" component="h1">
           Docker Volumes
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<Add />}
+            startDecorator={<Add />}
             onClick={() => setCreateModalOpen(true)}
           >
             Create Volume
           </Button>
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
+            startDecorator={<Refresh />}
             onClick={fetchVolumes}
             disabled={loading}
           >
@@ -169,34 +169,41 @@ const VolumesPage: React.FC = () => {
 
       {/* Search */}
       <Box sx={{ mb: 3 }}>
-        <TextField
+        <Input
           fullWidth
           placeholder="Search volumes by name or driver..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
+          startDecorator={<Search />}
         />
       </Box>
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert
+          color="danger"
+          sx={{ mb: 2 }}
+          startDecorator={<Report />}
+          endDecorator={
+            <IconButton
+              variant="plain"
+              size="sm"
+              color="danger"
+              onClick={() => setError(null)}
+            >
+              X
+            </IconButton>
+          }
+        >
           {error}
         </Alert>
       )}
 
-      {/* Volumes Grid */}
-      <VolumeGrid
+      {/* Volumes Table */}
+      <VolumesTable
         volumes={filteredVolumes}
         onVolumeClick={handleVolumeClick}
         onVolumeRemove={handleVolumeRemove}
-        selectedVolume={selectedVolume}
       />
 
       {/* Volume Details Modal */}

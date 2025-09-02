@@ -1,20 +1,20 @@
-import { Refresh, Add, Search } from "@mui/icons-material";
+import { Refresh, Add, Search, Report, Delete } from "@mui/icons-material";
 import {
   Box,
   Typography,
   Alert,
   CircularProgress,
   Button,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
+  Input,
+  IconButton,
+} from "@mui/joy";
 import React, { useState, useEffect, useCallback } from "react";
 
 import { dockerAPI } from "../../services/api";
 import { DockerImage } from "../../types/docker";
 import ConfirmDialog from "../common/ConfirmDialog";
 
-import ImageGrid from "./ImageGrid";
+import ImagesTable from "./ImagesTable";
 import ImageModal from "./ImageModal";
 import PullImageModal from "./PullImageModal";
 
@@ -23,9 +23,9 @@ const ImagesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedImages, setSelectedImages] = useState<readonly string[]>([]);
 
   // Modal states
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<DockerImage | null>(null);
   const [pullModalOpen, setPullModalOpen] = useState(false);
 
@@ -65,7 +65,6 @@ const ImagesPage: React.FC = () => {
   // Handle image selection
   const handleImageClick = useCallback(
     (imageId: string) => {
-      setSelectedImage(imageId);
       const image = images.find((img) => img.id === imageId);
       if (image) {
         setModalImage(image);
@@ -76,7 +75,6 @@ const ImagesPage: React.FC = () => {
 
   // Handle close modal
   const handleCloseModal = useCallback(() => {
-    setSelectedImage(null);
     setModalImage(null);
   }, []);
 
@@ -113,6 +111,30 @@ const ImagesPage: React.FC = () => {
     [images, confirmRemoveImage],
   );
 
+  const confirmBulkRemoveImages = useCallback(async () => {
+    setActionLoading("remove-bulk");
+    setConfirmDialog((prev) => ({ ...prev, open: false }));
+
+    try {
+      await dockerAPI.bulkRemoveImages(selectedImages as string[]);
+      await fetchImages(); // Refresh the list
+      setSelectedImages([]); // Clear selection
+    } catch (err: any) {
+      setError(err.message || "Failed to remove images");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [fetchImages, selectedImages]);
+
+  const handleBulkImageRemove = useCallback(() => {
+    setConfirmDialog({
+      open: true,
+      title: "Remove Images",
+      message: `Are you sure you want to remove the ${selectedImages.length} selected images? This action cannot be undone.`,
+      onConfirm: () => confirmBulkRemoveImages(),
+    });
+  }, [selectedImages, confirmBulkRemoveImages]);
+
   // Handle pull image success
   const handlePullSuccess = useCallback(() => {
     setPullModalOpen(false);
@@ -141,7 +163,7 @@ const ImagesPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -151,21 +173,32 @@ const ImagesPage: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography level="h2" component="h1">
           Docker Images
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
+          {selectedImages.length > 0 && (
+            <Button
+              variant="solid"
+              color="danger"
+              startDecorator={<Delete />}
+              onClick={handleBulkImageRemove}
+              disabled={actionLoading !== null}
+            >
+              Delete ({selectedImages.length})
+            </Button>
+          )}
           <Button
             variant="outlined"
-            startIcon={<Add />}
+            startDecorator={<Add />}
             onClick={() => setPullModalOpen(true)}
           >
             Pull Image
           </Button>
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
+            startDecorator={<Refresh />}
             onClick={fetchImages}
             disabled={loading || actionLoading !== null}
           >
@@ -176,35 +209,46 @@ const ImagesPage: React.FC = () => {
 
       {/* Search */}
       <Box sx={{ mb: 3 }}>
-        <TextField
+        <Input
           fullWidth
           placeholder="Search images by repository, tag, or ID..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
+          startDecorator={<Search />}
         />
       </Box>
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert
+          color="danger"
+          sx={{ mb: 2 }}
+          startDecorator={<Report />}
+          endDecorator={
+            <IconButton
+              variant="plain"
+              size="sm"
+              color="danger"
+              onClick={() => setError(null)}
+            >
+              X
+            </IconButton>
+          }
+        >
           {error}
         </Alert>
       )}
 
-      {/* Images Grid */}
-      <ImageGrid
-        images={filteredImages}
-        onImageClick={handleImageClick}
-        onImageRemove={handleImageRemove}
-        selectedImage={selectedImage}
-      />
+      {/* Images Table */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+        <ImagesTable
+          images={filteredImages}
+          selected={selectedImages}
+          onSelectionChange={setSelectedImages}
+          onImageClick={handleImageClick}
+          onImageRemove={handleImageRemove}
+        />
+      </Box>
 
       {/* Image Details Modal */}
       <ImageModal
@@ -227,7 +271,7 @@ const ImagesPage: React.FC = () => {
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        loading={actionLoading === "remove"}
+        loading={actionLoading === "remove" || actionLoading === "remove-bulk"}
       />
     </Box>
   );

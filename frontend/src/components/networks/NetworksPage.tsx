@@ -1,17 +1,18 @@
-import { Refresh, Add, Search } from "@mui/icons-material";
+import { Refresh, Add, Search, Report } from "@mui/icons-material";
 import {
   Box,
   Typography,
   Alert,
   CircularProgress,
   Button,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
+  Input,
+  IconButton,
+} from "@mui/joy";
 import React, { useState, useEffect, useCallback } from "react";
 
 import { dockerAPI } from "../../services/api";
 import { DockerNetwork } from "../../types/docker";
+import NetworksTable from "./NetworksTable";
 
 const NetworksPage: React.FC = () => {
   const [networks, setNetworks] = useState<DockerNetwork[]>([]);
@@ -70,14 +71,14 @@ const NetworksPage: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography level="h2" component="h1">
           Docker Networks
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<Add />}
+            startDecorator={<Add />}
             onClick={() => {
               /* TODO: Open create network modal */
             }}
@@ -86,7 +87,7 @@ const NetworksPage: React.FC = () => {
           </Button>
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
+            startDecorator={<Refresh />}
             onClick={fetchNetworks}
             disabled={loading}
           >
@@ -97,97 +98,40 @@ const NetworksPage: React.FC = () => {
 
       {/* Search */}
       <Box sx={{ mb: 3 }}>
-        <TextField
+        <Input
           fullWidth
           placeholder="Search networks by name, driver, or scope..."
           value={searchTerm}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setSearchTerm(e.target.value)
           }
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
+          startDecorator={<Search />}
         />
       </Box>
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert
+          color="danger"
+          sx={{ mb: 2 }}
+          startDecorator={<Report />}
+          endDecorator={
+            <IconButton
+              variant="plain"
+              size="sm"
+              color="danger"
+              onClick={() => setError(null)}
+            >
+              X
+            </IconButton>
+          }
+        >
           {error}
         </Alert>
       )}
 
-      {/* Networks List */}
-      <Box>
-        <Typography variant="h5" gutterBottom>
-          Networks ({filteredNetworks.length} total)
-        </Typography>
-
-        {filteredNetworks.length === 0 ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 200,
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No networks found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create some networks to see them here
-            </Typography>
-          </Box>
-        ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {filteredNetworks.map((network) => (
-              <Box
-                key={network.id}
-                sx={{
-                  p: 2,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  backgroundColor: "background.paper",
-                }}
-              >
-                <Typography variant="h6" gutterBottom>
-                  {network.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  ID: {network.id.substring(0, 12)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Driver: {network.driver}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Scope: {network.scope}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Created: {new Date(network.created).toLocaleString()}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Connected Containers:{" "}
-                  {Object.keys(network.containers || {}).length}
-                </Typography>
-                {(network.ipam?.config?.length ?? 0) > 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    Subnet:{" "}
-                    {network.ipam?.config?.[0]?.subnet ?? "Not configured"}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
-      </Box>
+      {/* Networks Table */}
+      <NetworksTable networks={filteredNetworks} />
     </Box>
   );
 };
