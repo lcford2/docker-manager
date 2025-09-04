@@ -53,7 +53,6 @@ const Dashboard: React.FC = React.memo(() => {
   });
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [newChartPoint, setNewChartPoint] = useState<ChartDataPoint | null>(null);
 
   // Initialize state manager once
   if (!stateManagerRef.current) {
@@ -101,7 +100,6 @@ const Dashboard: React.FC = React.memo(() => {
           }
           return newData;
         });
-        setNewChartPoint(newPoint);
 
         setDashboardState(updatedState);
         console.log("Dashboard updated with WebSocket container data");
@@ -229,7 +227,7 @@ const Dashboard: React.FC = React.memo(() => {
               p: 2,
               display: "flex",
               flexDirection: "column",
-              height: 240,
+              height: 400,
             }}
           >
             <EnhancedResourceChart
@@ -244,17 +242,6 @@ const Dashboard: React.FC = React.memo(() => {
                   interpolated: false,
                 },
               }))}
-              newDataPoints={newChartPoint ? [{
-                timestamp: newChartPoint.timestamp || Date.now(),
-                time: newChartPoint.time,
-                cpu: newChartPoint.cpu,
-                memory: newChartPoint.memory,
-                metadata: {
-                  source: "websocket" as const,
-                  quality: "high" as const,
-                  interpolated: false,
-                },
-              }] : []}
               config={{
                 time: {
                   precision: "second",
@@ -293,7 +280,7 @@ const Dashboard: React.FC = React.memo(() => {
               p: 2,
               display: "flex",
               flexDirection: "column",
-              height: 240,
+              height: 400,
             }}
           >
             <SystemSummary dockerStatus={dashboardState.dockerStatus} />

@@ -1,25 +1,27 @@
 import {
+  Box,
   ButtonGroup,
   Button,
   Checkbox,
   Chip,
   Dropdown,
   IconButton,
-  Link,
   Menu,
   MenuButton,
   MenuItem,
+  Link,
   Sheet,
   Table,
   Typography,
 } from "@mui/joy";
-import {
-  ArrowDownward,
-  MoreHoriz,
-} from "@mui/icons-material";
+import { ArrowDownward, MoreHoriz } from "@mui/icons-material";
 import React from "react";
 import { DockerImage } from "../../types/docker";
-import { formatBytes, formatDateTime, isDanglingImage } from "../../utils/formatters";
+import {
+  formatBytes,
+  formatDateTime,
+  isDanglingImage,
+} from "../../utils/formatters";
 
 interface ImagesTableProps {
   images: DockerImage[];
@@ -37,8 +39,11 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
   onImageRemove,
 }) => {
   return (
-    <Sheet variant="outlined" sx={{ width: "100%", boxShadow: "sm", borderRadius: "sm" }}>
-      <Table aria-label="Images table" stickyHeader hoverRow={true} variant="plain">
+    <Sheet
+      variant="outlined"
+      sx={{ width: "100%", boxShadow: "sm", borderRadius: "sm" }}
+    >
+      <Table aria-label="Images table" stickyHeader variant="plain">
         <thead>
           <tr>
             <th style={{ width: 40, padding: "12px 6px" }}>
@@ -49,7 +54,7 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 checked={selected.length === images.length}
                 onChange={(event) => {
                   onSelectionChange(
-                    event.target.checked ? images.map((img) => img.id) : []
+                    event.target.checked ? images.map((img) => img.id) : [],
                   );
                 }}
               />
@@ -60,23 +65,23 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 color="primary"
                 component="button"
                 endDecorator={<ArrowDownward />}
-                sx={{ fontWeight: "lg" }}
+                sx={{ fontWeight: "lg", width: "35%" }}
               >
                 Repository
               </Link>
             </th>
-            <th>Tag</th>
-            <th>ID</th>
-            <th>Size</th>
-            <th>Created</th>
-            <th></th>
+            <th style={{ width: "10%" }}>Tag</th>
+            <th style={{ width: "20%" }}>ID</th>
+            <th style={{ width: "15%" }}>Size</th>
+            <th style={{ width: "15%" }}>Created</th>
+            <th style={{ width: "15%" }}></th>
           </tr>
         </thead>
         <tbody>
           {images.map((image) => {
             const isDangling = isDanglingImage(image.repository, image.tag);
             return (
-              <tr key={image.id}>
+              <tr key={image.id} onClick={() => onImageClick(image.id)}>
                 <td style={{ padding: "12px 6px" }}>
                   <Checkbox
                     checked={selected.includes(image.id)}
@@ -89,49 +94,84 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                   />
                 </td>
                 <td>
-                  <Typography level="body-sm">{image.repository}</Typography>
-                  {isDangling && <Chip color="warning" size="sm" sx={{ ml: 1 }}>Dangling</Chip>}
+                  <Typography noWrap level="body-sm">
+                    {image.repository}
+                  </Typography>
+                  {isDangling && (
+                    <Chip color="warning" size="sm" sx={{ ml: 1 }}>
+                      Dangling
+                    </Chip>
+                  )}
                 </td>
                 <td>
-                  <Typography level="body-sm">{image.tag}</Typography>
+                  <Typography noWrap level="body-sm">
+                    {image.tag}
+                  </Typography>
                 </td>
                 <td>
-                  <Typography level="body-sm">{image.id.substring(0, 12)}</Typography>
+                  <Typography noWrap level="body-sm">
+                    {image.id.substring(0, 12)}
+                  </Typography>
                 </td>
                 <td>
-                  <Typography level="body-sm">{formatBytes(image.size)}</Typography>
+                  <Typography level="body-sm">
+                    {formatBytes(image.size)}
+                  </Typography>
                 </td>
                 <td>
-                  <Typography level="body-sm">{formatDateTime(image.created)}</Typography>
+                  <Typography level="body-sm">
+                    {formatDateTime(image.created)}
+                  </Typography>
                 </td>
+
                 <td>
-                  <ButtonGroup aria-label="Image actions" variant="soft" size="sm">
-                      <Button onClick={() => onImageClick(image.id)}>
-                        Details
-                      </Button>
-                      <Button color="danger" onClick={() => onImageRemove(image.id)}>
-                        Remove
-                      </Button>
-                  </ButtonGroup>
-                </td>
-                {/* <td>
-                  <Dropdown>
-                    <MenuButton
-                      slots={{ root: IconButton }}
-                      slotProps={{ root: { variant: "plain", color: "neutral", size: "sm" } }}
+                  {/* Desktop ButtonGroup */}
+                  <ButtonGroup
+                    aria-label="Image actions"
+                    variant="soft"
+                    size="sm"
+                    sx={{ display: { xs: "none", xl: "flex" } }}
+                  >
+                    <Button onClick={() => onImageClick(image.id)}>
+                      Details
+                    </Button>
+                    <Button
+                      color="danger"
+                      onClick={() => onImageRemove(image.id)}
                     >
-                      <MoreHoriz />
-                    </MenuButton>
-                    <Menu size="sm" sx={{ minWidth: 140 }}>
-                      <MenuItem onClick={() => onImageClick(image.id)}>
-                        View Details
-                      </MenuItem>
-                      <MenuItem color="danger" onClick={() => onImageRemove(image.id)}>
-                        Remove
-                      </MenuItem>
-                    </Menu>
-                  </Dropdown>
-                </td> */}
+                      Remove
+                    </Button>
+                  </ButtonGroup>
+
+                  {/* Mobile Dropdown */}
+                  <Box sx={{ display: { xs: "block", xl: "none" } }}>
+                    <Dropdown>
+                      <MenuButton
+                        slots={{ root: IconButton }}
+                        slotProps={{
+                          root: {
+                            variant: "plain",
+                            color: "neutral",
+                            size: "sm",
+                          },
+                        }}
+                      >
+                        <MoreHoriz />
+                      </MenuButton>
+                      <Menu>
+                        <MenuItem onClick={() => onImageClick(image.id)}>
+                          Details
+                        </MenuItem>
+                        <MenuItem
+                          color="danger"
+                          onClick={() => onImageRemove(image.id)}
+                        >
+                          Remove
+                        </MenuItem>
+                      </Menu>
+                    </Dropdown>
+                  </Box>
+                </td>
               </tr>
             );
           })}

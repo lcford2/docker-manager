@@ -168,7 +168,7 @@ export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
   },
   // Data management - heavily reduced for better performance
   data: {
-    maxDataPoints: 25, // Further reduced from 50 to 25
+    maxDataPoints: 50, // Increased for better data visibility // Further reduced from 50 to 25
     aggregationWindow: 5000, // 5 second windows
     deduplicationThreshold: 1000, // 1 second threshold
     compressionEnabled: true,
@@ -180,13 +180,13 @@ export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
     memoryLimit: 100, // 100MB limit
     enableProfiling: false, // Disable profiling to reduce overhead
     throttleUpdates: true,
-    throttleDelay: 500, // Increased throttling to 500ms
+    throttleDelay: 200, // Reduced for more responsive updates // Increased throttling to 500ms
   },
   // Engine configuration
   engine: {
-    preferred: "canvas" as ChartEngineType, // Changed from 'recharts' to 'canvas' for better performance
+    preferred: "recharts" as ChartEngineType, // Changed back to recharts for consistency // Changed from 'recharts' to 'canvas' for better performance
     fallbackOrder: ["canvas", "recharts", "chartjs"],
-    autoSwitch: true,
+    autoSwitch: false, // Disabled for stability
     performanceThreshold: 30,
   },
   theme: {

@@ -14,16 +14,6 @@ import {
   Sheet,
 } from "@mui/joy";
 import React from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { ContainerStatsWithHistory } from "../../types/metrics";
 import { formatBytes, formatDateTime } from "../../utils/formatters";
 import MetricSparkline from "./MetricSparkline";

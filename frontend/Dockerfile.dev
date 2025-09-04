@@ -8,8 +8,16 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Expose the default port for Create React App
+# Copy source code
+COPY . .
+
+# Set environment variables for WebSocket configuration
+ENV HOST=0.0.0.0
+ENV WDS_SOCKET_HOST=0.0.0.0
+ENV WDS_SOCKET_PORT=3050
+
+# Expose port 3000
 EXPOSE 3000
 
-# Start the development server
+# Start development server
 CMD ["npm", "start"]

@@ -1,17 +1,21 @@
 import {
+  Box,
   ButtonGroup,
   Button,
   Checkbox,
   Chip,
+  Dropdown,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
   Link,
   Sheet,
   Table,
   Tooltip,
   Typography,
 } from "@mui/joy";
-import {
-  ArrowDownward,
-} from "@mui/icons-material";
+import { ArrowDownward, MoreHoriz } from "@mui/icons-material";
 import React from "react";
 import { DockerVolume } from "../../types/docker";
 import { formatDateTime, getVolumeDriverDisplay } from "../../utils/formatters";
@@ -30,7 +34,10 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
   const [selected, setSelected] = React.useState<readonly string[]>([]);
 
   return (
-    <Sheet variant="outlined" sx={{ width: "100%", boxShadow: "sm", borderRadius: "sm" }}>
+    <Sheet
+      variant="outlined"
+      sx={{ width: "100%", boxShadow: "sm", borderRadius: "sm" }}
+    >
       <Table aria-label="Volumes table" stickyHeader>
         <thead>
           <tr>
@@ -42,12 +49,12 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                 checked={selected.length === volumes.length}
                 onChange={(event) => {
                   setSelected(
-                    event.target.checked ? volumes.map((v) => v.name) : []
+                    event.target.checked ? volumes.map((v) => v.name) : [],
                   );
                 }}
               />
             </th>
-            <th style={{ maxWidth: "350px" }}>
+            <th style={{ width: "35%" }}>
               <Link
                 underline="none"
                 color="primary"
@@ -58,10 +65,10 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                 Name
               </Link>
             </th>
-            <th>Driver</th>
-            <th>Scope</th>
-            <th>Created</th>
-            <th></th>
+            <th style={{ width: "20%" }}>Driver</th>
+            <th style={{ width: "15%" }}>Scope</th>
+            <th style={{ width: "15%" }}>Created</th>
+            <th style={{ width: "15%" }}></th>
           </tr>
         </thead>
         <tbody>
@@ -74,34 +81,84 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                     setSelected((names) =>
                       event.target.checked
                         ? names.concat(volume.name)
-                        : names.filter((vName) => vName !== volume.name)
+                        : names.filter((vName) => vName !== volume.name),
                     );
                   }}
                 />
               </td>
-              <td style={{ maxWidth: "350px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <td
+                style={{
+                  maxWidth: "350px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
                 <Tooltip title={volume.name}>
-                  <Typography level="body-sm">{volume.name}</Typography>
+                  <Typography noWrap level="body-sm">
+                    {volume.name}
+                  </Typography>
                 </Tooltip>
               </td>
               <td>
-                <Chip size="sm" color="primary">{getVolumeDriverDisplay(volume.driver)}</Chip>
+                <Chip size="sm" color="primary">
+                  {getVolumeDriverDisplay(volume.driver)}
+                </Chip>
               </td>
               <td>
-                <Typography level="body-sm">{volume.scope}</Typography>
+                <Typography noWrap level="body-sm">
+                  {volume.scope}
+                </Typography>
               </td>
               <td>
-                <Typography level="body-sm">{formatDateTime(volume.created)}</Typography>
+                <Typography level="body-sm">
+                  {formatDateTime(volume.created)}
+                </Typography>
               </td>
               <td>
-                <ButtonGroup aria-label="Volume actions" variant="soft" size="sm">
+                <ButtonGroup
+                  aria-label="Volume actions"
+                  variant="soft"
+                  size="sm"
+                  sx={{ display: { xs: "none", xl: "flex" } }}
+                >
                   <Button onClick={() => onVolumeClick(volume.name)}>
                     Details
                   </Button>
-                  <Button color="danger" onClick={() => onVolumeRemove(volume.name)}>
+                  <Button
+                    color="danger"
+                    onClick={() => onVolumeRemove(volume.name)}
+                  >
                     Remove
                   </Button>
                 </ButtonGroup>
+                <Box sx={{ display: { xs: "block", xl: "none" } }}>
+                  <Dropdown>
+                    <MenuButton
+                      slots={{ root: IconButton }}
+                      slotProps={{
+                        root: {
+                          variant: "plain",
+                          color: "neutral",
+                          size: "sm",
+                        },
+                      }}
+                    >
+                      <MoreHoriz />
+                    </MenuButton>
+                    <Menu>
+                      <MenuItem onClick={() => onVolumeClick(volume.name)}>
+                        Details
+                      </MenuItem>
+                      <MenuItem
+                        color="danger"
+                        onClick={() => onVolumeRemove(volume.name)}
+                      >
+                        Remove
+                      </MenuItem>
+                    </Menu>
+                  </Dropdown>
+                </Box>
               </td>
             </tr>
           ))}

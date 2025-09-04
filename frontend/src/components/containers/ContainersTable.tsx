@@ -1,4 +1,6 @@
 import {
+  ButtonGroup,
+  Button,
   Box,
   Checkbox,
   Chip,
@@ -21,15 +23,23 @@ import { ContainerStatsWithHistory } from "../../types/metrics";
 
 interface ContainersTableProps {
   containers: ContainerStatsWithHistory[];
+  selected: readonly string[];
+  onSelectionChange: (selected: readonly string[]) => void;
   onContainerClick: (containerId: string) => void;
+  onContainerStop: (containerId: string) => void;
+  onContainerRestart: (containerId: string) => void;
+  onContainerRemove: (containerId: string) => void;
 }
 
 const ContainersTable: React.FC<ContainersTableProps> = ({
   containers,
+  selected,
+  onSelectionChange,
   onContainerClick,
+  onContainerStop,
+  onContainerRestart,
+  onContainerRemove,
 }) => {
-  const [selected, setSelected] = React.useState<readonly string[]>([]);
-
   const renderStatusChip = (status: string) => {
     let color: "success" | "warning" | "danger" | "neutral" = "neutral";
     if (status.startsWith("running")) {
@@ -54,13 +64,13 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 }
                 checked={selected.length === containers.length}
                 onChange={(event) => {
-                  setSelected(
+                  onSelectionChange(
                     event.target.checked ? containers.map((c) => c.id) : []
                   );
                 }}
               />
             </th>
-            <th>
+            <th style={{ width: "15%" }}>
               <Link
                 underline="none"
                 color="primary"
@@ -71,12 +81,12 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 Name
               </Link>
             </th>
-            <th>ID</th>
-            <th>Image</th>
-            <th>Status</th>
-            <th>CPU %</th>
-            <th>Memory %</th>
-            <th style={{ width: 40 }}> </th>
+            <th style={{ width: "15%" }}>ID</th>
+            <th style={{ width: "15%" }}>Image</th>
+            <th style={{ width: "8%" }}>Status</th>
+            <th style={{ width: "8%" }}>CPU %</th>
+            <th style={{ width: "8%" }}>Memory %</th>
+            <th style={{ width: "26%" }}></th>
           </tr>
         </thead>
         <tbody>
@@ -86,22 +96,21 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 <Checkbox
                   checked={selected.includes(container.id)}
                   onChange={(event) => {
-                    setSelected((ids) =>
-                      event.target.checked
-                        ? ids.concat(container.id)
-                        : ids.filter((cId) => cId !== container.id)
-                    );
+                    const newSelected = event.target.checked
+                      ? selected.concat(container.id)
+                      : selected.filter((cId) => cId !== container.id);
+                    onSelectionChange(newSelected);
                   }}
                 />
               </td>
               <td>
-                <Typography level="body-sm">{container.name}</Typography>
+                <Typography noWrap level="body-sm">{container.name}</Typography>
               </td>
               <td>
-                <Typography level="body-sm">{container.id.substring(0, 12)}</Typography>
+                <Typography noWrap level="body-sm">{container.id.substring(0, 12)}</Typography>
               </td>
               <td>
-                <Typography level="body-sm">{container.image || 'N/A'}</Typography>
+                <Typography noWrap level="body-sm">{container.image || 'N/A'}</Typography>
               </td>
               <td>{renderStatusChip(container.status)}</td>
               <td>
@@ -111,21 +120,51 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 <Typography level="body-sm">{(container.memory_percent ?? 0).toFixed(2)}</Typography>
               </td>
               <td>
-                <Dropdown>
-                  <MenuButton
-                    slots={{ root: IconButton }}
-                    slotProps={{ root: { variant: "plain", color: "neutral", size: "sm" } }}
+                <Box sx={{ display: { xs: 'none', xl: 'flex' }, textAlign: 'center' }}>
+                  <ButtonGroup
+                    aria-label="Container actions"
+                    variant="soft"
+                    size="sm"
+                    // sx={{ display: { xs: 'none', xl: 'flex' }, margin: '0 auto' }}
                   >
-                    <MoreHoriz />
-                  </MenuButton>
-                  <Menu size="sm" sx={{ minWidth: 140 }}>
-                    <MenuItem onClick={() => onContainerClick(container.id)}>
-                      View Details
-                    </MenuItem>
-                    <MenuItem>Stop</MenuItem>
-                    <MenuItem color="danger">Remove</MenuItem>
-                  </Menu>
-                </Dropdown>
+                    <Button color="neutral" size="sm" onClick={() => onContainerClick(container.id)}>
+                      Details
+                    </Button>
+                    <Button color="warning" size="sm" onClick={() => onContainerStop(container.id)}>
+                      Stop
+                    </Button>
+                    <Button color="primary" size="sm" onClick={() => onContainerRestart(container.id)}>
+                      Restart
+                    </Button>
+                    <Button color="danger" size="sm" onClick={() => onContainerRemove(container.id)}>
+                      Remove
+                    </Button>
+                  </ButtonGroup>
+                </Box>
+                <Box sx={{ display: { xs: 'block', xl: 'none' }, textAlign: 'center' }}>
+                  <Dropdown>
+                    <MenuButton
+                      slots={{ root: IconButton }}
+                      slotProps={{ root: { variant: "plain", color: "neutral", size: "sm" } }}
+                    >
+                      <MoreHoriz />
+                    </MenuButton>
+                    <Menu>
+                      <MenuItem onClick={() => onContainerClick(container.id)}>
+                        Details
+                      </MenuItem>
+                      <MenuItem color="warning" onClick={() => onContainerStop(container.id)}>
+                        Stop
+                      </MenuItem>
+                      <MenuItem color="primary" onClick={() => onContainerRestart(container.id)}>
+                        Restart
+                      </MenuItem>
+                      <MenuItem color="danger" onClick={() => onContainerRemove(container.id)}>
+                        Remove
+                      </MenuItem>
+                    </Menu>
+                  </Dropdown>
+                </Box>
               </td>
             </tr>
           ))}

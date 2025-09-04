@@ -66,14 +66,14 @@ export default function Chart({ data }: ChartProps) {
             isAnimationActive={false}
             type="monotone"
             dataKey="cpu"
-            stroke={theme.palette.primary.main}
+            stroke="#2563eb" // WCAG-compliant blue
             dot={false}
           />
           <Line
             isAnimationActive={false}
             type="monotone"
             dataKey="memory"
-            stroke={theme.palette.secondary.main}
+            stroke="#dc2626" // WCAG-compliant red
             dot={false}
           />
         </LineChart>

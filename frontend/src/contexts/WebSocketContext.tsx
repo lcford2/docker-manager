@@ -120,7 +120,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         .then(() => {
           console.log("WebSocket connected successfully on app load");
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.error("Failed to connect WebSocket on app load:", error);
         });
     }
@@ -130,19 +130,19 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   useEffect(() => {
     if (service && isConnected) {
       // Subscribe to container stats
-      const containerSubId = service.subscribe("container_stats", (data) => {
+      const containerSubId = service.subscribe("container_stats", (data: any) => {
         if (data?.containers) {
           setContainers(data.containers);
         }
       });
 
       // Subscribe to system stats
-      const systemSubId = service.subscribe("system_stats", (data) => {
+      const systemSubId = service.subscribe("system_stats", (data: any) => {
         setSystemStats(data);
       });
 
       // Subscribe to all messages for debugging
-      const allSubId = service.subscribe("*", (data) => {
+      const allSubId = service.subscribe("*", (data: any) => {
         console.log("All WebSocket message received:", data);
       });
 

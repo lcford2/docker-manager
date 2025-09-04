@@ -85,6 +85,29 @@ export const dockerAPI = {
     return response.data;
   },
 
+  bulkStopContainers: async (containerIds: string[], force: boolean = false) => {
+    const response = await api.post("/containers/bulk-stop", {
+      container_ids: containerIds,
+      force: force,
+    });
+    return response.data;
+  },
+
+  bulkRestartContainers: async (containerIds: string[]) => {
+    const response = await api.post("/containers/bulk-restart", {
+      container_ids: containerIds,
+    });
+    return response.data;
+  },
+
+  bulkRemoveContainers: async (containerIds: string[], force: boolean = false) => {
+    const response = await api.post("/containers/bulk-delete", {
+      container_ids: containerIds,
+      force: force,
+    });
+    return response.data;
+  },
+
   getVolumes: async () => {
     const response = await api.get("/volumes");
     return response.data;

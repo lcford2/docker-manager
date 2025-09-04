@@ -201,51 +201,10 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
       chartState.selectedTimeRange.end,
     );
 
-    // If we have too much data, downsample for performance
-    if (rawData.length > 50) {
-      const step = Math.ceil(rawData.length / 25); // Keep only 25 points max (matching config)
-      return rawData.filter((_, index) => index % step === 0);
-    }
-
     return rawData;
   }, [displayData, chartState.selectedTimeRange]);
 
   // Add external data - use ref to track processed data to prevent infinite loops
-  const processedDataRef = useRef<Set<number>>(new Set());
-
-  useEffect(() => {
-    if (!dataManagerRef.current) return;
-
-    // This logic might need to be re-evaluated or removed, as data is now managed internally.
-    // For now, let's keep it disabled to avoid conflicts with the new state management.
-    /*
-    // Batch process data points to reduce overhead
-    const newPoints = data.filter(
-      (point) => !processedDataRef.current.has(point.timestamp),
-    );
-
-    if (newPoints.length > 0) {
-      newPoints.forEach((point) => {
-        dataManagerRef.current!.addDataPoint(
-          point.cpu,
-          point.memory,
-          point.metadata?.source,
-        );
-        processedDataRef.current.add(point.timestamp);
-      });
-
-      // Clean up old processed timestamps to prevent memory leaks
-      if (processedDataRef.current.size > 200) {
-        const timestampsArray = Array.from(processedDataRef.current);
-        const oldTimestamps = timestampsArray.slice(
-          0,
-          timestampsArray.length - 100,
-        );
-        oldTimestamps.forEach((ts) => processedDataRef.current.delete(ts));
-      }
-    }
-    */
-  }, []);
 
   // Performance monitoring with throttling and automatic optimization
   const lastPerformanceUpdate = useRef<number>(0);
@@ -266,33 +225,8 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
       // Remove duplicate performance monitoring - engines already handle this
       // The PerformanceMonitor.endProfiling was causing duplicate memory alerts
 
-      // Track poor performance and auto-optimize
-      if (metrics.renderTime > 50 || metrics.fps < 15) {
-        poorPerformanceCount.current++;
 
-        // After 3 consecutive poor performance measurements, switch to simpler engine
-        if (poorPerformanceCount.current >= 3 && engineManagerRef.current) {
-          console.warn(
-            "Poor chart performance detected, switching to canvas engine",
-          );
-          engineManagerRef.current.selectEngine(
-            metrics.dataPoints,
-            [],
-            "canvas",
-          );
-          poorPerformanceCount.current = 0; // Reset counter
-        }
-      } else {
-        poorPerformanceCount.current = 0; // Reset counter on good performance
-      }
-
-      // Auto-switch engine if performance is poor
-      if (engineManagerRef.current && chartConfig.engine.autoSwitch) {
-        engineManagerRef.current.updatePerformanceMetrics(metrics);
-      }
-    },
-    [onPerformanceUpdate, chartConfig.engine.autoSwitch],
-  );
+    }, [onPerformanceUpdate]);
 
   // Control handlers
   const handlePlayPause = useCallback(() => {

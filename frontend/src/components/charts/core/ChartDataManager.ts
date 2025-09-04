@@ -29,7 +29,7 @@ export class ChartDataManager {
     source: "websocket" | "rest" | "cached" = "websocket",
   ): EnhancedChartDataPoint | null {
     const now = Date.now();
-    const timestamp = this.roundTimestamp(now);
+    const timestamp = now; // Use raw timestamp for simplicity
     const formattedTime = this.formatTimestamp(timestamp);
 
     // Check for deduplication
