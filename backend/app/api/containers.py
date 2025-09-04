@@ -5,7 +5,23 @@ from sqlalchemy.orm import Session
 
 from app.api.auth import check_permissions
 from app.core.database import get_db
-from app.models.docker_types import ContainerBasic, ContainerDetailed
+from app.core.validators import ValidationError as ValidatorError
+from app.core.validators import (
+    validate_docker_id,
+    validate_historical_time_range,
+    validate_log_tail_count,
+)
+from app.models.docker_types import (
+    ContainerBasic,
+    ContainerBulkDeleteRequest,
+    ContainerBulkDeleteResponse,
+    ContainerBulkRestartRequest,
+    ContainerBulkRestartResponse,
+    ContainerBulkStopRequest,
+    ContainerBulkStopResponse,
+    ContainerDetailed,
+    FailedContainerOperation,
+)
 from app.models.user import User
 from app.services.docker_database_service import docker_database_service
 from app.services.docker_service import DockerService
@@ -30,12 +46,16 @@ async def get_container(
     db: Session = Depends(get_db),
 ):
     """Get detailed container information"""
-    container = await docker_database_service.get_container_by_id(container_id)
-    if not container:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Container not found"
-        )
-    return container
+    try:
+        validated_id = validate_docker_id(container_id)
+        container = await docker_database_service.get_container_by_id(validated_id)
+        if not container:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Container not found"
+            )
+        return container
+    except ValidatorError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{container_id}/start")
@@ -113,10 +133,15 @@ async def get_container_logs(
     db: Session = Depends(get_db),
 ):
     """Get container logs"""
-    docker_service = DockerService()
     try:
-        logs = docker_service.get_container_logs(container_id, tail=tail)
+        validated_id = validate_docker_id(container_id)
+        validated_tail = validate_log_tail_count(tail)
+
+        docker_service = DockerService()
+        logs = docker_service.get_container_logs(validated_id, tail=validated_tail)
         return {"logs": logs}
+    except ValidatorError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -159,20 +184,17 @@ async def get_container_metrics_history(
     db: Session = Depends(get_db),
 ):
     """Get historical metrics for a container"""
-    if minutes < 1 or minutes > 1440:  # Max 24 hours
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Minutes must be between 1 and 1440",
-        )
-
     try:
+        validated_id = validate_docker_id(container_id)
+        validated_minutes = validate_historical_time_range(minutes)
+
         metrics_data = await docker_database_service.get_container_metrics_history(
-            container_id, minutes
+            validated_id, validated_minutes
         )
 
         if not metrics_data:
             # Check if container exists
-            container = await docker_database_service.get_container_by_id(container_id)
+            container = await docker_database_service.get_container_by_id(validated_id)
             if not container:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -180,11 +202,13 @@ async def get_container_metrics_history(
                 )
 
         return {
-            "container_id": container_id,
-            "minutes": minutes,
+            "container_id": validated_id,
+            "minutes": validated_minutes,
             "data_points": metrics_data,
             "total_points": len(metrics_data),
         }
+    except ValidatorError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import logging
 
@@ -194,3 +218,75 @@ async def get_container_metrics_history(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve metrics history",
         )
+
+
+@router.post("/bulk-stop", response_model=ContainerBulkStopResponse)
+async def bulk_stop_containers(
+    request: ContainerBulkStopRequest,
+    current_user: User = Depends(check_permissions("stop")),
+    db: Session = Depends(get_db),
+):
+    """Stop multiple containers"""
+    docker_service = DockerService()
+    stopped = []
+    failed = []
+    for container_id in request.container_ids:
+        success = docker_service.stop_container(container_id)
+        if success:
+            stopped.append(container_id)
+        else:
+            failed.append(
+                FailedContainerOperation(
+                    container_id=container_id, error="Failed to stop container"
+                )
+            )
+
+    return ContainerBulkStopResponse(stopped=stopped, failed=failed)
+
+
+@router.post("/bulk-restart", response_model=ContainerBulkRestartResponse)
+async def bulk_restart_containers(
+    request: ContainerBulkRestartRequest,
+    current_user: User = Depends(check_permissions("restart")),
+    db: Session = Depends(get_db),
+):
+    """Restart multiple containers"""
+    docker_service = DockerService()
+    restarted = []
+    failed = []
+    for container_id in request.container_ids:
+        success = docker_service.restart_container(container_id)
+        if success:
+            restarted.append(container_id)
+        else:
+            failed.append(
+                FailedContainerOperation(
+                    container_id=container_id, error="Failed to restart container"
+                )
+            )
+
+    return ContainerBulkRestartResponse(restarted=restarted, failed=failed)
+
+
+@router.post("/bulk-delete", response_model=ContainerBulkDeleteResponse)
+async def bulk_remove_containers(
+    request: ContainerBulkDeleteRequest,
+    current_user: User = Depends(check_permissions("remove")),
+    db: Session = Depends(get_db),
+):
+    """Remove multiple containers"""
+    docker_service = DockerService()
+    deleted = []
+    failed = []
+    for container_id in request.container_ids:
+        success = docker_service.remove_container(container_id, request.force)
+        if success:
+            deleted.append(container_id)
+        else:
+            failed.append(
+                FailedContainerOperation(
+                    container_id=container_id, error="Failed to remove container"
+                )
+            )
+
+    return ContainerBulkDeleteResponse(deleted=deleted, failed=failed)

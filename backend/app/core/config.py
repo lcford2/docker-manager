@@ -29,6 +29,30 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@dockermanager.local")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin123")
 
+    # Circuit Breaker Settings
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = int(
+        os.getenv("CIRCUIT_BREAKER_FAILURE_THRESHOLD", "3")
+    )
+    CIRCUIT_BREAKER_RECOVERY_TIMEOUT: int = int(
+        os.getenv("CIRCUIT_BREAKER_RECOVERY_TIMEOUT", "30")
+    )
+
+    # Cache Settings
+    CACHE_MAX_ITEMS: int = int(os.getenv("CACHE_MAX_ITEMS", "1000"))
+    CACHE_DEFAULT_TTL: int = int(os.getenv("CACHE_DEFAULT_TTL", "300"))
+    CACHE_CONTAINER_TTL: int = int(os.getenv("CACHE_CONTAINER_TTL", "30"))
+    CACHE_SYSTEM_TTL: int = int(os.getenv("CACHE_SYSTEM_TTL", "60"))
+
+    # Database Pool Settings
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "20"))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "30"))
+    DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "3600"))
+
+    # Validation Limits
+    MAX_BULK_OPERATIONS: int = int(os.getenv("MAX_BULK_OPERATIONS", "50"))
+    MAX_HISTORICAL_DAYS: int = int(os.getenv("MAX_HISTORICAL_DAYS", "7"))
+    MAX_LOG_LINES: int = int(os.getenv("MAX_LOG_LINES", "10000"))
+
     class Config:
         case_sensitive = True
 

@@ -72,6 +72,40 @@ class ImageBulkDeleteResponse(BaseModel):
     failed: list[FailedImageDelete]
 
 
+class ContainerBulkStopRequest(BaseModel):
+    container_ids: list[str]
+    force: bool = False
+
+
+class ContainerBulkRestartRequest(BaseModel):
+    container_ids: list[str]
+
+
+class ContainerBulkDeleteRequest(BaseModel):
+    container_ids: list[str]
+    force: bool = False
+
+
+class FailedContainerOperation(BaseModel):
+    container_id: str
+    error: str
+
+
+class ContainerBulkStopResponse(BaseModel):
+    stopped: list[str]
+    failed: list[FailedContainerOperation]
+
+
+class ContainerBulkRestartResponse(BaseModel):
+    restarted: list[str]
+    failed: list[FailedContainerOperation]
+
+
+class ContainerBulkDeleteResponse(BaseModel):
+    deleted: list[str]
+    failed: list[FailedContainerOperation]
+
+
 class NetworkInfo(BaseModel):
     id: str
     name: str

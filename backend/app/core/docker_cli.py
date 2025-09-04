@@ -1,7 +1,10 @@
 import json
 import logging
 import subprocess
+import time
 from typing import Any, Dict, List, Optional
+
+from app.core.circuit_breaker import CircuitBreakerOpenException, circuit_breaker
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,8 @@ logger = logging.getLogger(__name__)
 class DockerCLIWrapper:
     def __init__(self):
         self.available = self._test_docker_availability()
+        self._last_availability_check = time.time()
+        self._availability_check_interval = 30  # Check every 30 seconds
 
     def _test_docker_availability(self) -> bool:
         """Test if Docker CLI is available"""
@@ -18,6 +23,7 @@ class DockerCLIWrapper:
             )
             if result.returncode == 0:
                 logger.info(f"Docker CLI available: {result.stdout.strip()}")
+                self._last_availability_check = time.time()
                 return True
             else:
                 logger.error(f"Docker CLI test failed: {result.stderr}")
@@ -26,10 +32,32 @@ class DockerCLIWrapper:
             logger.error(f"Docker CLI not available: {e}")
             return False
 
+    def _check_availability_if_needed(self) -> bool:
+        """Check Docker availability if enough time has passed"""
+        current_time = time.time()
+        if (
+            not self.available
+            and (current_time - self._last_availability_check)
+            >= self._availability_check_interval
+        ):
+            logger.info("Re-checking Docker availability...")
+            self.available = self._test_docker_availability()
+        return self.available
+
+    @circuit_breaker(
+        failure_threshold=3,
+        recovery_timeout=30,
+        expected_exception=(
+            subprocess.SubprocessError,
+            subprocess.TimeoutExpired,
+            Exception,
+        ),
+        name="docker_command",
+    )
     def _run_docker_command(self, command: List[str]) -> Optional[Dict[str, Any]]:
         """Run a docker command and return parsed JSON result"""
-        if not self.available:
-            return None
+        if not self._check_availability_if_needed():
+            raise Exception("Docker CLI not available")
 
         try:
             full_command = ["docker"] + command
@@ -46,22 +74,34 @@ class DockerCLIWrapper:
                         return {"output": result.stdout.strip()}
                 return {"success": True}
             else:
-                logger.error(
+                error_msg = (
                     f"Docker command failed: {' '.join(full_command)}, "
                     f"Error: {result.stderr}"
                 )
-                return None
-        except subprocess.TimeoutExpired:
-            logger.error(f"Docker command timed out: {' '.join(command)}")
-            return None
+                logger.error(error_msg)
+                raise Exception(error_msg)
+        except subprocess.TimeoutExpired as e:
+            error_msg = f"Docker command timed out: {' '.join(command)}"
+            logger.error(error_msg)
+            raise e
         except Exception as e:
             logger.error(f"Error running docker command: {e}")
-            return None
+            raise e
 
+    @circuit_breaker(
+        failure_threshold=3,
+        recovery_timeout=30,
+        expected_exception=(
+            subprocess.SubprocessError,
+            subprocess.TimeoutExpired,
+            Exception,
+        ),
+        name="docker_system_info",
+    )
     def get_system_info(self) -> Dict[str, Any]:
         """Get Docker system information"""
         try:
-            if not self.available:
+            if not self._check_availability_if_needed():
                 return {"status": "disconnected", "error": "Docker CLI not available"}
 
             # Test basic connectivity
@@ -93,25 +133,44 @@ class DockerCLIWrapper:
                             "containers_paused": info_data.get("ContainersPaused", 0),
                             "containers_stopped": info_data.get("ContainersStopped", 0),
                             "images": info_data.get("Images", 0),
+                            "server_version": server_version,
+                            "total_memory": info_data.get("MemTotal", 0),
+                            "cpus": info_data.get("NCPU", 0),
                         }
                     except json.JSONDecodeError:
                         pass
 
                 return {"status": "connected", "docker_version": server_version}
             else:
-                return {
-                    "status": "disconnected",
-                    "error": version_result.stderr.strip(),
-                }
+                error_msg = (
+                    f"Docker version check failed: {version_result.stderr.strip()}"
+                )
+                raise Exception(error_msg)
 
+        except CircuitBreakerOpenException:
+            return {
+                "status": "circuit_open",
+                "error": "Docker service temporarily unavailable",
+            }
         except Exception as e:
-            return {"status": "disconnected", "error": str(e)}
+            logger.error(f"Error getting system info: {e}")
+            raise e
 
+    @circuit_breaker(
+        failure_threshold=3,
+        recovery_timeout=30,
+        expected_exception=(
+            subprocess.SubprocessError,
+            subprocess.TimeoutExpired,
+            Exception,
+        ),
+        name="docker_containers",
+    )
     def get_containers(self, all: bool = True) -> List[Dict[str, Any]]:
         """Get list of containers"""
         try:
-            if not self.available:
-                return []
+            if not self._check_availability_if_needed():
+                raise Exception("Docker CLI not available")
 
             cmd = ["ps", "--format", "json"]
             if all:
@@ -141,12 +200,16 @@ class DockerCLIWrapper:
                             continue
                 return containers
             else:
-                logger.error(f"Failed to get containers: {result.stderr}")
-                return []
+                error_msg = f"Failed to get containers: {result.stderr}"
+                logger.error(error_msg)
+                raise Exception(error_msg)
 
+        except CircuitBreakerOpenException:
+            logger.warning("Circuit breaker open for container operations")
+            return []
         except Exception as e:
             logger.error(f"Error getting containers: {e}")
-            return []
+            raise e
 
     def get_container_stats(self, container_id: str) -> Optional[Dict[str, Any]]:
         """Get container statistics"""
@@ -172,17 +235,27 @@ class DockerCLIWrapper:
             logger.error(f"Error getting container stats: {e}")
             return None
 
+    @circuit_breaker(
+        failure_threshold=3,
+        recovery_timeout=30,
+        expected_exception=(
+            subprocess.SubprocessError,
+            subprocess.TimeoutExpired,
+            Exception,
+        ),
+        name="docker_stats",
+    )
     def get_all_container_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get statistics for all running containers in a single call"""
         try:
-            if not self.available:
-                return {}
+            if not self._check_availability_if_needed():
+                raise Exception("Docker CLI not available")
 
             result = subprocess.run(
                 ["docker", "stats", "--no-stream", "--format", "json"],
                 capture_output=True,
                 text=True,
-                timeout=5,  # Reduced timeout for bulk operation
+                timeout=10,  # Increased timeout for reliability
             )
 
             if result.returncode == 0 and result.stdout.strip():
@@ -202,21 +275,25 @@ class DockerCLIWrapper:
                             )
                             continue
 
-                logger.info(
-                    f"Successfully retrieved bulk stats for {len(stats_dict)}"
-                    " containers"
+                logger.debug(
+                    "Successfully retrieved bulk stats for "
+                    f"{len(stats_dict)} containers"
                 )
                 return stats_dict
             else:
-                logger.warning(f"Docker stats bulk call failed: {result.stderr}")
-                return {}
+                error_msg = f"Docker stats bulk call failed: {result.stderr}"
+                logger.warning(error_msg)
+                raise Exception(error_msg)
 
-        except subprocess.TimeoutExpired:
-            logger.error("Docker stats bulk call timed out")
+        except CircuitBreakerOpenException:
+            logger.warning("Circuit breaker open for stats operations")
             return {}
+        except subprocess.TimeoutExpired as e:
+            logger.error("Docker stats bulk call timed out")
+            raise e
         except Exception as e:
             logger.error(f"Error getting bulk container stats: {e}")
-            return {}
+            raise e
 
     def start_container(self, container_id: str) -> bool:
         """Start a container"""

@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy import and_, desc, func
 
-from app.core.database import SessionLocal
+from app.core.cache import cached
+from app.core.database import SessionLocal, get_db_context
 from app.models.docker_models import (
     ContainerMetrics,
     DockerContainer,
@@ -22,6 +23,7 @@ class DockerDatabaseService:
     def __init__(self):
         pass
 
+    @cached("containers", ttl_seconds=30)
     async def get_containers(self, all: bool = True) -> List[Dict[str, Any]]:
         """Get list of containers from database"""
         try:
@@ -79,8 +81,7 @@ class DockerDatabaseService:
     async def get_container_by_id(self, container_id: str) -> Optional[Dict[str, Any]]:
         """Get container by ID from database"""
         try:
-            db = SessionLocal()
-            try:
+            with get_db_context() as db:
                 container = (
                     db.query(DockerContainer)
                     .filter(
@@ -114,8 +115,6 @@ class DockerDatabaseService:
                         container.updated_at.isoformat() if container.updated_at else ""
                     ),
                 }
-            finally:
-                db.close()
 
         except Exception as e:
             logger.error(f"Error getting container {container_id} from database: {e}")
@@ -166,6 +165,7 @@ class DockerDatabaseService:
             )
             return []
 
+    @cached("images", ttl_seconds=300)
     async def get_images(self) -> List[Dict[str, Any]]:
         """Get list of images from database"""
         try:
@@ -234,6 +234,7 @@ class DockerDatabaseService:
             logger.error(f"Error getting image {image_id} from database: {e}")
             return None
 
+    @cached("volumes", ttl_seconds=300)
     async def get_volumes(self) -> List[Dict[str, Any]]:
         """Get list of volumes from database"""
         try:
@@ -310,6 +311,7 @@ class DockerDatabaseService:
             logger.error(f"Error getting volume {volume_name} from database: {e}")
             return None
 
+    @cached("networks", ttl_seconds=300)
     async def get_networks(self) -> List[Dict[str, Any]]:
         """Get list of networks from database"""
         try:

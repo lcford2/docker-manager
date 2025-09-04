@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from typing import Set
 
+from app.core.cache import invalidate_docker_cache
 from app.services.docker_collection_service import (
     container_collector,
     image_collector,
@@ -75,6 +76,9 @@ class BackgroundTaskManager:
             try:
                 start_time = datetime.now()
                 await container_collector.collect_container_data()
+
+                # Invalidate container cache after collection
+                invalidate_docker_cache()
 
                 duration = (datetime.now() - start_time).total_seconds()
                 logger.debug(f"Container collection completed in {duration:.2f}s")

@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
+from app.core.cache import cached
 from app.core.docker_cli import docker_cli_client
 from app.models.docker_types import SystemInfo
 
@@ -108,6 +109,7 @@ class DockerService:
             logger.error(f"Error getting networks: {e}")
             raise
 
+    @cached("system", ttl_seconds=60)
     def get_system_info(self) -> SystemInfo:
         """Get Docker system information"""
         try:
