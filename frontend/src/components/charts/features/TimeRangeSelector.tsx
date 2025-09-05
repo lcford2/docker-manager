@@ -9,7 +9,6 @@ import {
   DialogContent,
   Stack,
   Typography,
-  Chip,
 } from "@mui/joy";
 import React, { useState, useCallback } from "react";
 import { TimeRange } from "../core/ChartTypes";
@@ -80,17 +79,17 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     }
   };
 
-  const getCurrentRangeLabel = () => {
-    if (selectedRange.preset && selectedRange.preset !== "custom") {
-      return (
-        PRESET_RANGES.find((p) => p.key === selectedRange.preset)?.label ||
-        "Custom"
-      );
-    }
-    const start = new Date(selectedRange.start).toLocaleString();
-    const end = new Date(selectedRange.end).toLocaleString();
-    return `${start} - ${end}`;
-  };
+  // const getCurrentRangeLabel = () => {
+  //   if (selectedRange.preset && selectedRange.preset !== "custom") {
+  //     return (
+  //       PRESET_RANGES.find((p) => p.key === selectedRange.preset)?.label ||
+  //       "Custom"
+  //     );
+  //   }
+  //   const start = new Date(selectedRange.start).toLocaleString();
+  //   const end = new Date(selectedRange.end).toLocaleString();
+  //   return `${start} - ${end}`;
+  // };
 
   return (
     <Box
@@ -126,11 +125,13 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           <DialogTitle>Custom Time Range</DialogTitle>
           <DialogContent>
             {/* Replace with a proper DateTime picker component if available */}
-            <Typography>
-              Date pickers would go here.
-            </Typography>
+            <Typography>Date pickers would go here.</Typography>
           </DialogContent>
-          <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'flex-end' }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{ mt: 2, justifyContent: "flex-end" }}
+          >
             <Button
               variant="plain"
               color="neutral"

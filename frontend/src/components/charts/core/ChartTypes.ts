@@ -54,6 +54,8 @@ export interface ChartThemeConfig {
   colors: {
     cpu: string;
     memory: string;
+    cpuFill: string;
+    memoryFill: string;
     grid: string;
     background: string;
     text: string;
@@ -194,6 +196,8 @@ export const DEFAULT_CHART_CONFIG: EnhancedChartConfig = {
     colors: {
       cpu: "#1976d2",
       memory: "#dc004e",
+      cpuFill: "rgba(37, 99, 235, 0.8)",
+      memoryFill: "rgba(220, 38, 38, 0.8)",
       grid: "#e0e0e0",
       background: "#ffffff",
       text: "#333333",

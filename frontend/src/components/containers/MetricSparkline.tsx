@@ -64,11 +64,15 @@ const MetricSparkline: React.FC<MetricSparklineProps> = ({
             <Line
               type="monotone"
               dataKey="value"
-              stroke={theme.palette[color as ColorPaletteProp]?.[500] || theme.palette.primary[500]}
+              stroke={
+                theme.palette[color as ColorPaletteProp]?.[500] ||
+                theme.palette.primary[500]
+              }
               strokeWidth={2}
               dot={false}
               strokeLinecap="round"
               strokeLinejoin="round"
+              isAnimationActive={false}
             />
           </LineChart>
         ) : (

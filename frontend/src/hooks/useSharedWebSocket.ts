@@ -94,6 +94,23 @@ export const useSharedWebSocket = (
       const cachedContainers =
         apiCacheService.get<ContainerStatsWithHistory[]>("containers");
       if (cachedContainers) {
+        console.log("Cached containers:", cachedContainers);
+        cachedContainers.forEach((container, index) => {
+          console.log(
+            `Cached Container ${index} (${container.name}): sparkline_data =`,
+            container.sparkline_data,
+          );
+          if (container.sparkline_data) {
+            console.log(
+              `- CPU history length: ${container.sparkline_data.cpu?.length || 0}`,
+            );
+            console.log(
+              `- Memory history length: ${container.sparkline_data.memory?.length || 0}`,
+            );
+          }
+        });
+      }
+      if (cachedContainers) {
         setContainers(cachedContainers);
         setLoading(false);
         return;

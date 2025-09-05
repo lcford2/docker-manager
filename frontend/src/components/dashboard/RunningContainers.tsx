@@ -1,9 +1,4 @@
-import {
-  Table,
-  Sheet,
-  Button,
-  Typography,
-} from "@mui/joy";
+import { Table, Sheet, Button } from "@mui/joy";
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -18,7 +13,7 @@ export default function RunningContainers({
   containers,
 }: RunningContainersProps) {
   return (
-    <Sheet variant="outlined" sx={{ p: 2, borderRadius: 'sm' }}>
+    <Sheet variant="outlined" sx={{ p: 2, borderRadius: "sm" }}>
       <Title>Running Containers</Title>
       <Table size="sm">
         <thead>

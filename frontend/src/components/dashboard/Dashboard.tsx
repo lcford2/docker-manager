@@ -1,11 +1,5 @@
 import { ViewInAr, Storage, Image, NetworkCheck } from "@mui/icons-material";
-import {
-  Box,
-  Grid,
-  Sheet,
-  Container,
-  CircularProgress,
-} from "@mui/joy";
+import { Box, Grid, Sheet, Container, CircularProgress } from "@mui/joy";
 import { useTheme } from "@mui/joy/styles";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
@@ -54,6 +48,55 @@ const Dashboard: React.FC = React.memo(() => {
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
+  const isFirstUpdate = useRef(true);
+
+  // const buildHistoricalData = useCallback(
+  //   (containers: ContainerStatsWithHistory[]): ChartDataPoint[] => {
+  //     const allTimestamps = new Set<number>();
+  //     containers.forEach((container) => {
+  //       container.history?.forEach((point) => {
+  //         if (point.timestamp) allTimestamps.add(point.timestamp);
+  //       });
+  //     });
+  //     const uniqueTimes = Array.from(allTimestamps).sort((a, b) => a - b);
+  //     const points: ChartDataPoint[] = [];
+  //     uniqueTimes.forEach((ts) => {
+  //       let totalCpu = 0;
+  //       let totalMemory = 0;
+  //       containers.forEach((container) => {
+  //         let lastCpu = 0;
+  //         let lastMemory = 0;
+  //         if (container.history) {
+  //           for (let i = 0; i < container.history.length; i++) {
+  //             if (container.history[i].timestamp <= ts) {
+  //               lastCpu = container.history[i].cpu_percent || 0;
+  //               lastMemory = container.history[i].memory_percent || 0;
+  //             } else {
+  //               break;
+  //             }
+  //           }
+  //         }
+  //         totalCpu += lastCpu;
+  //         totalMemory += lastMemory;
+  //       });
+  //       const date = new Date(ts);
+  //       const time = date.toLocaleTimeString([], {
+  //         hour: "2-digit",
+  //         minute: "2-digit",
+  //         second: "2-digit",
+  //       });
+  //       points.push({
+  //         time,
+  //         cpu: totalCpu,
+  //         memory: totalMemory,
+  //         timestamp: ts,
+  //       });
+  //     });
+  //     return points;
+  //   },
+  //   [],
+  // );
+
   // Initialize state manager once
   if (!stateManagerRef.current) {
     stateManagerRef.current = new DashboardStateManager(dashboardState);
@@ -80,26 +123,37 @@ const Dashboard: React.FC = React.memo(() => {
           (acc, c) => acc + (c.memory_percent || 0),
           0,
         );
-        const timestamp = new Date().toLocaleTimeString([], {
+        const time = new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
         });
 
         const newPoint: ChartDataPoint = {
-          time: timestamp,
+          time,
           cpu: totalCpu,
           memory: totalMemory,
           timestamp: Date.now(),
         };
 
-        setChartData((prevData) => {
-          const newData = [...prevData, newPoint];
-          if (newData.length > MAX_CHART_DATA_POINTS) {
-            return newData.slice(newData.length - MAX_CHART_DATA_POINTS);
-          }
-          return newData;
-        });
+        if (isFirstUpdate.current) {
+          // const historical = buildHistoricalData(containerStats);
+          // setChartData([...historical, newPoint]);
+          setChartData([newPoint]);
+          isFirstUpdate.current = false;
+        } else {
+          setChartData((prevData) => {
+            const updatedData = [...prevData, newPoint];
+            if (updatedData.length > MAX_CHART_DATA_POINTS) {
+              return updatedData.slice(
+                updatedData.length - MAX_CHART_DATA_POINTS,
+              );
+            }
+            console.log("Updating chartData - new length:", updatedData.length);
+            console.log("Sample point:", updatedData[updatedData.length - 1]);
+            return updatedData;
+          });
+        }
 
         setDashboardState(updatedState);
         console.log("Dashboard updated with WebSocket container data");
@@ -231,6 +285,7 @@ const Dashboard: React.FC = React.memo(() => {
             }}
           >
             <EnhancedResourceChart
+              key={chartData.length}
               initialData={chartData.map((point) => ({
                 timestamp: point.timestamp || Date.now(),
                 time: point.time,
@@ -244,9 +299,9 @@ const Dashboard: React.FC = React.memo(() => {
               }))}
               config={{
                 time: {
-                  precision: "second",
-                  format: "HH:mm:ss",
-                  includeSeconds: true,
+                  precision: "minute",
+                  format: "HH:mm",
+                  includeSeconds: false,
                 },
                 features: {
                   liveUpdates: true,

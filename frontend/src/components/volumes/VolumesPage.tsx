@@ -25,7 +25,7 @@ const VolumesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modal states
-  const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
+  // const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
   const [modalVolume, setModalVolume] = useState<DockerVolume | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 

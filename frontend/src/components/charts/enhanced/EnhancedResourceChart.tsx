@@ -101,9 +101,15 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
           ...DEFAULT_CHART_CONFIG.theme.colors,
           grid: gridColor || DEFAULT_CHART_CONFIG.theme.colors.grid,
           text: textColor || DEFAULT_CHART_CONFIG.theme.colors.text,
-          cpu: cpuColor || DEFAULT_CHART_CONFIG.theme.colors.cpu,
-          memory: memoryColor || DEFAULT_CHART_CONFIG.theme.colors.memory,
+          cpu: cpuColor || "#2563eb",
+          memory: memoryColor || "#dc2626",
+          cpuFill: "rgba(37, 99, 235, 0.8)",
+          memoryFill: "rgba(220, 38, 38, 0.8)",
         },
+      },
+      features: {
+        ...DEFAULT_CHART_CONFIG.features,
+        gradientFill: false,
       },
     }),
     [config, gridColor, textColor, cpuColor, memoryColor],
@@ -115,16 +121,21 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
     isPaused: false,
     error: null,
     selectedTimeRange: {
-      start: Date.now() - 5 * 60 * 1000, // Last 5 minutes
+      start: Date.now() - 60 * 60 * 1000, // Last 60 minutes
       end: Date.now(),
-      preset: "5m",
+      preset: "1h",
     },
     zoomLevel: 1,
     panOffset: { x: 0, y: 0 },
     connectionStatus: "connected",
   });
 
-  const [displayData, setDisplayData] = useState<EnhancedChartDataPoint[]>(initialData);
+  const [displayData, setDisplayData] =
+    useState<EnhancedChartDataPoint[]>(initialData);
+  console.log(
+    "EnhancedResourceChart rendered with initialData length:",
+    initialData.length,
+  );
   const [currentMetrics, setCurrentMetrics] =
     useState<ChartPerformanceMetrics | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -178,7 +189,7 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
   // Effect to handle incoming new data points
   useEffect(() => {
     if (newDataPoints.length > 0 && !chartState.isPaused) {
-      setDisplayData(prevData => {
+      setDisplayData((prevData) => {
         const updatedData = [...prevData, ...newDataPoints];
         if (updatedData.length > MAX_DATA_POINTS) {
           return updatedData.slice(updatedData.length - MAX_DATA_POINTS);
@@ -187,6 +198,14 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
       });
     }
   }, [newDataPoints, chartState.isPaused]);
+
+  useEffect(() => {
+    console.log(
+      "Syncing displayData with initialData length:",
+      initialData.length,
+    );
+    setDisplayData([...initialData]);
+  }, [initialData]);
 
   // Processed chart data with performance optimization
   const processedData = useMemo(() => {
@@ -200,7 +219,8 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
       chartState.selectedTimeRange.start,
       chartState.selectedTimeRange.end,
     );
-
+    console.log("Processed data length:", rawData.length);
+    console.log("Selected time range:", chartState.selectedTimeRange);
     return rawData;
   }, [displayData, chartState.selectedTimeRange]);
 
@@ -208,7 +228,6 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
 
   // Performance monitoring with throttling and automatic optimization
   const lastPerformanceUpdate = useRef<number>(0);
-  const poorPerformanceCount = useRef<number>(0);
 
   const handlePerformanceUpdate = useCallback(
     (metrics: ChartPerformanceMetrics) => {
@@ -224,9 +243,9 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
 
       // Remove duplicate performance monitoring - engines already handle this
       // The PerformanceMonitor.endProfiling was causing duplicate memory alerts
-
-
-    }, [onPerformanceUpdate]);
+    },
+    [onPerformanceUpdate],
+  );
 
   // Control handlers
   const handlePlayPause = useCallback(() => {
@@ -299,6 +318,10 @@ const EnhancedResourceChart: React.FC<EnhancedResourceChartProps> = ({
       );
     }
 
+    console.log(
+      "Rendering chart with processedData length:",
+      processedData.length,
+    );
     return currentEngine.render({
       data: processedData,
       config: chartConfig,

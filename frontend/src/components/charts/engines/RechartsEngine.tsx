@@ -109,20 +109,88 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
     }
   }, [data, onPerformanceUpdate]);
 
-  // Memoized chart data processing
-  const processedData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+  const parseTime = (timeStr: string): number => {
+    const parts = timeStr.split(":").map(Number);
+    let seconds = 0;
+    if (parts.length >= 2) {
+      seconds += parts[0] * 3600 + parts[1] * 60;
+    }
+    if (parts.length === 3) {
+      seconds += parts[2];
+    }
+    return seconds;
+  };
 
-    return data.map((point) => ({
+  const formatTime = (
+    totalSeconds: number,
+    includeSeconds: boolean,
+  ): string => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    if (includeSeconds) {
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    } else {
+      return `${pad(hours)}:${pad(minutes)}`;
+    }
+  };
+
+  // Memoized chart data processing with backfilling
+  const processedData = useMemo(() => {
+    if (!data || data.length < 2) {
+      return data.map((point) => ({
+        ...point,
+        cpu: Number(point.cpu) || 0,
+        memory: Number(point.memory) || 0,
+        cpuFormatted: `${(Number(point.cpu) || 0).toFixed(1)}%`,
+        memoryFormatted: `${(Number(point.memory) || 0).toFixed(1)}%`,
+      }));
+    }
+
+    const sortedData = [...data].sort(
+      (a, b) => parseTime(a.time) - parseTime(b.time),
+    );
+    const times = sortedData.map((p) => parseTime(p.time));
+    let minDelta = Infinity;
+    for (let i = 1; i < times.length; i++) {
+      const d = times[i] - times[i - 1];
+      if (d > 0) minDelta = Math.min(minDelta, d);
+    }
+    if (minDelta === Infinity || minDelta === 0) {
+      return sortedData.map((point) => ({
+        ...point,
+        cpu: Number(point.cpu) || 0,
+        memory: Number(point.memory) || 0,
+        cpuFormatted: `${(Number(point.cpu) || 0).toFixed(1)}%`,
+        memoryFormatted: `${(Number(point.memory) || 0).toFixed(1)}%`,
+      }));
+    }
+
+    const includeSeconds = config.time.includeSeconds;
+    const backfilled: EnhancedChartDataPoint[] = [sortedData[0]];
+    for (let i = 1; i < sortedData.length; i++) {
+      const prevTime = times[i - 1];
+      const currTime = times[i];
+      let fillTime = prevTime + minDelta;
+      while (fillTime < currTime) {
+        backfilled.push({
+          ...sortedData[i - 1],
+          time: formatTime(fillTime, includeSeconds),
+        });
+        fillTime += minDelta;
+      }
+      backfilled.push(sortedData[i]);
+    }
+
+    return backfilled.map((point) => ({
       ...point,
-      // Ensure numeric values for better chart rendering
       cpu: Number(point.cpu) || 0,
       memory: Number(point.memory) || 0,
-      // Add formatted values for tooltips
       cpuFormatted: `${(Number(point.cpu) || 0).toFixed(1)}%`,
       memoryFormatted: `${(Number(point.memory) || 0).toFixed(1)}%`,
     }));
-  }, [data]);
+  }, [data, config.time.includeSeconds]);
 
   // Calculate dynamic Y-axis domain
   const yAxisDomain = useMemo(() => {
@@ -139,6 +207,26 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
 
     return [Math.floor(min), Math.ceil(max)];
   }, [processedData]);
+
+  const yTicks = useMemo(() => {
+    const [minDomain, maxDomain] = yAxisDomain;
+    const desiredTickCount = 4;
+    const ticks: number[] = [];
+    if (maxDomain <= minDomain) {
+      return [minDomain];
+    }
+    const maxInterval = (maxDomain - minDomain) / (desiredTickCount - 1);
+    let interval = Math.floor(maxInterval / 5) * 5;
+    interval = interval > 0 ? interval : 5;
+    const start = Math.ceil(minDomain / interval) * interval;
+    let current = start;
+    while (current <= maxDomain) {
+      ticks.push(current);
+      current += interval;
+    }
+    console.log(`Got ticks ${ticks} for [${minDomain}, ${maxDomain}]`);
+    return ticks;
+  }, [yAxisDomain]);
 
   // Format X-axis tick labels
   const formatXAxisTick = useCallback(
@@ -261,7 +349,7 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
           <YAxis
             stroke={theme.palette.text.tertiary}
             domain={yAxisDomain}
-            tickCount={4}
+            ticks={yTicks}
             label={{
               value: "Usage (%)",
               angle: -90,
@@ -308,8 +396,8 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
                 type="monotone"
                 dataKey="cpu"
                 stroke={config.theme.colors.cpu}
-                fillOpacity={1}
-                fill="url(#cpuGradient)"
+                fillOpacity={0.8}
+                fill={config.theme.colors.cpuFill}
                 strokeWidth={2}
                 dot={false}
                 name="CPU %"
@@ -321,8 +409,8 @@ const RechartsChart: React.FC<RechartsChartProps> = ({
                 type="monotone"
                 dataKey="memory"
                 stroke={config.theme.colors.memory}
-                fillOpacity={1}
-                fill="url(#memoryGradient)"
+                fillOpacity={0.8}
+                fill={config.theme.colors.memoryFill}
                 strokeWidth={2}
                 dot={false}
                 name="Memory %"
