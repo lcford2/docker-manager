@@ -73,85 +73,94 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {networks.map((network) => (
-            <tr key={network.id}>
-              <td style={{ padding: "12px 6px" }}>
-                <Checkbox
-                  checked={selected.includes(network.id)}
-                  onChange={(event) => {
-                    setSelected((ids) =>
-                      event.target.checked
-                        ? ids.concat(network.id)
-                        : ids.filter((nId) => nId !== network.id),
-                    );
-                  }}
-                />
-              </td>
-              <td>
-                <Typography noWrap level="body-sm">
-                  {network.name}
-                </Typography>
-              </td>
-              <td>
-                <Typography noWrap level="body-sm">
-                  {network.id.substring(0, 12)}
-                </Typography>
-              </td>
-              <td>
-                <Chip size="sm" color="primary">
-                  {network.driver}
-                </Chip>
-              </td>
-              <td>
-                <Typography level="body-sm">{network.scope}</Typography>
-              </td>
-              <td>
-                <Typography level="body-sm">
-                  {network.ipam?.config?.[0]?.subnet ?? "N/A"}
-                </Typography>
-              </td>
-              <td>
-                <Typography level="body-sm">
-                  {formatDateTime(network.created)}
-                </Typography>
-              </td>
-              <td>
-                <ButtonGroup
-                  aria-label="Network actions"
-                  variant="soft"
-                  size="sm"
-                  sx={{ display: { xs: "none", xl: "flex" } }}
-                >
-                  <Button color="neutral" size="sm">
-                    Details
-                  </Button>
-                  <Button color="danger" size="sm">
-                    Remove
-                  </Button>
-                </ButtonGroup>
-                <Box sx={{ display: { xs: "block", xl: "none" } }}>
-                  <Dropdown>
-                    <MenuButton
-                      slots={{ root: IconButton }}
-                      slotProps={{
-                        root: {
-                          variant: "plain",
-                          color: "neutral",
-                          size: "sm",
-                        },
-                      }}
-                    >
-                      <MoreHoriz />
-                    </MenuButton>
-                    <Menu>
-                      <MenuItem>Details</MenuItem>
-                      <MenuItem color="danger">Remove</MenuItem>
-                    </Menu>
-                  </Dropdown>
-                </Box>
-              </td>
-            </tr>
-          ))}
+          {networks.map((network) => {
+            const handleSelectionChange = (isChecked: boolean) => {
+              const newSelected = isChecked
+                ? selected.concat(network.id)
+                : selected.filter((nId) => nId !== network.id);
+              setSelected(newSelected);
+            };
+            return (
+              <tr
+                key={network.id}
+                onClick={() =>
+                  handleSelectionChange(!selected.includes(network.name))
+                }
+              >
+                <td style={{ padding: "12px 6px" }}>
+                  <Checkbox
+                    checked={selected.includes(network.id)}
+                    onChange={(event) => {
+                      handleSelectionChange(event.target.checked);
+                    }}
+                  />
+                </td>
+                <td>
+                  <Typography noWrap level="body-sm">
+                    {network.name}
+                  </Typography>
+                </td>
+                <td>
+                  <Typography noWrap level="body-sm">
+                    {network.id.substring(0, 12)}
+                  </Typography>
+                </td>
+                <td>
+                  <Chip size="sm" color="primary">
+                    {network.driver}
+                  </Chip>
+                </td>
+                <td>
+                  <Typography level="body-sm">{network.scope}</Typography>
+                </td>
+                <td>
+                  <Typography level="body-sm">
+                    {network.ipam?.config?.[0]?.subnet ?? "N/A"}
+                  </Typography>
+                </td>
+                <td>
+                  <Typography level="body-sm">
+                    {formatDateTime(network.created)}
+                  </Typography>
+                </td>
+                <td>
+                  <ButtonGroup
+                    aria-label="Network actions"
+                    variant="soft"
+                    size="sm"
+                    sx={{ display: { xs: "none", xl: "flex" } }}
+                  >
+                    <Button color="neutral" size="sm">
+                      Details
+                    </Button>
+                    <Button color="danger" size="sm">
+                      Remove
+                    </Button>
+                  </ButtonGroup>
+                  <Box sx={{ display: { xs: "block", xl: "none" } }}>
+                    <Dropdown>
+                      <MenuButton
+                        slots={{ root: IconButton }}
+                        slotProps={{
+                          root: {
+                            variant: "plain",
+                            color: "neutral",
+                            size: "sm",
+                          },
+                        }}
+                      >
+                        <MoreHoriz />
+                      </MenuButton>
+                      <Menu>
+                        <MenuItem>Details</MenuItem>
+                        <MenuItem color="danger">Remove</MenuItem>
+                      </Menu>
+                    </Dropdown>
+                  </Box>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </Table>
     </Sheet>

@@ -61,7 +61,7 @@ const NetworksPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -131,7 +131,9 @@ const NetworksPage: React.FC = () => {
       )}
 
       {/* Networks Table */}
-      <NetworksTable networks={filteredNetworks} />
+      <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+        <NetworksTable networks={filteredNetworks} />
+      </Box>
     </Box>
   );
 };

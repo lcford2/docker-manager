@@ -25,7 +25,7 @@ const VolumesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modal states
-  // const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
+  const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
   const [modalVolume, setModalVolume] = useState<DockerVolume | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -134,7 +134,7 @@ const VolumesPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -200,11 +200,13 @@ const VolumesPage: React.FC = () => {
       )}
 
       {/* Volumes Table */}
-      <VolumesTable
-        volumes={filteredVolumes}
-        onVolumeClick={handleVolumeClick}
-        onVolumeRemove={handleVolumeRemove}
-      />
+      <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+        <VolumesTable
+          volumes={filteredVolumes}
+          onVolumeClick={handleVolumeClick}
+          onVolumeRemove={handleVolumeRemove}
+        />
+      </Box>
 
       {/* Volume Details Modal */}
       <VolumeModal

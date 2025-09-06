@@ -12,6 +12,7 @@ interface RunningContainersProps {
 export default function RunningContainers({
   containers,
 }: RunningContainersProps) {
+  console.log(containers);
   return (
     <Sheet variant="outlined" sx={{ p: 2, borderRadius: "sm" }}>
       <Title>Running Containers</Title>

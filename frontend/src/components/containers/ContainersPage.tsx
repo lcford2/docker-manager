@@ -17,19 +17,15 @@ import ConfirmDialog from "../common/ConfirmDialog";
 
 import ContainersTable from "./ContainersTable";
 import ContainerMetricsModal from "./ContainerMetricsModal";
+import { useDockerStore } from "../../store/dockerStore";
 
 const ContainersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedContainer, setSelectedContainer] = useState<string | null>(
-    null,
-  );
   const [modalContainer, setModalContainer] =
     useState<ContainerStatsWithHistory | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedContainers, setSelectedContainers] = useState<
     readonly string[]
   >([]);
-  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -48,44 +44,23 @@ const ContainersPage: React.FC = () => {
     isConnected,
     containers,
     error: wsError,
+    loading,
     refresh,
-  } = useSharedWebSocket({
-    onContainerStats: (containerStats: ContainerStatsWithHistory[]) => {
-      console.log("ContainersPage updated with WebSocket container data");
-      setLoading(false); // Mark as loaded when we receive data
-    },
-  });
+  } = useSharedWebSocket({});
 
-  // Clear loading state when WebSocket connects, even if no containers
+  const { error, setError } = useDockerStore();
+
+  // Effect to sync modalContainer with updated containers data (for real-time updates)
   useEffect(() => {
-    if (isConnected) {
-      // Give a brief moment for initial data, then clear loading
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 2000); // 2 second timeout
-
-      return () => clearTimeout(timer);
-    }
-  }, [isConnected]);
-
-  // NEW: Effect to sync modalContainer with updated containers data (for real-time updates)
-  useEffect(() => {
-    if (selectedContainer && modalContainer) {
+    if (modalContainer) {
       const updatedContainer = containers.find(
-        (c) => c.id === selectedContainer,
+        (c) => c.id === modalContainer.id,
       );
-      if (updatedContainer && updatedContainer !== modalContainer) {
-        // Only update if the data has meaningfully changed (avoids unnecessary re-renders)
-        if (
-          updatedContainer.cpu_percent !== modalContainer.cpu_percent ||
-          updatedContainer.memory_percent !== modalContainer.memory_percent
-          // Add other key fields as needed, e.g., JSON.stringify(updatedContainer.sparkline_data) !== JSON.stringify(modalContainer.sparkline_data)
-        ) {
-          setModalContainer(updatedContainer);
-        }
+      if (updatedContainer) {
+        setModalContainer(updatedContainer as ContainerStatsWithHistory);
       }
     }
-  }, [containers, selectedContainer, modalContainer]);
+  }, [containers, modalContainer]);
 
   // Filter containers based on search term
   const filteredContainers = containers.filter(
@@ -97,67 +72,70 @@ const ContainersPage: React.FC = () => {
 
   const handleContainerClick = useCallback(
     (containerId: string) => {
-      setSelectedContainer(containerId);
       const container = containers.find((c) => c.id === containerId);
       if (container) {
-        setModalContainer(container);
+        setModalContainer(container as ContainerStatsWithHistory);
       }
     },
     [containers],
   );
 
   const handleCloseModal = useCallback(() => {
-    setSelectedContainer(null);
     setModalContainer(null);
   }, []);
 
   const handleRefresh = useCallback(() => {
-    // Use the shared WebSocket refresh function
     refresh();
   }, [refresh]);
 
   // Individual container action handlers
-  const confirmStopContainer = useCallback(async (containerId: string) => {
-    setActionLoading("stop");
-    setConfirmDialog((prev) => ({ ...prev, open: false }));
+  const confirmStopContainer = useCallback(
+    async (containerId: string) => {
+      setActionLoading("stop");
+      setConfirmDialog((prev) => ({ ...prev, open: false }));
 
-    try {
-      await dockerAPI.stopContainer(containerId);
-      // WebSocket will automatically update the container list
-    } catch (err: any) {
-      setError(err.message || "Failed to stop container");
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
+      try {
+        await dockerAPI.stopContainer(containerId);
+      } catch (err: any) {
+        setError(err.message || "Failed to stop container");
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [setError],
+  );
 
-  const confirmRestartContainer = useCallback(async (containerId: string) => {
-    setActionLoading("restart");
-    setConfirmDialog((prev) => ({ ...prev, open: false }));
+  const confirmRestartContainer = useCallback(
+    async (containerId: string) => {
+      setActionLoading("restart");
+      setConfirmDialog((prev) => ({ ...prev, open: false }));
 
-    try {
-      await dockerAPI.restartContainer(containerId);
-      // WebSocket will automatically update the container list
-    } catch (err: any) {
-      setError(err.message || "Failed to restart container");
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
+      try {
+        await dockerAPI.restartContainer(containerId);
+      } catch (err: any) {
+        setError(err.message || "Failed to restart container");
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [setError],
+  );
 
-  const confirmRemoveContainer = useCallback(async (containerId: string) => {
-    setActionLoading("remove");
-    setConfirmDialog((prev) => ({ ...prev, open: false }));
+  const confirmRemoveContainer = useCallback(
+    async (containerId: string) => {
+      setActionLoading("remove");
+      setConfirmDialog((prev) => ({ ...prev, open: false }));
 
-    try {
-      await dockerAPI.removeContainer(containerId);
-      // WebSocket will automatically update the container list
-    } catch (err: any) {
-      setError(err.message || "Failed to remove container");
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
+      try {
+        await dockerAPI.removeContainer(containerId);
+      } catch (err: any) {
+        setError(err.message || "Failed to remove container");
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [setError],
+  );
 
   const handleContainerStop = useCallback(
     (containerId: string) => {
@@ -211,14 +189,13 @@ const ContainersPage: React.FC = () => {
 
     try {
       await dockerAPI.bulkStopContainers(selectedContainers as string[]);
-      // WebSocket will automatically update the container list
-      setSelectedContainers([]); // Clear selection
+      setSelectedContainers([]);
     } catch (err: any) {
       setError(err.message || "Failed to stop containers");
     } finally {
       setActionLoading(null);
     }
-  }, [selectedContainers]);
+  }, [selectedContainers, setError]);
 
   const confirmBulkRestartContainers = useCallback(async () => {
     setActionLoading("restart-bulk");
@@ -226,14 +203,13 @@ const ContainersPage: React.FC = () => {
 
     try {
       await dockerAPI.bulkRestartContainers(selectedContainers as string[]);
-      // WebSocket will automatically update the container list
-      setSelectedContainers([]); // Clear selection
+      setSelectedContainers([]);
     } catch (err: any) {
       setError(err.message || "Failed to restart containers");
     } finally {
       setActionLoading(null);
     }
-  }, [selectedContainers]);
+  }, [selectedContainers, setError]);
 
   const confirmBulkRemoveContainers = useCallback(async () => {
     setActionLoading("remove-bulk");
@@ -241,14 +217,13 @@ const ContainersPage: React.FC = () => {
 
     try {
       await dockerAPI.bulkRemoveContainers(selectedContainers as string[]);
-      // WebSocket will automatically update the container list
-      setSelectedContainers([]); // Clear selection
+      setSelectedContainers([]);
     } catch (err: any) {
       setError(err.message || "Failed to remove containers");
     } finally {
       setActionLoading(null);
     }
-  }, [selectedContainers]);
+  }, [selectedContainers, setError]);
 
   const handleBulkContainerStop = useCallback(() => {
     setConfirmDialog({
@@ -296,7 +271,7 @@ const ContainersPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -403,15 +378,17 @@ const ContainersPage: React.FC = () => {
       )}
 
       {/* Container Metrics Table */}
-      <ContainersTable
-        containers={filteredContainers}
-        selected={selectedContainers}
-        onSelectionChange={setSelectedContainers}
-        onContainerClick={handleContainerClick}
-        onContainerStop={handleContainerStop}
-        onContainerRestart={handleContainerRestart}
-        onContainerRemove={handleContainerRemove}
-      />
+      <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+        <ContainersTable
+          containers={filteredContainers as ContainerStatsWithHistory[]}
+          selected={selectedContainers}
+          onSelectionChange={setSelectedContainers}
+          onContainerClick={handleContainerClick}
+          onContainerStop={handleContainerStop}
+          onContainerRestart={handleContainerRestart}
+          onContainerRemove={handleContainerRemove}
+        />
+      </Box>
 
       {/* Container Metrics Modal */}
       <ContainerMetricsModal

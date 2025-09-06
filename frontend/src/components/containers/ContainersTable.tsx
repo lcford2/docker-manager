@@ -14,10 +14,7 @@ import {
   Table,
   Typography,
 } from "@mui/joy";
-import {
-  ArrowDownward,
-  MoreHoriz,
-} from "@mui/icons-material";
+import { ArrowDownward, MoreHoriz } from "@mui/icons-material";
 import React from "react";
 import { ContainerStatsWithHistory } from "../../types/metrics";
 
@@ -49,11 +46,18 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
     } else if (status.startsWith("created")) {
       color = "warning";
     }
-    return <Chip color={color} size="sm">{status}</Chip>;
+    return (
+      <Chip color={color} size="sm">
+        {status}
+      </Chip>
+    );
   };
 
   return (
-    <Sheet variant="outlined" sx={{ width: "100%", boxShadow: "sm", borderRadius: "sm" }}>
+    <Sheet
+      variant="outlined"
+      sx={{ width: "100%", boxShadow: "sm", borderRadius: "sm" }}
+    >
       <Table aria-label="Containers table" stickyHeader>
         <thead>
           <tr>
@@ -65,7 +69,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 checked={selected.length === containers.length}
                 onChange={(event) => {
                   onSelectionChange(
-                    event.target.checked ? containers.map((c) => c.id) : []
+                    event.target.checked ? containers.map((c) => c.id) : [],
                   );
                 }}
               />
@@ -90,84 +94,147 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {containers.map((container) => (
-            <tr key={container.id}>
-              <td style={{ padding: "12px 6px" }}>
-                <Checkbox
-                  checked={selected.includes(container.id)}
-                  onChange={(event) => {
-                    const newSelected = event.target.checked
-                      ? selected.concat(container.id)
-                      : selected.filter((cId) => cId !== container.id);
-                    onSelectionChange(newSelected);
-                  }}
-                />
-              </td>
-              <td>
-                <Typography noWrap level="body-sm">{container.name}</Typography>
-              </td>
-              <td>
-                <Typography noWrap level="body-sm">{container.id.substring(0, 12)}</Typography>
-              </td>
-              <td>
-                <Typography noWrap level="body-sm">{container.image || 'N/A'}</Typography>
-              </td>
-              <td>{renderStatusChip(container.status)}</td>
-              <td>
-                <Typography level="body-sm">{(container.cpu_percent ?? 0).toFixed(2)}</Typography>
-              </td>
-              <td>
-                <Typography level="body-sm">{(container.memory_percent ?? 0).toFixed(2)}</Typography>
-              </td>
-              <td>
-                <Box sx={{ display: { xs: 'none', xl: 'flex' }, textAlign: 'center' }}>
-                  <ButtonGroup
-                    aria-label="Container actions"
-                    variant="soft"
-                    size="sm"
-                    // sx={{ display: { xs: 'none', xl: 'flex' }, margin: '0 auto' }}
+          {containers.map((container) => {
+            const handleSelectionChange = (isChecked: boolean) => {
+              const newSelected = isChecked
+                ? selected.concat(container.id)
+                : selected.filter((cId) => cId !== container.id);
+              onSelectionChange(newSelected);
+            };
+            return (
+              <tr
+                key={container.id}
+                onClick={() =>
+                  handleSelectionChange(!selected.includes(container.id))
+                }
+              >
+                <td style={{ padding: "12px 6px" }}>
+                  <Checkbox
+                    checked={selected.includes(container.id)}
+                    onChange={(event) => {
+                      handleSelectionChange(event.target.checked);
+                    }}
+                  />
+                </td>
+                <td>
+                  <Typography noWrap level="body-sm">
+                    {container.name}
+                  </Typography>
+                </td>
+                <td>
+                  <Typography noWrap level="body-sm">
+                    {container.id.substring(0, 12)}
+                  </Typography>
+                </td>
+                <td>
+                  <Typography noWrap level="body-sm">
+                    {container.image || "N/A"}
+                  </Typography>
+                </td>
+                <td>{renderStatusChip(container.status)}</td>
+                <td>
+                  <Typography level="body-sm">
+                    {(container.cpu_percent ?? 0).toFixed(2)}
+                  </Typography>
+                </td>
+                <td>
+                  <Typography level="body-sm">
+                    {(container.memory_percent ?? 0).toFixed(2)}
+                  </Typography>
+                </td>
+                <td>
+                  <Box
+                    sx={{
+                      display: { xs: "none", xl: "flex" },
+                      textAlign: "center",
+                    }}
                   >
-                    <Button color="neutral" size="sm" onClick={() => onContainerClick(container.id)}>
-                      Details
-                    </Button>
-                    <Button color="warning" size="sm" onClick={() => onContainerStop(container.id)}>
-                      Stop
-                    </Button>
-                    <Button color="primary" size="sm" onClick={() => onContainerRestart(container.id)}>
-                      Restart
-                    </Button>
-                    <Button color="danger" size="sm" onClick={() => onContainerRemove(container.id)}>
-                      Remove
-                    </Button>
-                  </ButtonGroup>
-                </Box>
-                <Box sx={{ display: { xs: 'block', xl: 'none' }, textAlign: 'center' }}>
-                  <Dropdown>
-                    <MenuButton
-                      slots={{ root: IconButton }}
-                      slotProps={{ root: { variant: "plain", color: "neutral", size: "sm" } }}
+                    <ButtonGroup
+                      aria-label="Container actions"
+                      variant="soft"
+                      size="sm"
+                      // sx={{ display: { xs: 'none', xl: 'flex' }, margin: '0 auto' }}
                     >
-                      <MoreHoriz />
-                    </MenuButton>
-                    <Menu>
-                      <MenuItem onClick={() => onContainerClick(container.id)}>
+                      <Button
+                        color="neutral"
+                        size="sm"
+                        onClick={() => onContainerClick(container.id)}
+                      >
                         Details
-                      </MenuItem>
-                      <MenuItem color="warning" onClick={() => onContainerStop(container.id)}>
+                      </Button>
+                      <Button
+                        color="warning"
+                        size="sm"
+                        onClick={() => onContainerStop(container.id)}
+                      >
                         Stop
-                      </MenuItem>
-                      <MenuItem color="primary" onClick={() => onContainerRestart(container.id)}>
+                      </Button>
+                      <Button
+                        color="primary"
+                        size="sm"
+                        onClick={() => onContainerRestart(container.id)}
+                      >
                         Restart
-                      </MenuItem>
-                      <MenuItem color="danger" onClick={() => onContainerRemove(container.id)}>
+                      </Button>
+                      <Button
+                        color="danger"
+                        size="sm"
+                        onClick={() => onContainerRemove(container.id)}
+                      >
                         Remove
-                      </MenuItem>
-                    </Menu>
-                  </Dropdown>
-                </Box>
-              </td>
-            </tr>
-          ))}
+                      </Button>
+                    </ButtonGroup>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: { xs: "block", xl: "none" },
+                      textAlign: "center",
+                    }}
+                  >
+                    <Dropdown>
+                      <MenuButton
+                        slots={{ root: IconButton }}
+                        slotProps={{
+                          root: {
+                            variant: "plain",
+                            color: "neutral",
+                            size: "sm",
+                          },
+                        }}
+                      >
+                        <MoreHoriz />
+                      </MenuButton>
+                      <Menu>
+                        <MenuItem
+                          onClick={() => onContainerClick(container.id)}
+                        >
+                          Details
+                        </MenuItem>
+                        <MenuItem
+                          color="warning"
+                          onClick={() => onContainerStop(container.id)}
+                        >
+                          Stop
+                        </MenuItem>
+                        <MenuItem
+                          color="primary"
+                          onClick={() => onContainerRestart(container.id)}
+                        >
+                          Restart
+                        </MenuItem>
+                        <MenuItem
+                          color="danger"
+                          onClick={() => onContainerRemove(container.id)}
+                        >
+                          Remove
+                        </MenuItem>
+                      </Menu>
+                    </Dropdown>
+                  </Box>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </Table>
     </Sheet>

@@ -80,16 +80,24 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
         <tbody>
           {images.map((image) => {
             const isDangling = isDanglingImage(image.repository, image.tag);
+            const handleSelectionChange = (isChecked: boolean) => {
+              const newSelected = isChecked
+                ? selected.concat(image.id)
+                : selected.filter((imgId) => imgId !== image.id);
+              onSelectionChange(newSelected);
+            };
             return (
-              <tr key={image.id} onClick={() => onImageClick(image.id)}>
+              <tr
+                key={image.id}
+                onClick={() =>
+                  handleSelectionChange(!selected.includes(image.id))
+                }
+              >
                 <td style={{ padding: "12px 6px" }}>
                   <Checkbox
                     checked={selected.includes(image.id)}
                     onChange={(event) => {
-                      const newSelected = event.target.checked
-                        ? selected.concat(image.id)
-                        : selected.filter((imgId) => imgId !== image.id);
-                      onSelectionChange(newSelected);
+                      handleSelectionChange(event.target.checked);
                     }}
                   />
                 </td>
