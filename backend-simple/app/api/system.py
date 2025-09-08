@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.database import get_db
 from app.core.logging import get_logger
 from app.models.system_info import SystemInfo
 from app.schemas.system_info import SystemInfoResponse
 from app.services.auth import verify_token
-from app.services.db import get_db
 from app.services.docker_stats import stats_collector
 from app.utils import timing_decorator
 

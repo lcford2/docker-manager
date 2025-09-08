@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
+import aiohttp
 import docker
 
 from app.core.config import settings
@@ -22,6 +23,7 @@ class DockerStatsCollector:
         self._stats_cache = {}
         self._cache_timestamp = None
         self._cache_ttl = settings.cache_ttl_seconds
+        self.base_url = "http://localhost/v1.41"  # Docker API version
 
     def get_docker_client_status(self):
         """Check if Docker client is available"""
@@ -31,77 +33,160 @@ class DockerStatsCollector:
         except Exception as e:
             return {"status": "disconnected", "error": str(e)}
 
+    async def _get_container_stats_async(self, session, container_id, base_url):
+        """Get stats for a single container asynchronously"""
+        url = f"{base_url}/containers/{container_id}/stats?stream=false"
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return container_id, await response.json()
+                else:
+                    logger.warning(
+                        f"Error fetching stats for {container_id}: "
+                        f"HTTP {response.status}"
+                    )
+                    return container_id, None
+        except Exception as e:
+            logger.warning(f"Error fetching stats for {container_id}: {e}")
+            return container_id, None
+
+    def _parse_container_stats(self, container, stats_data):
+        """Parse container stats data into the expected format"""
+        container_data = {
+            "id": container.id[:12],  # Short ID
+            "name": container.name,
+            "status": container.status,
+            "image": container.image.tags[0] if container.image.tags else "unknown",
+            "cpu_percent": 0.0,
+            "memory_percent": 0.0,
+            "memory_usage": 0,
+            "memory_limit": 0,
+            "network_rx": 0,
+            "network_tx": 0,
+            "block_read": 0,
+            "block_write": 0,
+            "timestamp": datetime.now(timezone.utc),
+            "is_active": container.status == "running",
+        }
+
+        # Parse stats if available and container is running
+        if container.status == "running" and stats_data:
+            try:
+                # CPU percentage
+                cpu_delta = (
+                    stats_data["cpu_stats"]["cpu_usage"]["total_usage"]
+                    - stats_data["precpu_stats"]["cpu_usage"]["total_usage"]
+                )
+                system_delta = (
+                    stats_data["cpu_stats"]["system_cpu_usage"]
+                    - stats_data["precpu_stats"]["system_cpu_usage"]
+                )
+
+                if system_delta > 0 and cpu_delta > 0:
+                    container_data["cpu_percent"] = (cpu_delta / system_delta) * 100.0
+
+                # Memory stats
+                mem_stats = stats_data["memory_stats"]
+                if "usage" in mem_stats and "limit" in mem_stats:
+                    container_data["memory_usage"] = mem_stats["usage"]
+                    container_data["memory_limit"] = mem_stats["limit"]
+                    if mem_stats["limit"] > 0:
+                        container_data["memory_percent"] = (
+                            mem_stats["usage"] / mem_stats["limit"]
+                        ) * 100.0
+
+                # Network stats
+                networks = stats_data.get("networks", {})
+                for network in networks.values():
+                    container_data["network_rx"] += network.get("rx_bytes", 0)
+                    container_data["network_tx"] += network.get("tx_bytes", 0)
+
+                # Block I/O stats
+                blkio_stats = stats_data.get("blkio_stats", {})
+                if "io_service_bytes_recursive" in blkio_stats:
+                    for item in blkio_stats["io_service_bytes_recursive"] or []:
+                        if item["op"] == "Read":
+                            container_data["block_read"] += item["value"]
+                        elif item["op"] == "Write":
+                            container_data["block_write"] += item["value"]
+
+            except Exception as e:
+                logger.warning(
+                    f"Error parsing stats for container {container.name}: {e}"
+                )
+
+        return container_data
+
+    async def collect_container_stats_async(self) -> List[Dict]:
+        """Collect current container stats from Docker API asynchronously"""
+        try:
+            # Get all containers first (synchronous call, but fast)
+            docker_containers = self.docker_client.containers.list(all=True)
+
+            if not docker_containers:
+                return []
+
+            # Prepare containers data structure
+            containers = []
+            running_containers = []
+
+            # Separate running containers that need stats
+            for container in docker_containers:
+                if container.status == "running":
+                    running_containers.append(container)
+
+            # Fetch stats asynchronously for running containers
+            stats_results = {}
+            if running_containers:
+                connector = aiohttp.UnixConnector(path="/var/run/docker.sock")
+                async with aiohttp.ClientSession(connector=connector) as session:
+                    tasks = [
+                        self._get_container_stats_async(
+                            session, container.id, self.base_url
+                        )
+                        for container in running_containers
+                    ]
+                    results = await asyncio.gather(*tasks)
+                    stats_results = dict(results)
+
+            # Process all containers (running and non-running)
+            for container in docker_containers:
+                try:
+                    stats_data = stats_results.get(container.id)
+                    container_data = self._parse_container_stats(container, stats_data)
+                    containers.append(container_data)
+                except Exception as e:
+                    logger.warning(f"Error processing container {container.name}: {e}")
+
+            return containers
+
+        except Exception as e:
+            logger.error(f"Error collecting container stats: {e}")
+            return []
+
+    # Keep the synchronous version as a fallback
     def collect_container_stats(self) -> List[Dict]:
-        """Collect current container stats from Docker API"""
+        """Collect current container stats from Docker API (synchronous fallback)"""
+        try:
+            return asyncio.run(self.collect_container_stats_async())
+        except Exception as e:
+            logger.error(f"Error in async stats collection, falling back to sync: {e}")
+            return self._collect_container_stats_sync_fallback()
+
+    def _collect_container_stats_sync_fallback(self) -> List[Dict]:
+        """Synchronous fallback for collecting container stats"""
         try:
             containers = []
             docker_containers = self.docker_client.containers.list(all=True)
 
             for container in docker_containers:
                 try:
-                    container_data = {
-                        "id": container.id[:12],  # Short ID
-                        "name": container.name,
-                        "status": container.status,
-                        "image": container.image.tags[0]
-                        if container.image.tags
-                        else "unknown",
-                        "cpu_percent": 0.0,
-                        "memory_percent": 0.0,
-                        "memory_usage": 0,
-                        "memory_limit": 0,
-                        "network_rx": 0,
-                        "network_tx": 0,
-                        "block_read": 0,
-                        "block_write": 0,
-                        "timestamp": datetime.now(timezone.utc),
-                        "is_active": container.status == "running",
-                    }
-
-                    # Get stats for running containers only
+                    # Get stats synchronously for running containers
+                    stats_data = None
                     if container.status == "running":
-                        stats = container.stats(stream=False)
+                        stats_data = container.stats(stream=False)
 
-                        # CPU percentage
-                        cpu_delta = (
-                            stats["cpu_stats"]["cpu_usage"]["total_usage"]
-                            - stats["precpu_stats"]["cpu_usage"]["total_usage"]
-                        )
-                        system_delta = (
-                            stats["cpu_stats"]["system_cpu_usage"]
-                            - stats["precpu_stats"]["system_cpu_usage"]
-                        )
-
-                        if system_delta > 0 and cpu_delta > 0:
-                            container_data["cpu_percent"] = (
-                                cpu_delta / system_delta
-                            ) * 100.0
-
-                        # Memory stats
-                        mem_stats = stats["memory_stats"]
-                        if "usage" in mem_stats and "limit" in mem_stats:
-                            container_data["memory_usage"] = mem_stats["usage"]
-                            container_data["memory_limit"] = mem_stats["limit"]
-                            if mem_stats["limit"] > 0:
-                                container_data["memory_percent"] = (
-                                    mem_stats["usage"] / mem_stats["limit"]
-                                ) * 100.0
-
-                        # Network stats
-                        networks = stats.get("networks", {})
-                        for network in networks.values():
-                            container_data["network_rx"] += network.get("rx_bytes", 0)
-                            container_data["network_tx"] += network.get("tx_bytes", 0)
-
-                        # Block I/O stats
-                        blkio_stats = stats.get("blkio_stats", {})
-                        if "io_service_bytes_recursive" in blkio_stats:
-                            for item in blkio_stats["io_service_bytes_recursive"] or []:
-                                if item["op"] == "Read":
-                                    container_data["block_read"] += item["value"]
-                                elif item["op"] == "Write":
-                                    container_data["block_write"] += item["value"]
-
+                    container_data = self._parse_container_stats(container, stats_data)
                     containers.append(container_data)
 
                 except Exception as e:
@@ -112,7 +197,7 @@ class DockerStatsCollector:
             return containers
 
         except Exception as e:
-            logger.error(f"Error collecting container stats: {e}")
+            logger.error(f"Error in sync fallback stats collection: {e}")
             return []
 
     def collect_system_info(self) -> Dict:
@@ -263,8 +348,8 @@ async def run_collection_loop():
     """Main collection loop - runs every 10 seconds"""
     while True:
         try:
-            # Collect data
-            containers_data = stats_collector.collect_container_stats()
+            # Collect data (now async for containers)
+            containers_data = await stats_collector.collect_container_stats_async()
             system_data = stats_collector.collect_system_info()
 
             # Store in database

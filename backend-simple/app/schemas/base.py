@@ -6,12 +6,23 @@ class Token(BaseModel):
     token_type: str
 
 
-class BulkDeleteRequest(BaseModel):
+class BulkActionRequest(BaseModel):
     entity_ids: list[str]
+
+
+class BulkDeleteRequest(BulkActionRequest):
     force: bool = False
 
 
-class BulkDeleteResponse(BaseModel):
-    deleted: list[str]
+class BulkRestartRequest(BulkActionRequest):
+    pass
+
+
+class BulkStopRequest(BulkActionRequest):
+    force: bool = False
+
+
+class BulkActionResponse(BaseModel):
+    successful: list[str]
     failed: list[str]
     message: str

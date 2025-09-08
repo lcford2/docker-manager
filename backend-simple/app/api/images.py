@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.exceptions import DockerConnectionError, ImageNotFoundError
 from app.core.logging import get_logger
-from app.schemas.base import BulkDeleteRequest, BulkDeleteResponse
+from app.schemas.base import BulkActionResponse, BulkDeleteRequest
 from app.schemas.images import ImageResponse
 from app.services.auth import verify_token
 from app.services.docker_stats import stats_collector
@@ -67,18 +67,53 @@ def delete_image(image_id: str, current_user: str = Depends(verify_token)):
         raise DockerConnectionError(f"Unexpected error deleting image {image_id}")
 
 
-@router.post("/api/images/bulk-delete", response_model=BulkDeleteResponse)
+@router.post("/api/images/pull")
+@timing_decorator(logger=logger)
+def pull_image(
+    image_name: str,
+    current_user: str = Depends(verify_token),
+):
+    image_service = stats_collector.docker_client.images
+    try:
+        image_service.pull(image_name)
+        return {"message": f"Image {image_name} pulled successfully"}
+    except docker.errors.APIError as e:
+        logger.error(f"Error pulling image {image_name}: {e}")
+        raise DockerConnectionError(f"Failed to pull image {image_name}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error pulling image {image_name}: {e}")
+        raise DockerConnectionError(f"Unexpected error pulling image {image_name}")
+
+
+@router.get("/api/images/{image_id}/inspect")
+def inspect_image(image_id: str, current_user: str = Depends(verify_token)):
+    image_service = stats_collector.docker_client.images
+    try:
+        image = image_service.get(image_id)
+        return image.attrs
+    except docker.errors.ImageNotFound:
+        logger.warning(f"Image {image_id} not found")
+        raise ImageNotFoundError(f"Image {image_id} not found")
+    except docker.errors.APIError as e:
+        logger.error(f"Error inspecting image {image_id}: {e}")
+        raise DockerConnectionError(f"Failed to inspect image {image_id}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error inspecting image {image_id}: {e}")
+        raise DockerConnectionError(f"Unexpected error inspecting image {image_id}")
+
+
+@router.post("/api/images/bulk-delete", response_model=BulkActionResponse)
 @timing_decorator(logger=logger)
 def bulk_delete_images(
     request: BulkDeleteRequest, current_user: str = Depends(verify_token)
 ):
     image_service = stats_collector.docker_client.images
-    deleted = []
+    successful = []
     failed = []
     for image_id in request.entity_ids:
         try:
             image_service.get(image_id).remove(force=request.force)
-            deleted.append(image_id)
+            successful.append(image_id)
         except docker.errors.ImageNotFound:
             logger.warning(f"Image {image_id} not found")
         except docker.errors.APIError as e:
@@ -87,8 +122,8 @@ def bulk_delete_images(
         except Exception as e:
             logger.error(f"Unexpected error deleting image {image_id}: {e}")
             failed.append(image_id)
-    return BulkDeleteResponse(
-        deleted=deleted,
+    return BulkActionResponse(
+        successful=successful,
         failed=failed,
-        message=f"Deleted {len(deleted)}/{len(request.entity_ids)} images",
+        message=f"Deleted {len(successful)}/{len(request.entity_ids)} images",
     )

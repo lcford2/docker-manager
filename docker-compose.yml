@@ -23,6 +23,7 @@ services:
             dockerfile: Dockerfile
         environment:
             DATABASE_URL: postgresql://docker_manager:docker_manager@postgres:5432/docker_manager
+            REDIS_URL: redis://redis:6379/0
             SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
             ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@dockermanager.local}
             ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
@@ -34,27 +35,40 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
+            redis:
+                condition: service_started
         healthcheck:
             test: [CMD, curl, -f, "http://localhost:6500/api/health"]
             interval: 30s
             timeout: 10s
             retries: 3
 
+    redis:
+        image: redis:7-alpine
+        command: redis-server --loglevel verbose --logfile ""
+        ports:
+            - 6379:6379
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
     frontend:
         build:
             context: ./frontend
-            dockerfile: Dockerfile.dev
-            # dockerfile: Dockerfile
-        volumes:
-            - ./frontend:/app
-            - /app/node_modules
+            # dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
+        # volumes:
+        #     - ./frontend:/app
+        #     - /app/node_modules
         ports:
-            - 3050:3000
-            # - 3050:80
+            # - 3050:3000
+            - 3050:80
         depends_on:
             - backend
-        # environment:
-        #     REACT_APP_API_URL: http://localhost:6500/api
+        environment:
+            REACT_APP_API_URL: http://localhost:6500/api
 
     nginx:
         build:
