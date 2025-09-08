@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.auth import check_permissions
 from app.core.cache import get_cache_status
 from app.core.database import get_connection_pool_status, get_db, test_connection
+from app.core.database_manager import db_manager
 from app.core.docker_cli import docker_cli_client
 from app.models.docker_types import SystemInfo
 from app.models.user import User
@@ -49,6 +50,9 @@ async def get_system_health(
         # Get cache status
         cache_status = get_cache_status()
 
+        # Get database access manager stats
+        db_access_stats = db_manager.get_stats()
+
         # Get circuit breaker status
         circuit_breaker_status = {}
         if hasattr(docker_cli_client.get_system_info, "_circuit_breaker"):
@@ -71,6 +75,7 @@ async def get_system_health(
                 "database": {
                     "healthy": db_healthy,
                     "pool_status": db_pool_status,
+                    "access_coordination": db_access_stats,
                 },
                 "docker": {
                     "available": docker_available,

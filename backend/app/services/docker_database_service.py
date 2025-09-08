@@ -6,6 +6,7 @@ from sqlalchemy import and_, desc, func
 
 from app.core.cache import cached
 from app.core.database import SessionLocal, get_db_context
+from app.core.database_manager import execute_read_operation
 from app.models.docker_models import (
     ContainerMetrics,
     DockerContainer,
@@ -26,54 +27,53 @@ class DockerDatabaseService:
     @cached("containers", ttl_seconds=30)
     async def get_containers(self, all: bool = True) -> List[Dict[str, Any]]:
         """Get list of containers from database"""
+
+        def _get_containers(db):
+            query = db.query(DockerContainer)
+
+            if not all:
+                # Only active containers
+                query = query.filter(DockerContainer.is_active)
+            else:
+                # All containers, but prioritize active ones
+                query = query.filter(DockerContainer.is_active)
+
+            containers = query.order_by(DockerContainer.name).all()
+
+            result = []
+            for container in containers:
+                result.append(
+                    {
+                        "id": container.id,
+                        "name": container.name,
+                        "status": container.status,
+                        "image": container.image,
+                        "created": (
+                            container.created_at.isoformat()
+                            if container.created_at
+                            else ""
+                        ),
+                        "ports": {},  # TODO: Add port mapping to model if needed
+                        "cpu_percent": container.cpu_percent,
+                        "memory_percent": container.memory_percent,
+                        "memory_usage": container.memory_usage,
+                        "memory_limit": container.memory_limit,
+                        "network_rx": container.network_rx,
+                        "network_tx": container.network_tx,
+                        "block_read": container.block_read,
+                        "block_write": container.block_write,
+                        "updated_at": (
+                            container.updated_at.isoformat()
+                            if container.updated_at
+                            else ""
+                        ),
+                    }
+                )
+
+            return result
+
         try:
-            db = SessionLocal()
-            try:
-                query = db.query(DockerContainer)
-
-                if not all:
-                    # Only active containers
-                    query = query.filter(DockerContainer.is_active)
-                else:
-                    # All containers, but prioritize active ones
-                    query = query.filter(DockerContainer.is_active)
-
-                containers = query.order_by(DockerContainer.name).all()
-
-                result = []
-                for container in containers:
-                    result.append(
-                        {
-                            "id": container.id,
-                            "name": container.name,
-                            "status": container.status,
-                            "image": container.image,
-                            "created": (
-                                container.created_at.isoformat()
-                                if container.created_at
-                                else ""
-                            ),
-                            "ports": {},  # TODO: Add port mapping to model if needed
-                            "cpu_percent": container.cpu_percent,
-                            "memory_percent": container.memory_percent,
-                            "memory_usage": container.memory_usage,
-                            "memory_limit": container.memory_limit,
-                            "network_rx": container.network_rx,
-                            "network_tx": container.network_tx,
-                            "block_read": container.block_read,
-                            "block_write": container.block_write,
-                            "updated_at": (
-                                container.updated_at.isoformat()
-                                if container.updated_at
-                                else ""
-                            ),
-                        }
-                    )
-
-                return result
-            finally:
-                db.close()
-
+            return await execute_read_operation(_get_containers)
         except Exception as e:
             logger.error(f"Error getting containers from database: {e}")
             return []

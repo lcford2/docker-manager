@@ -10,7 +10,6 @@ from app.api import auth, containers, images, networks, system, volumes, websock
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.services.background_tasks import background_manager
-from app.services.retention_service import retention_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,34 +25,18 @@ async def lifespan(app: FastAPI):
 
     # Start background collection tasks
     logger.info("Starting background collection tasks")
-    collection_task = asyncio.create_task(background_manager.start_collection_tasks())
-
-    # Start data retention tasks
-    logger.info("Starting data retention tasks")
-    retention_task = asyncio.create_task(retention_service.start_retention_tasks())
+    background_task = asyncio.create_task(background_manager.start_collection_tasks())
 
     yield
 
     # Shutdown
     logger.info("Shutting down Docker Manager API")
-    # Signal shutdown to background tasks
     background_manager.shutdown()
-
-    # Cancel tasks
-    collection_task.cancel()
-    retention_task.cancel()
-
     try:
-        await collection_task
-    except asyncio.CancelledError:
-        pass
-
-    try:
-        await retention_task
-    except asyncio.CancelledError:
-        pass
-
-    logger.info("Background tasks stopped")
+        await asyncio.wait_for(background_task, timeout=30.0)
+    except asyncio.TimeoutError:
+        logger.warning("Background tasks did not shut down gracefully")
+        background_task.cancel()
 
 
 app = FastAPI(

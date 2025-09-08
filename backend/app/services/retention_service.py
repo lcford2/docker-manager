@@ -1,11 +1,13 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 from sqlalchemy import and_, func
 
+from app.core.config import settings
 from app.core.database import SessionLocal
+from app.core.database_manager import execute_write_operation
 from app.models.docker_models import (
     ContainerMetrics,
     DockerContainer,
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class DataRetentionService:
     def __init__(self):
-        self.retention_hours = 24
+        self.retention_hours = settings.DATA_RETENTION_HOURS
         self.cleanup_batch_size = 1000
         self.inactive_resource_hours = 1
 
@@ -44,7 +46,7 @@ class DataRetentionService:
 
     async def cleanup_old_metrics(self):
         """Delete metrics records older than 24 hours"""
-        cutoff_time = datetime.utcnow() - timedelta(hours=self.retention_hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.retention_hours)
 
         try:
             # Cleanup container metrics
@@ -125,59 +127,48 @@ class DataRetentionService:
         self, model_class, cutoff_time: datetime, description: str
     ) -> int:
         """Generic method to cleanup a table by timestamp"""
-        total_deleted = 0
 
-        try:
-            db = SessionLocal()
-            try:
-                # Count records to be deleted first
-                count_query = db.query(func.count(model_class.id)).filter(
-                    model_class.timestamp < cutoff_time
+        def _cleanup_batch(db):
+            # Count records to be deleted first
+            count_query = db.query(func.count(model_class.id)).filter(
+                model_class.timestamp < cutoff_time
+            )
+            total_to_delete = count_query.scalar()
+
+            if total_to_delete == 0:
+                return 0
+
+            logger.debug(f"Found {total_to_delete} {description} records to delete")
+
+            # Delete in batches to avoid long-running transactions
+            total_deleted = 0
+            while True:
+                # Get a batch of IDs to delete
+                batch_query = (
+                    db.query(model_class.id)
+                    .filter(model_class.timestamp < cutoff_time)
+                    .limit(self.cleanup_batch_size)
                 )
-                total_to_delete = count_query.scalar()
 
-                if total_to_delete == 0:
-                    return 0
+                batch_ids = [row.id for row in batch_query.all()]
 
-                logger.debug(f"Found {total_to_delete} {description} records to delete")
+                if not batch_ids:
+                    break
 
-                # Delete in batches to avoid long-running transactions
-                while True:
-                    # Get a batch of IDs to delete
-                    batch_query = (
-                        db.query(model_class.id)
-                        .filter(model_class.timestamp < cutoff_time)
-                        .limit(self.cleanup_batch_size)
-                    )
+                # Delete the batch
+                deleted_count = (
+                    db.query(model_class)
+                    .filter(model_class.id.in_(batch_ids))
+                    .delete(synchronize_session=False)
+                )
 
-                    batch_ids = [row.id for row in batch_query.all()]
+                total_deleted += deleted_count
 
-                    if not batch_ids:
-                        break
+                logger.debug(f"Deleted batch of {deleted_count} {description} records")
 
-                    # Delete the batch
-                    deleted_count = (
-                        db.query(model_class)
-                        .filter(model_class.id.in_(batch_ids))
-                        .delete(synchronize_session=False)
-                    )
+            return total_deleted
 
-                    total_deleted += deleted_count
-                    db.commit()
-
-                    logger.debug(
-                        f"Deleted batch of {deleted_count} {description} records"
-                    )
-
-                    # Brief pause to avoid overwhelming the database
-                    await asyncio.sleep(0.1)
-            finally:
-                db.close()
-
-        except Exception as e:
-            logger.error(f"Error cleaning up {description}: {e}")
-
-        return total_deleted
+        return await execute_write_operation(_cleanup_batch)
 
     async def _cleanup_inactive_resources(
         self, model_class, cutoff_time: datetime, description: str

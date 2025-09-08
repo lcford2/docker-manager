@@ -1,9 +1,11 @@
 import asyncio
+import json
 import logging
 from datetime import datetime
 from typing import Set
 
 from app.core.cache import invalidate_docker_cache
+from app.core.redis_client import redis_client
 from app.services.docker_collection_service import (
     container_collector,
     image_collector,
@@ -11,7 +13,7 @@ from app.services.docker_collection_service import (
     system_collector,
     volume_collector,
 )
-from app.services.websocket_service import manager as websocket_manager
+from app.services.retention_service import retention_service
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +21,20 @@ logger = logging.getLogger(__name__)
 class BackgroundTaskManager:
     def __init__(self):
         self.running_tasks: Set[asyncio.Task] = set()
-        self.shutdown_event = asyncio.Event()
+        self.shutdown_event = None
+        self._is_running = False
 
     async def start_collection_tasks(self):
         """Start all background collection tasks with proper scheduling"""
+        if self._is_running:
+            logger.warning("Background tasks are already running, skipping startup")
+            return
+
         logger.info("Starting Docker collection background tasks")
+        self._is_running = True
+
+        # Create shutdown event in the current event loop
+        self.shutdown_event = asyncio.Event()
 
         try:
             # Create tasks with offset scheduling to prevent write conflicts
@@ -44,8 +55,8 @@ class BackgroundTaskManager:
                     self._delayed_start(12, self._system_collection_loop)
                 ),  # Start after 12s
                 asyncio.create_task(
-                    self._delayed_start(15, self._websocket_broadcast_loop)
-                ),  # Start after 15s for WebSocket broadcasting
+                    self._delayed_start(20, retention_service.start_retention_tasks)
+                ),  # Start after 20s for data retention
             ]
 
             # Store tasks for monitoring
@@ -61,6 +72,7 @@ class BackgroundTaskManager:
         except Exception as e:
             logger.error(f"Error in background task manager: {e}")
         finally:
+            self._is_running = False
             await self._graceful_shutdown()
 
     async def _delayed_start(self, delay_seconds: int, task_func):
@@ -76,6 +88,17 @@ class BackgroundTaskManager:
             try:
                 start_time = datetime.now()
                 await container_collector.collect_container_data()
+
+                # Publish container data to Redis
+                try:
+                    containers = (
+                        await container_collector.get_all_containers_with_stats()
+                    )
+                    await redis_client.publish(
+                        "container_stats", json.dumps({"containers": containers})
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to publish container stats to Redis: {e}")
 
                 # Invalidate container cache after collection
                 invalidate_docker_cache()
@@ -168,6 +191,13 @@ class BackgroundTaskManager:
                 start_time = datetime.now()
                 await system_collector.collect_system_snapshot()
 
+                # Publish system data to Redis
+                try:
+                    system_info = await system_collector.get_system_info()
+                    await redis_client.publish("system_stats", json.dumps(system_info))
+                except Exception as e:
+                    logger.error(f"Failed to publish system stats to Redis: {e}")
+
                 duration = (datetime.now() - start_time).total_seconds()
                 logger.debug(f"System collection completed in {duration:.2f}s")
 
@@ -180,39 +210,6 @@ class BackgroundTaskManager:
             except Exception as e:
                 logger.error(f"Error in system collection loop: {e}")
                 await asyncio.sleep(10)  # Continue after error
-
-    async def _websocket_broadcast_loop(self):
-        """WebSocket broadcast loop - every 5 seconds for live updates"""
-        logger.info("Starting WebSocket broadcast loop (5s interval)")
-
-        while not self.shutdown_event.is_set():
-            try:
-                start_time = datetime.now()
-
-                # Only broadcast if there are connected clients
-                if websocket_manager.active_connections:
-                    # Send container stats to all connected clients
-                    await websocket_manager.send_container_stats()
-                    # Send system stats to all connected clients
-                    await websocket_manager.send_system_stats()
-
-                    duration = (datetime.now() - start_time).total_seconds()
-                    logger.debug(
-                        f"WebSocket broadcast completed in {duration:.2f}s to "
-                        f"{len(websocket_manager.active_connections)} clients"
-                    )
-                else:
-                    logger.debug("No WebSocket clients connected - skipping broadcast")
-
-                # Wait for next interval
-                await asyncio.sleep(5)
-
-            except asyncio.CancelledError:
-                logger.info("WebSocket broadcast loop cancelled")
-                break
-            except Exception as e:
-                logger.error(f"Error in WebSocket broadcast loop: {e}")
-                await asyncio.sleep(5)  # Continue after error
 
     async def _task_health_monitor(self):
         """Monitor health of all collection tasks and restart if needed"""
@@ -271,7 +268,9 @@ class BackgroundTaskManager:
     def shutdown(self):
         """Signal shutdown to all tasks"""
         logger.info("Shutdown signal received for background tasks")
-        self.shutdown_event.set()
+        self._is_running = False
+        if self.shutdown_event:
+            self.shutdown_event.set()
 
 
 # Global background task manager instance

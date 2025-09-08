@@ -16,18 +16,20 @@ logger = logging.getLogger(__name__)
 engine = create_engine(
     settings.DATABASE_URL,
     poolclass=QueuePool,
-    pool_size=20,  # Optimized pool size
-    max_overflow=30,  # Additional connections on demand
+    pool_size=10,  # Reduced pool size to prevent exhaustion
+    max_overflow=15,  # Reduced overflow connections
     pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,  # Recycle connections every hour
+    pool_recycle=1800,  # Recycle connections every 30 minutes
+    pool_reset_on_return="commit",  # Always commit/rollback on return
     echo=False,  # Set to True for SQL debugging
-    connect_args={"connect_timeout": 30},  # Connection timeout
+    connect_args={"connect_timeout": 30, "application_name": "docker_manager_backend"},
+    isolation_level="READ_COMMITTED",  # Set isolation level explicitly
 )
 
 # Create sessionmaker with optimized settings
 SessionLocal = sessionmaker(
     autocommit=False,
-    autoflush=False,
+    autoflush=False,  # Prevent auto-flushing which can cause transaction issues
     bind=engine,
     expire_on_commit=False,  # Keep objects accessible after commit
 )
@@ -40,9 +42,14 @@ Base = declarative_base()
 def set_connection_params(dbapi_connection, connection_record):
     """Set connection-level parameters for optimization"""
     if "postgresql" in settings.DATABASE_URL:
-        with dbapi_connection.cursor() as cursor:
-            cursor.execute("SET statement_timeout = '30s'")
-            cursor.execute("SET idle_in_transaction_session_timeout = '60s'")
+        try:
+            with dbapi_connection.cursor() as cursor:
+                cursor.execute("SET statement_timeout = '30s'")
+                cursor.execute("SET idle_in_transaction_session_timeout = '60s'")
+                cursor.execute("SET lock_timeout = '10s'")
+                dbapi_connection.commit()
+        except Exception as e:
+            logger.warning(f"Could not set connection parameters: {e}")
 
 
 @event.listens_for(engine, "checkout")

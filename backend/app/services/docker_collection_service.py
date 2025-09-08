@@ -1,12 +1,10 @@
-import asyncio
 import logging
 from typing import Dict
 
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.database import SessionLocal
+from app.core.database_manager import execute_read_operation, execute_write_operation
 from app.core.docker_cli import docker_cli_client
 from app.models.docker_models import (
     ContainerMetrics,
@@ -26,31 +24,8 @@ class DockerCollectionService:
         self.docker_client = docker_cli_client
 
     async def safe_database_write(self, operation):
-        """Safe database write with retry logic and exponential backoff"""
-        for attempt in range(3):
-            db = None
-            try:
-                db = SessionLocal()
-                operation(db)
-                db.commit()
-                break
-            except IntegrityError as e:
-                logger.warning(
-                    f"Database integrity error on attempt {attempt + 1}: {e}"
-                )
-                if db:
-                    db.rollback()
-                await asyncio.sleep(0.1 * (attempt + 1))  # Exponential backoff
-            except Exception as e:
-                logger.error(f"Database write attempt {attempt + 1} failed: {e}")
-                if db:
-                    db.rollback()
-                if attempt == 2:  # Last attempt
-                    raise
-                await asyncio.sleep(0.1 * (attempt + 1))
-            finally:
-                if db:
-                    db.close()
+        """Safe database write with coordinated access and retry logic"""
+        return await execute_write_operation(operation)
 
     def _parse_bytes(self, byte_str: str) -> int:
         """Parse byte string like '1.23MB' or '2.45MiB' to integer bytes"""
@@ -237,6 +212,31 @@ class ContainerCollector(DockerCollectionService):
 
         except Exception as e:
             logger.error(f"Error storing container metrics for {container_id}: {e}")
+
+    async def get_all_containers_with_stats(self):
+        """Get all active containers with their latest stats from the database"""
+
+        def _get_containers(db):
+            containers = (
+                db.query(DockerContainer).filter(DockerContainer.is_active).all()
+            )
+            return [
+                {
+                    "id": c.id,
+                    "name": c.name,
+                    "status": c.status,
+                    "image": c.image,
+                    "cpu_percent": c.cpu_percent,
+                    "memory_percent": c.memory_percent,
+                    "network_rx": c.network_rx,
+                    "network_tx": c.network_tx,
+                    "block_read": c.block_read,
+                    "block_write": c.block_write,
+                }
+                for c in containers
+            ]
+
+        return await execute_read_operation(_get_containers)
 
 
 class ImageCollector(DockerCollectionService):
@@ -502,6 +502,28 @@ class SystemCollector(DockerCollectionService):
     async def store_system_metrics(self, metrics_data: Dict):
         """Store system metrics"""
         await self.collect_system_snapshot()
+
+    async def get_system_info(self):
+        """Get the latest system snapshot from the database"""
+
+        def _get_system_info(db):
+            snapshot = (
+                db.query(SystemSnapshot)
+                .order_by(SystemSnapshot.timestamp.desc())
+                .first()
+            )
+            if snapshot:
+                return {
+                    "containers_running": snapshot.containers_running,
+                    "containers_total": snapshot.containers_total,
+                    "images_count": snapshot.images_count,
+                    "volumes_count": snapshot.volumes_count,
+                    "networks_count": snapshot.networks_count,
+                    "timestamp": snapshot.timestamp.isoformat(),
+                }
+            return {}
+
+        return await execute_read_operation(_get_system_info)
 
 
 # Global service instances

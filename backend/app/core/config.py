@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     MAX_HISTORICAL_DAYS: int = int(os.getenv("MAX_HISTORICAL_DAYS", "7"))
     MAX_LOG_LINES: int = int(os.getenv("MAX_LOG_LINES", "10000"))
 
+    # Data Retention
+    DATA_RETENTION_HOURS: int = int(os.getenv("DATA_RETENTION_HOURS", "24"))
+
+    # Redis
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
     class Config:
         case_sensitive = True
 
