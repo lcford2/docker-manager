@@ -25,7 +25,6 @@ const VolumesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modal states
-  const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
   const [modalVolume, setModalVolume] = useState<DockerVolume | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -65,7 +64,6 @@ const VolumesPage: React.FC = () => {
   // Handle volume selection
   const handleVolumeClick = useCallback(
     (volumeName: string) => {
-      setSelectedVolume(volumeName);
       const volume = volumes.find((v) => v.name === volumeName);
       if (volume) {
         setModalVolume(volume);
@@ -76,7 +74,6 @@ const VolumesPage: React.FC = () => {
 
   // Handle close modal
   const handleCloseModal = useCallback(() => {
-    setSelectedVolume(null);
     setModalVolume(null);
   }, []);
 

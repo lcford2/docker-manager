@@ -123,7 +123,7 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
                     {formatDateTime(network.created)}
                   </Typography>
                 </td>
-                <td>
+                <td onClick={(event) => event.stopPropagation()}>
                   <ButtonGroup
                     aria-label="Network actions"
                     variant="soft"

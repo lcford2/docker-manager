@@ -36,8 +36,11 @@ export const useSharedWebSocket = (
 ): UseSharedWebSocketReturn => {
   const { enableRestFallback = true } = options;
 
-  const { isConnected, connectionStatus, reconnect: wsReconnect } =
-    useWebSocketContext();
+  const {
+    isConnected,
+    connectionStatus,
+    reconnect: wsReconnect,
+  } = useWebSocketContext();
 
   const {
     containers,

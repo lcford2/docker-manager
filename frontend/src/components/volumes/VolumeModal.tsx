@@ -54,18 +54,10 @@ const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
                 Status
               </Typography>
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Chip
-                  color="primary"
-                  variant="outlined"
-                  size="sm"
-                >
+                <Chip color="primary" variant="outlined" size="sm">
                   {`Driver: ${getVolumeDriverDisplay(volume.driver)}`}
                 </Chip>
-                <Chip
-                  color="neutral"
-                  variant="outlined"
-                  size="sm"
-                >
+                <Chip color="neutral" variant="outlined" size="sm">
                   {`Scope: ${volume.scope || "local"}`}
                 </Chip>
               </Box>

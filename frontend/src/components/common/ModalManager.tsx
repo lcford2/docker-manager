@@ -90,7 +90,9 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         </Box>
 
         {/* Modal content */}
-        <Box sx={{ p: fullScreen ? 2 : { xs: 2, md: 3 }, pt: 0 }}>{children}</Box>
+        <Box sx={{ p: fullScreen ? 2 : { xs: 2, md: 3 }, pt: 0 }}>
+          {children}
+        </Box>
       </Box>
     </Modal>
   );

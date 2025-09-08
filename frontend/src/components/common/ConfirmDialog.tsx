@@ -37,8 +37,17 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <DialogContent>
           <Typography id="confirm-dialog-description">{message}</Typography>
         </DialogContent>
-        <Stack direction="row" spacing={2} sx={{ mt: 2, justifyContent: 'flex-end' }}>
-          <Button variant="plain" color="neutral" onClick={onClose} disabled={loading}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ mt: 2, justifyContent: "flex-end" }}
+        >
+          <Button
+            variant="plain"
+            color="neutral"
+            onClick={onClose}
+            disabled={loading}
+          >
             Cancel
           </Button>
           <Button

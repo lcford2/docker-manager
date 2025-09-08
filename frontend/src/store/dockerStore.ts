@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { ContainerStatsWithHistory } from '../types/metrics';
-import { DockerContainer, DockerStatus } from '../types/docker';
-import { mergeSystemStats } from '../utils/dataComparison';
+import { create } from "zustand";
+import { ContainerStatsWithHistory } from "../types/metrics";
+import { DockerContainer, DockerStatus } from "../types/docker";
+import { mergeSystemStats } from "../utils/dataComparison";
 
 // Define the structure for SystemStats
 export interface SystemStats {
@@ -24,11 +24,11 @@ interface DockerState {
 
 // Define the actions for the store
 interface DockerActions {
-  setContainers: (containers: DockerState['containers']) => void;
-  setSystemStats: (systemStats: DockerState['systemStats']) => void;
+  setContainers: (containers: DockerState["containers"]) => void;
+  setSystemStats: (systemStats: DockerState["systemStats"]) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setDockerStatus: (dockerStatus: DockerState['dockerStatus']) => void;
+  setDockerStatus: (dockerStatus: DockerState["dockerStatus"]) => void;
   mergeData: (newData: Partial<DockerState>) => void; // For combining WS/REST data
 }
 
@@ -49,40 +49,42 @@ const initialState: DockerState = {
 };
 
 // Create the Zustand store
-export const useDockerStore = create<DockerState & DockerActions>((set, get) => ({
-  // State
-  ...initialState,
+export const useDockerStore = create<DockerState & DockerActions>(
+  (set, get) => ({
+    // State
+    ...initialState,
 
-  // Actions
-  setContainers: (containers) => set({ containers }),
-  setSystemStats: (systemStats) => set({ systemStats }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
-  setDockerStatus: (dockerStatus) => set({ dockerStatus }),
+    // Actions
+    setContainers: (containers) => set({ containers }),
+    setSystemStats: (systemStats) => set({ systemStats }),
+    setLoading: (loading) => set({ loading }),
+    setError: (error) => set({ error }),
+    setDockerStatus: (dockerStatus) => set({ dockerStatus }),
 
-  mergeData: (newData) =>
-    set((state) => {
-      const newState = { ...state, ...newData };
+    mergeData: (newData) =>
+      set((state) => {
+        const newState = { ...state, ...newData };
 
-      // Smart merging for systemStats (prefer REST for totals, WS for real-time running)
-      if (newData.containers) {
-        newState.systemStats = mergeSystemStats(
-          newData.systemStats ?? state.systemStats, // Use provided systemStats if any, else current
-          {
-            containers_running: newData.containers.filter(
-              (c) =>
-                c.status === 'running' ||
-                (c as ContainerStatsWithHistory).cpu_percent !== undefined, // Assume running if it has stats
-            ).length,
-            containers_total: newData.containers.length,
-            // Other stats might need separate handling if not provided by WS
-          },
-        );
-      }
+        // Smart merging for systemStats (prefer REST for totals, WS for real-time running)
+        if (newData.containers) {
+          newState.systemStats = mergeSystemStats(
+            newData.systemStats ?? state.systemStats, // Use provided systemStats if any, else current
+            {
+              containers_running: newData.containers.filter(
+                (c) =>
+                  c.status === "running" ||
+                  (c as ContainerStatsWithHistory).cpu_percent !== undefined, // Assume running if it has stats
+              ).length,
+              containers_total: newData.containers.length,
+              // Other stats might need separate handling if not provided by WS
+            },
+          );
+        }
 
-      // Handle other merges as needed
-      // e.g., if newData.dockerStatus is more recent
+        // Handle other merges as needed
+        // e.g., if newData.dockerStatus is more recent
 
-      return newState;
-    }),
-}));
+        return newState;
+      }),
+  }),
+);

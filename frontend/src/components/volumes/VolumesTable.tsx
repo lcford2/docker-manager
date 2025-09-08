@@ -123,7 +123,7 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                     {formatDateTime(volume.created)}
                   </Typography>
                 </td>
-                <td>
+                <td onClick={(event) => event.stopPropagation()}>
                   <ButtonGroup
                     aria-label="Volume actions"
                     variant="soft"

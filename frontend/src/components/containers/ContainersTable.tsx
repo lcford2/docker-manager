@@ -3,7 +3,6 @@ import {
   Button,
   Box,
   Checkbox,
-  Chip,
   Dropdown,
   IconButton,
   Link,
@@ -17,6 +16,7 @@ import {
 import { ArrowDownward, MoreHoriz } from "@mui/icons-material";
 import React from "react";
 import { ContainerStatsWithHistory } from "../../types/metrics";
+import StatusChip from "./StatusChip";
 
 interface ContainersTableProps {
   containers: ContainerStatsWithHistory[];
@@ -37,22 +37,6 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
   onContainerRestart,
   onContainerRemove,
 }) => {
-  const renderStatusChip = (status: string) => {
-    let color: "success" | "warning" | "danger" | "neutral" = "neutral";
-    if (status.startsWith("running")) {
-      color = "success";
-    } else if (status.startsWith("exited")) {
-      color = "danger";
-    } else if (status.startsWith("created")) {
-      color = "warning";
-    }
-    return (
-      <Chip color={color} size="sm">
-        {status}
-      </Chip>
-    );
-  };
-
   return (
     <Sheet
       variant="outlined"
@@ -131,7 +115,9 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                     {container.image || "N/A"}
                   </Typography>
                 </td>
-                <td>{renderStatusChip(container.status)}</td>
+                <td>
+                  <StatusChip status={container.status} />
+                </td>
                 <td>
                   <Typography level="body-sm">
                     {(container.cpu_percent ?? 0).toFixed(2)}
@@ -142,7 +128,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                     {(container.memory_percent ?? 0).toFixed(2)}
                   </Typography>
                 </td>
-                <td>
+                <td onClick={(event) => event.stopPropagation()}>
                   <Box
                     sx={{
                       display: { xs: "none", xl: "flex" },

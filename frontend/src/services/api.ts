@@ -85,9 +85,12 @@ export const dockerAPI = {
     return response.data;
   },
 
-  bulkStopContainers: async (containerIds: string[], force: boolean = false) => {
+  bulkStopContainers: async (
+    containerIds: string[],
+    force: boolean = false,
+  ) => {
     const response = await api.post("/containers/bulk-stop", {
-      container_ids: containerIds,
+      entity_ids: containerIds,
       force: force,
     });
     return response.data;
@@ -100,9 +103,12 @@ export const dockerAPI = {
     return response.data;
   },
 
-  bulkRemoveContainers: async (containerIds: string[], force: boolean = false) => {
+  bulkRemoveContainers: async (
+    containerIds: string[],
+    force: boolean = false,
+  ) => {
     const response = await api.post("/containers/bulk-delete", {
-      container_ids: containerIds,
+      entity_ids: containerIds,
       force: force,
     });
     return response.data;
@@ -148,7 +154,7 @@ export const dockerAPI = {
 
   bulkRemoveImages: async (imageIds: string[], force: boolean = false) => {
     const response = await api.post("/images/bulk-delete", {
-      image_ids: imageIds,
+      entity_ids: imageIds,
       force: force,
     });
     return response.data;

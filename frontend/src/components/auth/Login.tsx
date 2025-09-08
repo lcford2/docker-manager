@@ -39,10 +39,15 @@ const Login: React.FC = () => {
   return (
     <Box
       sx={{
-        marginTop: 8,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
+        justifyContent: "center",
+        padding: 2,
       }}
     >
       <Sheet
@@ -54,10 +59,18 @@ const Login: React.FC = () => {
           borderRadius: "sm",
         }}
       >
-        <Typography level="h4" component="h1" sx={{ textAlign: 'center', mb: 1 }}>
+        <Typography
+          level="h4"
+          component="h1"
+          sx={{ textAlign: "center", mb: 1 }}
+        >
           Docker Manager
         </Typography>
-        <Typography level="h4" component="h2" sx={{ textAlign: 'center', mb: 2 }}>
+        <Typography
+          level="h4"
+          component="h2"
+          sx={{ textAlign: "center", mb: 2 }}
+        >
           Sign In
         </Typography>
         {error && (
@@ -73,7 +86,9 @@ const Login: React.FC = () => {
               autoComplete="username"
               autoFocus
               value={username}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setUsername(e.target.value)
+              }
             />
           </FormControl>
           <FormControl required sx={{ mt: 2 }}>
@@ -83,7 +98,9 @@ const Login: React.FC = () => {
               type="password"
               autoComplete="current-password"
               value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
             />
           </FormControl>
           <Button
@@ -95,7 +112,11 @@ const Login: React.FC = () => {
             Sign In
           </Button>
         </Box>
-        <Typography level="body-sm" color="neutral" sx={{ textAlign: 'center' }}>
+        <Typography
+          level="body-sm"
+          color="neutral"
+          sx={{ textAlign: "center" }}
+        >
           Default credentials: admin / admin123
         </Typography>
       </Sheet>

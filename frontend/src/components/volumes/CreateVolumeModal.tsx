@@ -139,16 +139,21 @@ const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({
                 onChange={(e) => setLabels(e.target.value)}
                 disabled={loading}
               />
-              <FormHelperText>
-                Format: key1=value1,key2=value2
-              </FormHelperText>
+              <FormHelperText>Format: key1=value1,key2=value2</FormHelperText>
             </FormControl>
             {error && (
               <Alert color="danger" startDecorator={<Report />}>
                 {error}
               </Alert>
             )}
-            <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 1,
+              }}
+            >
               <Button
                 variant="plain"
                 color="neutral"

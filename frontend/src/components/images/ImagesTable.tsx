@@ -132,7 +132,7 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                   </Typography>
                 </td>
 
-                <td>
+                <td onClick={(event) => event.stopPropagation()}>
                   {/* Desktop ButtonGroup */}
                   <ButtonGroup
                     aria-label="Image actions"

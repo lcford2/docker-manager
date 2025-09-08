@@ -101,7 +101,7 @@ const Dashboard: React.FC = React.memo(() => {
       const time = new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
+        // second: "2-digit",
       });
 
       const newPoint: ChartDataPoint = {
@@ -204,7 +204,9 @@ const Dashboard: React.FC = React.memo(() => {
           <Sheet sx={{ p: 2, display: "flex", flexDirection: "column" }}>
             <RunningContainers
               containers={
-                containers.filter((c) => "state" in c) as DockerContainer[]
+                containers.filter(
+                  (c) => c.status === "running",
+                ) as ContainerStatsWithHistory[]
               }
             />
           </Sheet>

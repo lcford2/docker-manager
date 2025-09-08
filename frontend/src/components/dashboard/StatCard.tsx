@@ -30,8 +30,8 @@ const StatCard: React.FC<StatCardProps> = ({
       sx={{
         cursor: "pointer",
         "&:hover": {
-          boxShadow: 'md',
-          borderColor: 'neutral.outlinedHoverBorder',
+          boxShadow: "md",
+          borderColor: "neutral.outlinedHoverBorder",
         },
       }}
       onClick={handleClick}
@@ -52,12 +52,10 @@ const StatCard: React.FC<StatCardProps> = ({
           {icon}
         </Box>
         <Box>
-          <Typography level="body-sm" sx={{ color: 'text.tertiary' }}>
+          <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
             {title}
           </Typography>
-          <Typography level="h2">
-            {value}
-          </Typography>
+          <Typography level="h2">{value}</Typography>
         </Box>
       </Box>
     </Card>

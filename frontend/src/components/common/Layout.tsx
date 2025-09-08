@@ -7,7 +7,16 @@ import {
   Logout,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import { Box, IconButton, List, ListItem, ListItemButton, ListItemDecorator, Sheet, Typography } from "@mui/joy";
+import {
+  Box,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemDecorator,
+  Sheet,
+  Typography,
+} from "@mui/joy";
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -43,38 +52,42 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <Sheet
       variant="outlined"
       sx={{
-        height: '100dvh',
+        height: "100dvh",
         p: 2,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
         gap: 2,
       }}
     >
       <Typography level="title-lg">Docker Manager</Typography>
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text}>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemDecorator>{item.icon}</ListItemDecorator>
-              {item.text}
+      <Box sx={{ fle: "0 0 auto" }}>
+        <List>
+          {menuItems.map((item) => (
+            <ListItem key={item.text}>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              >
+                <ListItemDecorator>{item.icon}</ListItemDecorator>
+                {item.text}
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+      <Box sx={{ flex: "1 1 auto" }} />
+      <Box sx={{ flex: "0 0 auto", mt: "auto" }}>
+        <List>
+          <ListItem>
+            <ListItemButton onClick={handleLogout}>
+              <ListItemDecorator>
+                <Logout />
+              </ListItemDecorator>
+              Logout
             </ListItemButton>
           </ListItem>
-        ))}
-      </List>
-      <Box sx={{ flexGrow: 1 }} />
-      <List>
-        <ListItem>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemDecorator>
-              <Logout />
-            </ListItemDecorator>
-            Logout
-          </ListItemButton>
-        </ListItem>
-      </List>
+        </List>
+      </Box>
     </Sheet>
   );
 
@@ -87,13 +100,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Mobile drawer */}
         <Sheet
           sx={{
-            display: { xs: 'block', sm: 'none' },
-            position: 'fixed',
+            display: { xs: "block", sm: "none" },
+            position: "fixed",
             zIndex: 1200,
             width: mobileOpen ? drawerWidth : 0,
-            height: '100dvh',
-            transition: 'width 0.2s',
-            overflow: 'hidden',
+            height: "100dvh",
+            transition: "width 0.2s",
+            overflow: "hidden",
           }}
         >
           {drawer}
@@ -101,9 +114,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Desktop drawer */}
         <Sheet
           sx={{
-            display: { xs: 'none', sm: 'block' },
+            display: { xs: "none", sm: "block" },
             width: drawerWidth,
-            height: '100dvh',
+            height: "100dvh",
           }}
         >
           {drawer}
@@ -124,9 +137,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           sx={{
             p: 2,
             mb: 3,
-            display: { sm: 'none' },
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: { sm: "none" },
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <Typography level="title-lg">Docker Manager</Typography>

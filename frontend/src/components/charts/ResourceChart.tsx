@@ -1,4 +1,3 @@
-import { useTheme } from "@mui/joy/styles";
 import React from "react";
 import {
   LineChart,
@@ -27,8 +26,6 @@ const ResourceChart: React.FC<ResourceChartProps> = ({
   title = "Live Resource Usage",
   height = 300,
 }) => {
-  const theme = useTheme();
-
   return (
     <div style={{ width: "100%", height }}>
       <h3 style={{ textAlign: "center", marginBottom: "10px" }}>{title}</h3>

@@ -1,37 +1,50 @@
-import { Table, Sheet, Button } from "@mui/joy";
-import React from "react";
+import { Table, Sheet, Button, Typography } from "@mui/joy";
 import { Link as RouterLink } from "react-router-dom";
 
-import { DockerContainer } from "../../types/docker";
+import { ContainerStatsWithHistory } from "../../types/metrics";
 import Title from "../common/Title";
+import StatusChip from "../containers/StatusChip";
 
 interface RunningContainersProps {
-  containers: DockerContainer[];
+  containers: ContainerStatsWithHistory[];
 }
 
 export default function RunningContainers({
   containers,
 }: RunningContainersProps) {
-  console.log(containers);
   return (
     <Sheet variant="outlined" sx={{ p: 2, borderRadius: "sm" }}>
       <Title>Running Containers</Title>
       <Table size="sm">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Image</th>
-            <th>State</th>
-            <th>Status</th>
+            <th style={{ width: "40%" }}>Name</th>
+            <th style={{ width: "40%" }}>Image</th>
+            <th style={{ width: "10%" }}>CPU %</th>
+            <th style={{ width: "10%" }}>Status</th>
           </tr>
         </thead>
         <tbody>
           {containers.map((container) => (
             <tr key={container.id}>
-              <td>{container.name}</td>
-              <td>{container.image}</td>
-              <td>{container.state}</td>
-              <td>{container.status}</td>
+              <td>
+                <Typography noWrap level="body-sm">
+                  {container.name}
+                </Typography>
+              </td>
+              <td>
+                <Typography noWrap level="body-sm">
+                  {container.image || "N/A"}
+                </Typography>
+              </td>
+              <td>
+                <Typography level="body-sm">
+                  {(container.cpu_percent ?? 0).toFixed(2)}
+                </Typography>
+              </td>
+              <td>
+                <StatusChip status={container.status} />
+              </td>
             </tr>
           ))}
         </tbody>

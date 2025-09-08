@@ -37,12 +37,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   }
 
   return (
-    <Button
-      variant="outlined"
-      size="sm"
-      onClick={handleClick}
-      {...buttonProps}
-    >
+    <Button variant="outlined" size="sm" onClick={handleClick} {...buttonProps}>
       {children || action}
     </Button>
   );
