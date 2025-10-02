@@ -1,0 +1,10 @@
+[logging]
+level = "info"
+format = "simple"
+
+[database]
+host = "127.0.0.1"
+port = 5432
+database_name = "docker_manager"
+username = "lucas"
+password = "test_db_password"

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "/api";
+const API_BASE_URL = "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -32,8 +32,10 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: async (username: string, password: string) => {
-    const formData = new FormData();
-    formData.append("username", username);
+    console.log(API_BASE_URL);
+    console.log(process.env.REACT_APP_API_URL);
+    const formData = new URLSearchParams();
+    formData.append("user_name", username);
     formData.append("password", password);
     const response = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -54,33 +56,33 @@ export const dockerAPI = {
   },
 
   getContainers: async () => {
-    const response = await api.get("/containers");
+    const response = await api.get("/docker/containers");
     return response.data;
   },
 
   getContainer: async (id: string) => {
-    const response = await api.get(`/containers/${id}`);
+    const response = await api.get(`/docker/containers/${id}`);
     return response.data;
   },
 
   startContainer: async (id: string) => {
-    const response = await api.post(`/containers/${id}/start`);
+    const response = await api.post(`/docker/containers/start/${id}`);
     return response.data;
   },
 
   stopContainer: async (id: string) => {
-    const response = await api.post(`/containers/${id}/stop`);
+    const response = await api.post(`/docker/containers/stop/${id}`);
     return response.data;
   },
 
   restartContainer: async (id: string) => {
-    const response = await api.post(`/containers/${id}/restart`);
+    const response = await api.post(`/docker/containers/restart/${id}`);
     return response.data;
   },
 
   removeContainer: async (id: string, force: boolean = false) => {
     const response = await api.delete(
-      `/containers/${id}${force ? "?force=true" : ""}`,
+      `/docker/containers/${id}${force ? "?force=true" : ""}`,
     );
     return response.data;
   },
@@ -115,17 +117,17 @@ export const dockerAPI = {
   },
 
   getVolumes: async () => {
-    const response = await api.get("/volumes");
+    const response = await api.get("/docker/volumes");
     return response.data;
   },
 
   getImages: async () => {
-    const response = await api.get("/images");
+    const response = await api.get("/docker/images");
     return response.data;
   },
 
   getNetworks: async () => {
-    const response = await api.get("/networks");
+    const response = await api.get("/docker/networks");
     return response.data;
   },
 

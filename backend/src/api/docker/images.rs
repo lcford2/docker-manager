@@ -1,0 +1,159 @@
+use crate::api::RouteSpec;
+use crate::api::middleware::require_bearer_auth_middleware;
+use crate::api::types;
+use crate::lib::{errors::AppError, state::AppState};
+use axum::{
+    Json, Router,
+    extract::{Path, Query, State},
+    middleware,
+    routing::{get, post},
+};
+use log::{info, trace};
+use std::default::Default;
+use std::sync::Arc;
+
+/// Creates the router for Docker image endpoints
+pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
+    let r = Router::new().nest(
+        "/docker",
+        Router::new()
+            .route("/images", get(get_images))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/images/prune", post(prune_images))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/images/pull/{image_name}", post(pull_image))
+            .layer(middleware::from_fn(require_bearer_auth_middleware)),
+    );
+
+    let docs = vec![
+        RouteSpec {
+            method: "GET",
+            path: "/docker/images".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/images/prune".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/images/pull/{name}".to_string(),
+        },
+    ];
+    (r, docs)
+}
+
+/// API Endpoint for getting a listing of images
+///
+/// # Arguments
+/// * `State(state): State<Arc<AppState>>` - The application state
+///
+/// # Returns
+/// * JSON response containing the list of images
+#[utoipa::path(
+    get,
+    path = "/api/docker/images",
+    responses(
+        (status = 200, description = "Successful response"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn get_images(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<bollard::secret::ImageSummary>>, AppError> {
+    use bollard::query_parameters::ListImagesOptionsBuilder;
+    let opts = Some(ListImagesOptionsBuilder::default().all(false).build());
+    trace!("Fetching images");
+    let images = state.docker_client.list_images(opts).await?;
+    info!("Fetched {} images", images.len());
+    Ok(Json(images))
+}
+
+/// API Endpoint for pruning images
+///
+/// # Arguments
+/// * `State(state): State<Arc<AppState>>` - The application state
+///
+/// # Returns
+/// * JSON response containing the pruning result
+#[utoipa::path(
+    post,
+    path = "/api/docker/images/prune",
+    responses(
+        (status = 200, description = "Successful response"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn prune_images(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<bollard::secret::ImagePruneResponse>, AppError> {
+    use bollard::query_parameters::PruneImagesOptionsBuilder;
+    let opts = Some(PruneImagesOptionsBuilder::default().build());
+    trace!("Pruning images");
+    let prune_response = state.docker_client.prune_images(opts).await?;
+    info!("Successfully pruned images");
+    Ok(Json(prune_response))
+}
+
+/// API Endpoint for pulling an image
+///
+/// # Arguments
+/// * `Path(image_name): Path<String>` - The name of the image to pull
+/// * `Query(params): Query<ImagePullQueryParams>` - The query parameters for pulling the image
+/// * `State(state): State<Arc<AppState>>` - The application state
+///
+/// # Returns
+/// * JSON response indicating success
+#[utoipa::path(
+    post,
+    path = "/api/docker/images/pull/{image_name}",
+    params(
+        ("image_name", Path, description="Name of image to pull" ),
+        types::images::ImagePullQueryParams),
+    responses(
+        (status = 200, description = "Successful response", body = types::images::PullImageResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn pull_image(
+    Path(image_name): Path<String>,
+    Query(params): Query<types::images::ImagePullQueryParams>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<types::images::PullImageResponse>, AppError> {
+    use bollard::query_parameters::CreateImageOptionsBuilder;
+    use futures_util::StreamExt;
+
+    // Parse image name and tag
+    let (repo, tag) = if image_name.contains(':') {
+        // Image name includes tag like "rust:1-slim-bullseye"
+        let parts: Vec<&str> = image_name.splitn(2, ':').collect();
+        (
+            parts[0].to_string(),
+            parts
+                .get(1)
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "latest".to_string()),
+        )
+    } else {
+        // Image name without tag, use query param or default to "latest"
+        (
+            image_name.clone(),
+            params.tag.unwrap_or_else(|| "latest".to_string()),
+        )
+    };
+
+    info!("Pulling image {}:{}", repo, tag);
+    let opts = Some(
+        CreateImageOptionsBuilder::default()
+            .from_image(repo.as_str())
+            .tag(tag.as_str())
+            .build(),
+    );
+
+    let mut pull_stream = state.docker_client.create_image(opts, None, None);
+    while let Some(pull_result) = pull_stream.next().await {
+        let output = pull_result?;
+        info!("{output:?}");
+    }
+
+    Ok(Json(types::images::PullImageResponse { success: true }))
+}
