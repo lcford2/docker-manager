@@ -42,9 +42,9 @@ const NetworksPage: React.FC = () => {
   // Filter networks based on search term
   const filteredNetworks = networks.filter(
     (network) =>
-      network.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      network.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      network.scope.toLowerCase().includes(searchTerm.toLowerCase()),
+      network.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      network.Driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      network.Scope.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (loading) {

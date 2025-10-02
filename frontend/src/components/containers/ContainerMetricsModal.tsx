@@ -37,7 +37,10 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
     <Modal open={open} onClose={onClose}>
       <ModalDialog layout="fullscreen">
         <DialogTitle>
-          Container Details: {container.name}
+          Container Details:{" "}
+          {container.names && container.names.length > 0
+            ? container.names[0]
+            : ""}
           <IconButton
             aria-label="close"
             onClick={onClose}
@@ -116,6 +119,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
                             data={container.sparkline_data.cpu}
                             label="CPU"
                             color="primary"
+                            unit="%"
                           />
                         </Grid>
                         <Grid xs={12} sm={6} md={3}>
@@ -123,6 +127,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
                             data={container.sparkline_data.memory}
                             label="Memory"
                             color="warning"
+                            unit="%"
                           />
                         </Grid>
                         <Grid xs={12} sm={6} md={3}>
@@ -130,6 +135,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
                             data={container.sparkline_data.network_rx}
                             label="Net RX"
                             color="success"
+                            unit="bytes"
                           />
                         </Grid>
                         <Grid xs={12} sm={6} md={3}>
@@ -137,6 +143,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
                             data={container.sparkline_data.network_tx}
                             label="Net TX"
                             color="info"
+                            unit="bytes"
                           />
                         </Grid>
                       </Grid>

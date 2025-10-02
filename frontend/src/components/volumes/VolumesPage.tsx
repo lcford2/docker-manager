@@ -49,7 +49,7 @@ const VolumesPage: React.FC = () => {
 
     try {
       const response = await dockerAPI.getVolumes();
-      setVolumes(response);
+      setVolumes(response.Volumes);
     } catch (err: any) {
       setError(err.message || "Failed to fetch volumes");
     } finally {
@@ -64,7 +64,7 @@ const VolumesPage: React.FC = () => {
   // Handle volume selection
   const handleVolumeClick = useCallback(
     (volumeName: string) => {
-      const volume = volumes.find((v) => v.name === volumeName);
+      const volume = volumes.find((v) => v.Name === volumeName);
       if (volume) {
         setModalVolume(volume);
       }
@@ -97,13 +97,13 @@ const VolumesPage: React.FC = () => {
   // Handle volume removal
   const handleVolumeRemove = useCallback(
     (volumeName: string) => {
-      const volume = volumes.find((v) => v.name === volumeName);
+      const volume = volumes.find((v) => v.Name === volumeName);
       if (!volume) return;
 
       setConfirmDialog({
         open: true,
         title: "Remove Volume",
-        message: `Are you sure you want to remove the volume "${volume.name}"? This action cannot be undone and will delete all data in the volume.`,
+        message: `Are you sure you want to remove the volume "${volume.Name}"? This action cannot be undone and will delete all data in the volume.`,
         onConfirm: () => confirmRemoveVolume(volumeName),
       });
     },
@@ -111,11 +111,15 @@ const VolumesPage: React.FC = () => {
   );
 
   // Filter volumes based on search term
-  const filteredVolumes = volumes.filter(
-    (volume) =>
-      volume.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      volume.driver.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredVolumes = volumes.filter((volume) => {
+    console.log(volume);
+    console.log(volume.Name.toLowerCase().includes(searchTerm.toLowerCase()));
+    console.log(volume.Driver.toLowerCase().includes(searchTerm.toLowerCase()));
+    return (
+      volume.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      volume.Driver.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   if (loading) {
     return (

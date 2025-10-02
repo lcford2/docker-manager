@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8"
+axum = { version = "0.8", features = ["ws"] }
 axum-login = { version = "0.18" }
 tower-sessions = { version = "0.14",  features = ["memory-store"]}
 tokio = { version = "1", features = ["full"] }

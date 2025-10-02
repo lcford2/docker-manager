@@ -3,10 +3,12 @@
 //! This module defines the shared application state that is passed
 //! to all request handlers.
 
+use crate::api::websocket::broadcaster::Broadcaster;
 use crate::lib::{config::Config, errors::AppError};
 use bollard::Docker;
 use chrono::{DateTime, Utc};
 use log::{error, info};
+use std::sync::Arc;
 
 /// Shared application state
 #[derive(Clone)]
@@ -15,6 +17,7 @@ pub struct AppState {
     pub database_pool: sqlx::PgPool,
     pub startup_time: DateTime<Utc>,
     pub config: Config,
+    pub broadcaster: Arc<Broadcaster>,
 }
 
 impl AppState {
@@ -46,11 +49,21 @@ impl AppState {
 
         let startup_time = Utc::now();
 
-        Ok(Self {
+        // Initialize broadcaster
+        let broadcaster = Arc::new(Broadcaster::new());
+
+        let state = Arc::new(Self {
             docker_client,
             database_pool,
             startup_time,
             config,
-        })
+            broadcaster: broadcaster.clone(),
+        });
+
+        // Start background tasks for broadcasting stats
+        Broadcaster::start_container_stats_task(Arc::clone(&broadcaster), state.clone());
+        Broadcaster::start_system_stats_task(Arc::clone(&broadcaster), state.clone());
+
+        Ok(Arc::try_unwrap(state).unwrap_or_else(|arc| (*arc).clone()))
     }
 }

@@ -66,6 +66,13 @@ export const formatImageTag = (repository: string, tag: string): string => {
   return `${repository}:${tag}`;
 };
 
+export const splitRepoTag = (repotag: string): [string, string] => {
+  if (!repotag) return ["<none>", "<none>"];
+  console.log("splitRepoTag", repotag);
+  const [repository, tag] = repotag.split(":");
+  return [repository, tag];
+};
+
 /**
  * Get status color for different resource types
  */
@@ -220,8 +227,14 @@ export const formatLabels = (labels?: Record<string, string>): string => {
 /**
  * Check if an image is dangling (untagged)
  */
-export const isDanglingImage = (repository: string, tag: string): boolean => {
-  return repository === "<none>" || tag === "<none>";
+export const isDanglingImage = (repotags: string[]): boolean => {
+  for (const repotag of repotags) {
+    const [repository, tag] = repotag.split(":");
+    if (repository !== "<none>" || tag !== "<none>") {
+      return false;
+    }
+  }
+  return true;
 };
 
 /**

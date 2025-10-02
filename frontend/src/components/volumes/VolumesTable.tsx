@@ -49,7 +49,7 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                 checked={selected.length === volumes.length}
                 onChange={(event) => {
                   setSelected(
-                    event.target.checked ? volumes.map((v) => v.name) : [],
+                    event.target.checked ? volumes.map((v) => v.Name) : [],
                   );
                 }}
               />
@@ -75,20 +75,20 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
           {volumes.map((volume) => {
             const handleSelectionChange = (isChecked: boolean) => {
               const newSelected = isChecked
-                ? selected.concat(volume.name)
-                : selected.filter((vName) => vName !== volume.name);
+                ? selected.concat(volume.Name)
+                : selected.filter((vName) => vName !== volume.Name);
               setSelected(newSelected);
             };
             return (
               <tr
-                key={volume.name}
+                key={volume.Name}
                 onClick={() =>
-                  handleSelectionChange(!selected.includes(volume.name))
+                  handleSelectionChange(!selected.includes(volume.Name))
                 }
               >
                 <td style={{ padding: "12px 6px" }}>
                   <Checkbox
-                    checked={selected.includes(volume.name)}
+                    checked={selected.includes(volume.Name)}
                     onChange={(event) => {
                       handleSelectionChange(event.target.checked);
                     }}
@@ -102,25 +102,25 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                     textOverflow: "ellipsis",
                   }}
                 >
-                  <Tooltip title={volume.name}>
+                  <Tooltip title={volume.Name}>
                     <Typography noWrap level="body-sm">
-                      {volume.name}
+                      {volume.Name}
                     </Typography>
                   </Tooltip>
                 </td>
                 <td>
                   <Chip size="sm" color="primary">
-                    {getVolumeDriverDisplay(volume.driver)}
+                    {getVolumeDriverDisplay(volume.Driver)}
                   </Chip>
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {volume.scope}
+                    {volume.Scope}
                   </Typography>
                 </td>
                 <td>
                   <Typography level="body-sm">
-                    {formatDateTime(volume.created)}
+                    {formatDateTime(volume.CreatedAt)}
                   </Typography>
                 </td>
                 <td onClick={(event) => event.stopPropagation()}>
@@ -130,12 +130,12 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                     size="sm"
                     sx={{ display: { xs: "none", xl: "flex" } }}
                   >
-                    <Button onClick={() => onVolumeClick(volume.name)}>
+                    <Button onClick={() => onVolumeClick(volume.Name)}>
                       Details
                     </Button>
                     <Button
                       color="danger"
-                      onClick={() => onVolumeRemove(volume.name)}
+                      onClick={() => onVolumeRemove(volume.Name)}
                     >
                       Remove
                     </Button>
@@ -155,12 +155,12 @@ const VolumesTable: React.FC<VolumesTableProps> = ({
                         <MoreHoriz />
                       </MenuButton>
                       <Menu>
-                        <MenuItem onClick={() => onVolumeClick(volume.name)}>
+                        <MenuItem onClick={() => onVolumeClick(volume.Name)}>
                           Details
                         </MenuItem>
                         <MenuItem
                           color="danger"
-                          onClick={() => onVolumeRemove(volume.name)}
+                          onClick={() => onVolumeRemove(volume.Name)}
                         >
                           Remove
                         </MenuItem>

@@ -17,13 +17,15 @@ import {
   formatDateTime,
   formatImageTag,
   isDanglingImage,
+  splitRepoTag,
 } from "../../utils/formatters";
 
 const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
   if (!image) return null;
 
-  const isDangling = isDanglingImage(image.repository, image.tag);
-  const displayName = formatImageTag(image.repository, image.tag);
+  const isDangling = isDanglingImage(image.RepoTags);
+  const [repository, tag] = splitRepoTag(image.RepoTags[0]);
+  const displayName = formatImageTag(repository, tag);
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -40,24 +42,24 @@ const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
 
             <Box sx={{ mb: 3 }}>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Image ID: {image.id}
+                Image ID: {image.Id}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Repository: {image.repository}
+                Repository: {repository}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Tag: {image.tag}
+                Tag: {tag}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Size: {formatBytes(image.size)}
+                Size: {formatBytes(image.Size)}
               </Typography>
-              {image.virtual_size && (
+              {/*{image.virtual_size && (
                 <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
                   Virtual Size: {formatBytes(image.virtual_size)}
                 </Typography>
-              )}
+              )}*/}
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Created: {formatDateTime(image.created)}
+                Created: {formatDateTime(image.Created)}
               </Typography>
             </Box>
 
@@ -79,13 +81,13 @@ const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
             <Divider sx={{ my: 2 }} />
 
             {/* Repository Tags */}
-            {image.repo_tags && image.repo_tags.length > 0 && (
+            {image.RepoTags && image.RepoTags.length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Typography level="h4" sx={{ mb: 1 }}>
                   Repository Tags
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {image.repo_tags.map((tag, index) => (
+                  {image.RepoTags.map((tag, index) => (
                     <Chip key={index} variant="outlined" size="sm">
                       {tag}
                     </Chip>
@@ -95,13 +97,13 @@ const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
             )}
 
             {/* Repository Digests */}
-            {image.repo_digests && image.repo_digests.length > 0 && (
+            {image.RepoDigests && image.RepoDigests.length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Typography level="h4" sx={{ mb: 1 }}>
                   Repository Digests
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {image.repo_digests.map((digest, index) => (
+                  {image.RepoDigests.map((digest, index) => (
                     <Typography
                       key={index}
                       level="body-sm"
@@ -116,7 +118,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
             )}
 
             {/* Parent Image */}
-            {image.parent_id && (
+            {image.ParentId && (
               <Box sx={{ mb: 3 }}>
                 <Typography level="h4" sx={{ mb: 1 }}>
                   Parent Image
@@ -126,19 +128,19 @@ const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
                   color="neutral"
                   sx={{ fontFamily: "monospace" }}
                 >
-                  {image.parent_id}
+                  {image.ParentId}
                 </Typography>
               </Box>
             )}
 
             {/* Labels */}
-            {image.labels && Object.keys(image.labels).length > 0 && (
+            {image.Labels && Object.keys(image.Labels).length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Typography level="h4" sx={{ mb: 1 }}>
                   Labels
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {Object.entries(image.labels).map(([key, value]) => (
+                  {Object.entries(image.Labels).map(([key, value]) => (
                     <Box key={key} sx={{ display: "flex", gap: 2 }}>
                       <Typography
                         level="body-sm"

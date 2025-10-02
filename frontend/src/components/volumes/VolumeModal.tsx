@@ -20,7 +20,7 @@ const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
   return (
     <Modal open={open} onClose={onClose}>
       <ModalDialog layout="fullscreen">
-        <DialogTitle>Volume Details: {volume.name}</DialogTitle>
+        <DialogTitle>Volume Details: {volume.Name}</DialogTitle>
         <ModalClose />
         <Divider />
         <DialogContent>
@@ -32,19 +32,19 @@ const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
 
             <Box sx={{ mb: 3 }}>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Name: {volume.name}
+                Name: {volume.Name}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Driver: {getVolumeDriverDisplay(volume.driver)}
+                Driver: {getVolumeDriverDisplay(volume.Driver)}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Scope: {volume.scope || "local"}
+                Scope: {volume.Scope || "local"}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Mount Point: {volume.mountpoint || "Not available"}
+                Mount Point: {volume.Mountpoint || "Not available"}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mb: 1 }}>
-                Created: {formatDateTime(volume.created)}
+                Created: {formatDateTime(volume.CreatedAt)}
               </Typography>
             </Box>
 
@@ -55,22 +55,22 @@ const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
               </Typography>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Chip color="primary" variant="outlined" size="sm">
-                  {`Driver: ${getVolumeDriverDisplay(volume.driver)}`}
+                  {`Driver: ${getVolumeDriverDisplay(volume.Driver)}`}
                 </Chip>
                 <Chip color="neutral" variant="outlined" size="sm">
-                  {`Scope: ${volume.scope || "local"}`}
+                  {`Scope: ${volume.Scope || "local"}`}
                 </Chip>
               </Box>
             </Box>
 
             {/* Labels */}
-            {volume.labels && Object.keys(volume.labels).length > 0 && (
+            {volume.Labels && Object.keys(volume.Labels).length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Typography level="h4" sx={{ mb: 1 }}>
                   Labels
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {Object.entries(volume.labels).map(([key, value]) => (
+                  {Object.entries(volume.Labels).map(([key, value]) => (
                     <Box key={key} sx={{ display: "flex", gap: 2 }}>
                       <Typography
                         level="body-sm"
@@ -89,13 +89,13 @@ const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
             )}
 
             {/* Options */}
-            {volume.options && Object.keys(volume.options).length > 0 && (
+            {volume.Options && Object.keys(volume.Options).length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Typography level="h4" sx={{ mb: 1 }}>
                   Options
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {Object.entries(volume.options).map(([key, value]) => (
+                  {Object.entries(volume.Options).map(([key, value]) => (
                     <Box key={key} sx={{ display: "flex", gap: 2 }}>
                       <Typography
                         level="body-sm"
@@ -119,7 +119,7 @@ const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
                 Usage Information
               </Typography>
               <Typography level="body-sm" color="neutral">
-                Mount Point: {volume.mountpoint || "Not specified"}
+                Mount Point: {volume.Mountpoint || "Not specified"}
               </Typography>
               <Typography level="body-sm" color="neutral" sx={{ mt: 1 }}>
                 This volume can be mounted by containers to persist data beyond

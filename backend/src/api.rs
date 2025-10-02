@@ -14,6 +14,7 @@ use utoipa_swagger_ui::SwaggerUi;
 pub mod auth;
 pub mod health;
 pub mod middleware;
+pub mod websocket;
 pub mod db {
     pub mod container_stats;
     pub mod system_stats;
@@ -81,7 +82,7 @@ pub struct RouteSpec {
 pub struct ApiDoc;
 
 /// Creates the main API router combining all sub-routers
-pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
+pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let (auth_router, auth_routes) = auth::router();
     let (health_router, health_routes) = health::router();
     let (containers_router, containers_routes) = docker::containers::router();
@@ -91,6 +92,10 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let (c_stats_router, c_stats_routes) = db::container_stats::router();
     let (s_stats_router, s_stats_routes) = db::system_stats::router();
 
+    // WebSocket router uses broadcaster from state
+    let (ws_router, ws_routes) = websocket::router();
+    let ws_router = ws_router.with_state(state.broadcaster.clone());
+
     let app_router = Router::new()
         .merge(auth_router)
         .merge(health_router)
@@ -99,7 +104,8 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         .merge(networks_router)
         .merge(images_router)
         .merge(c_stats_router)
-        .merge(s_stats_router);
+        .merge(s_stats_router)
+        .merge(ws_router);
 
     let (openapi_router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi()).split_for_parts();
 
@@ -120,6 +126,7 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         .chain(networks_routes)
         .chain(c_stats_routes)
         .chain(s_stats_routes)
+        .chain(ws_routes)
         .collect();
     (router, routes)
 }

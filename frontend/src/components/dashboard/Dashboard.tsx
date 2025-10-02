@@ -35,7 +35,7 @@ const Dashboard: React.FC = React.memo(() => {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
   // Hook to manage WebSocket connection and data fetching
-  // useSharedWebSocket({});
+  useSharedWebSocket({});
 
   // Effect for fetching initial REST API data
   useEffect(() => {

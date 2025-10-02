@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tokio::spawn(lib::stats_workers::system_info_worker(app_state.clone()));
 
     // setup router
-    let (api_router, api_routes) = api::router();
+    let (api_router, api_routes) = api::router(app_state.clone());
     let app = Router::new()
         .nest("/api", api_router)
         .with_state(app_state.clone())

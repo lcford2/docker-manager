@@ -21,6 +21,7 @@ import {
   formatBytes,
   formatDateTime,
   isDanglingImage,
+  splitRepoTag,
 } from "../../utils/formatters";
 
 interface ImagesTableProps {
@@ -54,7 +55,7 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 checked={selected.length === images.length}
                 onChange={(event) => {
                   onSelectionChange(
-                    event.target.checked ? images.map((img) => img.id) : [],
+                    event.target.checked ? images.map((img) => img.Id) : [],
                   );
                 }}
               />
@@ -79,23 +80,24 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
         </thead>
         <tbody>
           {images.map((image) => {
-            const isDangling = isDanglingImage(image.repository, image.tag);
+            const isDangling = isDanglingImage(image.RepoTags);
+            const [repository, tag] = splitRepoTag(image.RepoTags[0]);
             const handleSelectionChange = (isChecked: boolean) => {
               const newSelected = isChecked
-                ? selected.concat(image.id)
-                : selected.filter((imgId) => imgId !== image.id);
+                ? selected.concat(image.Id)
+                : selected.filter((imgId) => imgId !== image.Id);
               onSelectionChange(newSelected);
             };
             return (
               <tr
-                key={image.id}
+                key={image.Id}
                 onClick={() =>
-                  handleSelectionChange(!selected.includes(image.id))
+                  handleSelectionChange(!selected.includes(image.Id))
                 }
               >
                 <td style={{ padding: "12px 6px" }}>
                   <Checkbox
-                    checked={selected.includes(image.id)}
+                    checked={selected.includes(image.Id)}
                     onChange={(event) => {
                       handleSelectionChange(event.target.checked);
                     }}
@@ -103,7 +105,7 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {image.repository}
+                    {repository}
                   </Typography>
                   {isDangling && (
                     <Chip color="warning" size="sm" sx={{ ml: 1 }}>
@@ -113,22 +115,22 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {image.tag}
+                    {tag}
                   </Typography>
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {image.id.substring(0, 12)}
+                    {image.Id.substring(0, 12)}
                   </Typography>
                 </td>
                 <td>
                   <Typography level="body-sm">
-                    {formatBytes(image.size)}
+                    {formatBytes(image.Size)}
                   </Typography>
                 </td>
                 <td>
                   <Typography level="body-sm">
-                    {formatDateTime(image.created)}
+                    {formatDateTime(image.Created)}
                   </Typography>
                 </td>
 
@@ -140,12 +142,12 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                     size="sm"
                     sx={{ display: { xs: "none", xl: "flex" } }}
                   >
-                    <Button onClick={() => onImageClick(image.id)}>
+                    <Button onClick={() => onImageClick(image.Id)}>
                       Details
                     </Button>
                     <Button
                       color="danger"
-                      onClick={() => onImageRemove(image.id)}
+                      onClick={() => onImageRemove(image.Id)}
                     >
                       Remove
                     </Button>
@@ -167,12 +169,12 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                         <MoreHoriz />
                       </MenuButton>
                       <Menu>
-                        <MenuItem onClick={() => onImageClick(image.id)}>
+                        <MenuItem onClick={() => onImageClick(image.Id)}>
                           Details
                         </MenuItem>
                         <MenuItem
                           color="danger"
-                          onClick={() => onImageRemove(image.id)}
+                          onClick={() => onImageRemove(image.Id)}
                         >
                           Remove
                         </MenuItem>

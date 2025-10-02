@@ -24,7 +24,7 @@ const MetricSparkline: React.FC<MetricSparklineProps> = ({
   }, [data]);
 
   // Get current value (latest data point)
-  const currentValue = data.length > 0 ? data[data.length - 1] : 0;
+  const currentValue = data && data.length > 0 ? data[data.length - 1] : 0;
 
   // Format the current value based on unit
   const formatValue = (value: number): string => {
@@ -58,7 +58,7 @@ const MetricSparkline: React.FC<MetricSparklineProps> = ({
         {label}
       </Typography>
       <ResponsiveContainer width="100%" height="80%">
-        {data.length > 0 ? (
+        {data && data.length > 0 ? (
           <LineChart data={chartData}>
             <YAxis hide domain={["dataMin", "dataMax"]} />
             <Line

@@ -102,7 +102,9 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {container.name}
+                    {container.names && container.names.length > 0
+                      ? container.names[0]
+                      : ""}
                   </Typography>
                 </td>
                 <td>

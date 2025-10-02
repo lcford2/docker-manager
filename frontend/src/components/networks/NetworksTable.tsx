@@ -48,7 +48,7 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
                 checked={selected.length === networks.length}
                 onChange={(event) => {
                   setSelected(
-                    event.target.checked ? networks.map((n) => n.id) : [],
+                    event.target.checked ? networks.map((n) => n.Id) : [],
                   );
                 }}
               />
@@ -76,20 +76,20 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
           {networks.map((network) => {
             const handleSelectionChange = (isChecked: boolean) => {
               const newSelected = isChecked
-                ? selected.concat(network.id)
-                : selected.filter((nId) => nId !== network.id);
+                ? selected.concat(network.Id)
+                : selected.filter((nId) => nId !== network.Id);
               setSelected(newSelected);
             };
             return (
               <tr
-                key={network.id}
+                key={network.Id}
                 onClick={() =>
-                  handleSelectionChange(!selected.includes(network.name))
+                  handleSelectionChange(!selected.includes(network.Name))
                 }
               >
                 <td style={{ padding: "12px 6px" }}>
                   <Checkbox
-                    checked={selected.includes(network.id)}
+                    checked={selected.includes(network.Id)}
                     onChange={(event) => {
                       handleSelectionChange(event.target.checked);
                     }}
@@ -97,30 +97,30 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {network.name}
+                    {network.Name}
                   </Typography>
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {network.id.substring(0, 12)}
+                    {network.Id.substring(0, 12)}
                   </Typography>
                 </td>
                 <td>
                   <Chip size="sm" color="primary">
-                    {network.driver}
+                    {network.Driver}
                   </Chip>
                 </td>
                 <td>
-                  <Typography level="body-sm">{network.scope}</Typography>
+                  <Typography level="body-sm">{network.Scope}</Typography>
                 </td>
                 <td>
                   <Typography level="body-sm">
-                    {network.ipam?.config?.[0]?.subnet ?? "N/A"}
+                    {network.IPAM?.Config?.[0]?.Subnet ?? "N/A"}
                   </Typography>
                 </td>
                 <td>
                   <Typography level="body-sm">
-                    {formatDateTime(network.created)}
+                    {formatDateTime(network.Created)}
                   </Typography>
                 </td>
                 <td onClick={(event) => event.stopPropagation()}>

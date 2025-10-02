@@ -65,7 +65,9 @@ const ContainersPage: React.FC = () => {
   // Filter containers based on search term
   const filteredContainers = containers.filter(
     (container) =>
-      container.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (container.names &&
+        container.names.length > 0 &&
+        container.names[0].toLowerCase().includes(searchTerm.toLowerCase())) ||
       container.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       container.status.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -145,7 +147,7 @@ const ContainersPage: React.FC = () => {
       setConfirmDialog({
         open: true,
         title: "Stop Container",
-        message: `Are you sure you want to stop the container "${container.name}"?`,
+        message: `Are you sure you want to stop the container "${container.names[0]}"?`,
         onConfirm: () => confirmStopContainer(containerId),
       });
     },
@@ -160,7 +162,7 @@ const ContainersPage: React.FC = () => {
       setConfirmDialog({
         open: true,
         title: "Restart Container",
-        message: `Are you sure you want to restart the container "${container.name}"?`,
+        message: `Are you sure you want to restart the container "${container.names[0]}"?`,
         onConfirm: () => confirmRestartContainer(containerId),
       });
     },
@@ -175,7 +177,7 @@ const ContainersPage: React.FC = () => {
       setConfirmDialog({
         open: true,
         title: "Remove Container",
-        message: `Are you sure you want to remove the container "${container.name}"? This action cannot be undone.`,
+        message: `Are you sure you want to remove the container "${container.names[0]}"? This action cannot be undone.`,
         onConfirm: () => confirmRemoveContainer(containerId),
       });
     },

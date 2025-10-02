@@ -65,7 +65,7 @@ const ImagesPage: React.FC = () => {
   // Handle image selection
   const handleImageClick = useCallback(
     (imageId: string) => {
-      const image = images.find((img) => img.id === imageId);
+      const image = images.find((img) => img.Id === imageId);
       if (image) {
         setModalImage(image);
       }
@@ -98,13 +98,13 @@ const ImagesPage: React.FC = () => {
   // Handle image removal
   const handleImageRemove = useCallback(
     (imageId: string) => {
-      const image = images.find((img) => img.id === imageId);
+      const image = images.find((img) => img.Id === imageId);
       if (!image) return;
 
       setConfirmDialog({
         open: true,
         title: "Remove Image",
-        message: `Are you sure you want to remove the image "${image.repository}:${image.tag}"? This action cannot be undone.`,
+        message: `Are you sure you want to remove the image "${image.RepoTags[0]}"? This action cannot be undone.`,
         onConfirm: () => confirmRemoveImage(imageId),
       });
     },
@@ -144,9 +144,9 @@ const ImagesPage: React.FC = () => {
   // Filter images based on search term
   const filteredImages = images.filter(
     (image) =>
-      image.repository.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      image.tag.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      image.id.toLowerCase().includes(searchTerm.toLowerCase()),
+      image.RepoTags.some((tag) =>
+        tag.toLowerCase().includes(searchTerm.toLowerCase()),
+      ) || image.Id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (loading) {
