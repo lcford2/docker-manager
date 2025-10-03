@@ -1,5 +1,9 @@
+import type {
+  // SparklineData as SparklineDataImport,
+  ContainerStatsWithHistory as ContainerStatsWithHistoryImport,
+} from "./websocket";
+
 export interface ContainerMetricsPoint {
-  timestamp: string;
   cpu_percent: number;
   memory_percent: number;
   memory_usage: number;
@@ -10,33 +14,8 @@ export interface ContainerMetricsPoint {
   block_write: number;
 }
 
-export interface SparklineData {
-  cpu: number[];
-  memory: number[];
-  network_rx: number[];
-  network_tx: number[];
-  block_read: number[];
-  block_write: number[];
-}
-
-export interface ContainerStatsWithHistory {
-  id: string;
-  names: string;
-  image?: string; // Add optional image property
-  status: string;
-  uptime: string;
-  uptime_seconds: number;
-  cpu_percent?: number;
-  memory_usage?: number;
-  memory_limit?: number;
-  memory_percent?: number;
-  network_rx?: number;
-  network_tx?: number;
-  block_read?: number;
-  block_write?: number;
-  sparkline_data?: SparklineData;
-  timestamp: string;
-}
+// export type SparklineData = SparklineDataImport;
+export type ContainerStatsWithHistory = ContainerStatsWithHistoryImport;
 
 export interface ContainerMetricsHistory {
   container_id: string;

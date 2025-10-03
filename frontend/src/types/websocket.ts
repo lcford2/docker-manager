@@ -44,6 +44,8 @@ export interface PongMessage extends WebSocketMessage {
 export interface ContainerStatsWithHistory {
   id: string;
   name: string;
+  state: string;
+  image?: string;
   status: string;
   uptime: string;
   uptime_seconds: number;

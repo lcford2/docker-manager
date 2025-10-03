@@ -37,10 +37,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
     <Modal open={open} onClose={onClose}>
       <ModalDialog layout="fullscreen">
         <DialogTitle>
-          Container Details:{" "}
-          {container.names && container.names.length > 0
-            ? container.names[0]
-            : ""}
+          Container Details: {container.name || ""}
           <IconButton
             aria-label="close"
             onClick={onClose}
@@ -74,7 +71,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
                       Summary
                     </Typography>
                     <Typography>ID: {container.id}</Typography>
-                    <Typography>Status: {container.status}</Typography>
+                    <Typography>State: {container.state}</Typography>
                     <Typography>Uptime: {container.uptime}</Typography>
                     <Typography>
                       Timestamp: {formatDateTime(container.timestamp)}

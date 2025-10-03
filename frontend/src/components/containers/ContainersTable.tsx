@@ -102,9 +102,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {container.names && container.names.length > 0
-                      ? container.names[0]
-                      : ""}
+                    {container.name || ""}
                   </Typography>
                 </td>
                 <td>
@@ -118,7 +116,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                   </Typography>
                 </td>
                 <td>
-                  <StatusChip status={container.status} />
+                  <StatusChip status={container.state} />
                 </td>
                 <td>
                   <Typography level="body-sm">

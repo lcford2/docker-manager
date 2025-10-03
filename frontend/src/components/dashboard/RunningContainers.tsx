@@ -29,9 +29,7 @@ export default function RunningContainers({
             <tr key={container.id}>
               <td>
                 <Typography noWrap level="body-sm">
-                  {container.names && container.names.length > 0
-                    ? container.names[0]
-                    : ""}
+                  {container.name || ""}
                 </Typography>
               </td>
               <td>
@@ -45,7 +43,7 @@ export default function RunningContainers({
                 </Typography>
               </td>
               <td>
-                <StatusChip status={container.status} />
+                <StatusChip status={container.state} />
               </td>
             </tr>
           ))}

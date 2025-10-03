@@ -12,6 +12,24 @@ use log::{info, trace};
 use sqlx::Execute;
 use std::sync::Arc;
 
+/// Format uptime in a human-readable format
+fn format_uptime(seconds: i64) -> String {
+    let days = seconds / 86400;
+    let hours = (seconds % 86400) / 3600;
+    let minutes = (seconds % 3600) / 60;
+    let secs = seconds % 60;
+
+    if days > 0 {
+        format!("{}d {}h", days, hours)
+    } else if hours > 0 {
+        format!("{}h {}m", hours, minutes)
+    } else if minutes > 0 {
+        format!("{}m {}s", minutes, secs)
+    } else {
+        format!("{}s", secs)
+    }
+}
+
 /// Creates the router for container statistics endpoints
 pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let r = Router::new().nest(
@@ -55,7 +73,7 @@ async fn fetch_container_stats(
 ) -> Result<types::db::ContainerStatsResponse, AppError> {
     info!("Fetching container stats");
     let mut query_builder = sqlx::QueryBuilder::new(
-        r#"SELECT id, name, status, image, cpu_percent, memory_percent,
+        r#"SELECT id, name, state, status, image, cpu_percent, memory_percent,
         memory_usage, memory_limit, network_rx, network_tx, block_read,
         block_write, timestamp, is_active, stat_id
         FROM container_stats"#,
@@ -194,4 +212,81 @@ async fn build_and_execute_count_query(
     trace!("Executing count query: {:?}", query.sql());
 
     query.fetch_one(pool).await
+}
+
+/// Fetch latest stats for all active containers with sparkline data
+/// This is optimized for WebSocket broadcasting
+pub async fn fetch_latest_stats_with_sparklines(
+    pool: &sqlx::PgPool,
+    sparkline_points: i64,
+) -> Result<Vec<types::db::ContainerStatWithSparkline>, sqlx::Error> {
+    // Query: Get latest stat per container (only active containers)
+    let latest_stats = sqlx::query_as::<_, types::db::ContainerStat>(
+        r#"
+        SELECT DISTINCT ON (id)
+            id, name, state, status, image, cpu_percent, memory_percent,
+            memory_usage, memory_limit, network_rx, network_tx,
+            block_read, block_write, uptime_seconds, timestamp, is_active, stat_id
+        FROM container_stats
+        WHERE is_active = true
+        ORDER BY id, timestamp DESC
+        "#,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    // For each container, fetch sparkline history
+    let mut results = Vec::new();
+    for stat in latest_stats {
+        let sparkline = fetch_sparkline_for_container(&stat.id, sparkline_points, pool).await?;
+        results.push(types::db::ContainerStatWithSparkline {
+            uptime: format_uptime(stat.uptime_seconds),
+            sparkline_data: sparkline,
+            stat,
+        });
+    }
+
+    Ok(results)
+}
+
+/// Sparkline row from query
+#[derive(sqlx::FromRow)]
+struct SparklineRow {
+    cpu_percent: Option<f64>,
+    memory_percent: Option<f64>,
+    network_rx: Option<i64>,
+    network_tx: Option<i64>,
+    block_read: Option<i64>,
+    block_write: Option<i64>,
+}
+
+/// Fetch sparkline data for a single container
+async fn fetch_sparkline_for_container(
+    container_id: &str,
+    points: i64,
+    pool: &sqlx::PgPool,
+) -> Result<types::db::SparklineData, sqlx::Error> {
+    let rows = sqlx::query_as::<_, SparklineRow>(
+        r#"
+        SELECT cpu_percent, memory_percent, network_rx, network_tx, block_read, block_write
+        FROM container_stats
+        WHERE id = $1
+        ORDER BY timestamp DESC
+        LIMIT $2
+        "#,
+    )
+    .bind(container_id)
+    .bind(points)
+    .fetch_all(pool)
+    .await?;
+
+    // Reverse to get chronological order (oldest to newest)
+    Ok(types::db::SparklineData {
+        cpu: rows.iter().rev().filter_map(|r| r.cpu_percent).collect(),
+        memory: rows.iter().rev().filter_map(|r| r.memory_percent).collect(),
+        network_rx: rows.iter().rev().filter_map(|r| r.network_rx).collect(),
+        network_tx: rows.iter().rev().filter_map(|r| r.network_tx).collect(),
+        block_read: rows.iter().rev().filter_map(|r| r.block_read).collect(),
+        block_write: rows.iter().rev().filter_map(|r| r.block_write).collect(),
+    })
 }

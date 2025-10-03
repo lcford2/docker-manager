@@ -28,6 +28,7 @@ CREATE TABLE public.container_stats (
     network_tx bigint,
     block_read bigint,
     block_write bigint,
+    uptime_seconds bigint DEFAULT 0,
     "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
     is_active boolean,
     stat_id bigint NOT NULL

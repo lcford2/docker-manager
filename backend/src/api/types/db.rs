@@ -8,7 +8,7 @@ use utoipa::ToSchema;
 /// This struct contains both static container information (like name and image) and
 /// dynamic performance metrics (like CPU usage and memory statistics). It maps
 /// directly to the `container_stats` database table.
-#[derive(Debug, Serialize, FromRow, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct ContainerStat {
     /// Unique container identifier (Docker container ID)
     pub id: String,
@@ -16,7 +16,10 @@ pub struct ContainerStat {
     /// Human-readable container name
     pub name: String,
 
-    /// Current status of the container (e.g., "running", "stopped", "paused")
+    /// Current state of the container (e.g., "running", "stopped", "paused")
+    pub state: String,
+
+    /// Human readable status
     pub status: String,
 
     /// Docker image name/tag the container was created from
@@ -45,7 +48,8 @@ pub struct ContainerStat {
 
     /// Total bytes written to block devices
     pub block_write: Option<i64>,
-
+    /// Container uptime in seconds
+    pub uptime_seconds: i64,
     /// Timestamp when these statistics were collected
     pub timestamp: DateTime<Utc>,
 
@@ -147,4 +151,39 @@ impl From<sqlx::Error> for ApiError {
             code: 500,
         }
     }
+}
+
+/// Sparkline data for visualizations
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SparklineData {
+    pub cpu: Vec<f64>,
+    pub memory: Vec<f64>,
+    pub network_rx: Vec<i64>,
+    pub network_tx: Vec<i64>,
+    pub block_read: Vec<i64>,
+    pub block_write: Vec<i64>,
+}
+
+impl Default for SparklineData {
+    fn default() -> Self {
+        Self {
+            cpu: Vec::new(),
+            memory: Vec::new(),
+            network_rx: Vec::new(),
+            network_tx: Vec::new(),
+            block_read: Vec::new(),
+            block_write: Vec::new(),
+        }
+    }
+}
+
+/// Container statistics with sparkline data for WebSocket broadcasting
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ContainerStatWithSparkline {
+    #[serde(flatten)]
+    pub stat: ContainerStat,
+    /// Human-readable uptime string (computed from uptime_seconds)
+    pub uptime: String,
+    /// Historical sparkline data for visualization
+    pub sparkline_data: SparklineData,
 }

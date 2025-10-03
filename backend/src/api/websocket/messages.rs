@@ -3,6 +3,7 @@
 //! This module defines all message types that can be sent/received
 //! over the WebSocket connection, matching the frontend TypeScript types.
 
+use crate::api::types::db::ContainerStatWithSparkline;
 use serde::{Deserialize, Serialize};
 
 /// Base WebSocket message structure
@@ -32,16 +33,18 @@ pub struct ConnectionData {
 /// Container statistics message data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContainerStatsData {
-    pub containers: Vec<ContainerStatsWithHistory>,
+    pub containers: Vec<ContainerStatWithSparkline>,
 }
 
 /// System statistics message data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemStatsData {
     pub containers_running: i64,
-    pub containers_paused: i64,
     pub containers_stopped: i64,
+    pub containers_total: i64,
     pub images: i64,
+    pub volumes: i64,
+    pub networks: i64,
     pub server_version: String,
     pub total_memory: i64,
     pub cpus: i64,
@@ -54,47 +57,3 @@ pub struct PingData {}
 /// Pong message data (empty)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PongData {}
-
-/// Container statistics with historical sparkline data
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContainerStatsWithHistory {
-    pub id: String,
-    pub names: Vec<String>,
-    pub status: String,
-    pub uptime: String,
-    pub uptime_seconds: i64,
-    pub cpu_percent: f64,
-    pub memory_usage: i64,
-    pub memory_limit: i64,
-    pub memory_percent: f64,
-    pub network_rx: i64,
-    pub network_tx: i64,
-    pub block_read: i64,
-    pub block_write: i64,
-    pub sparkline_data: SparklineData,
-    pub timestamp: String,
-}
-
-/// Sparkline data for visualizations
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SparklineData {
-    pub cpu: Vec<f64>,
-    pub memory: Vec<f64>,
-    pub network_rx: Vec<i64>,
-    pub network_tx: Vec<i64>,
-    pub block_read: Vec<i64>,
-    pub block_write: Vec<i64>,
-}
-
-impl Default for SparklineData {
-    fn default() -> Self {
-        Self {
-            cpu: Vec::new(),
-            memory: Vec::new(),
-            network_rx: Vec::new(),
-            network_tx: Vec::new(),
-            block_read: Vec::new(),
-            block_write: Vec::new(),
-        }
-    }
-}

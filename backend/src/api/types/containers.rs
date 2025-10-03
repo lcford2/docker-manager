@@ -5,7 +5,7 @@ use utoipa::{IntoParams, ToSchema};
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ContainerSummary {
     pub id: String,
-    pub names: Vec<String>,
+    pub name: String,
     pub image: String,
     pub image_id: String,
     pub command: String,
@@ -20,7 +20,12 @@ impl From<bollard_types::ContainerSummary> for ContainerSummary {
     fn from(summary: bollard_types::ContainerSummary) -> Self {
         ContainerSummary {
             id: summary.id.unwrap_or_default(),
-            names: summary.names.unwrap_or_default(),
+            name: summary
+                .names
+                .unwrap_or_default()
+                .first()
+                .unwrap_or(&"".to_string())
+                .clone(),
             image: summary.image.unwrap_or_default(),
             image_id: summary.image_id.unwrap_or_default(),
             command: summary.command.unwrap_or_default(),

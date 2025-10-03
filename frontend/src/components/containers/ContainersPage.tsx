@@ -62,15 +62,21 @@ const ContainersPage: React.FC = () => {
     }
   }, [containers, modalContainer]);
 
-  // Filter containers based on search term
-  const filteredContainers = containers.filter(
-    (container) =>
-      (container.names &&
-        container.names.length > 0 &&
-        container.names[0].toLowerCase().includes(searchTerm.toLowerCase())) ||
-      container.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      container.status.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Filter containers: only show active containers and apply search term
+  const filteredContainers = containers
+    .filter((container) => {
+      // Only show active containers (filter out deleted ones)
+      const isActive = "is_active" in container ? container.is_active : true;
+      return isActive;
+    })
+    .filter(
+      (container) =>
+        // Apply search filter
+        (container.name &&
+          container.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        container.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        container.state.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
 
   const handleContainerClick = useCallback(
     (containerId: string) => {
@@ -147,7 +153,7 @@ const ContainersPage: React.FC = () => {
       setConfirmDialog({
         open: true,
         title: "Stop Container",
-        message: `Are you sure you want to stop the container "${container.names[0]}"?`,
+        message: `Are you sure you want to stop the container "${container.name}"?`,
         onConfirm: () => confirmStopContainer(containerId),
       });
     },
@@ -162,7 +168,7 @@ const ContainersPage: React.FC = () => {
       setConfirmDialog({
         open: true,
         title: "Restart Container",
-        message: `Are you sure you want to restart the container "${container.names[0]}"?`,
+        message: `Are you sure you want to restart the container "${container.name}"?`,
         onConfirm: () => confirmRestartContainer(containerId),
       });
     },
@@ -177,7 +183,7 @@ const ContainersPage: React.FC = () => {
       setConfirmDialog({
         open: true,
         title: "Remove Container",
-        message: `Are you sure you want to remove the container "${container.names[0]}"? This action cannot be undone.`,
+        message: `Are you sure you want to remove the container "${container.name}"? This action cannot be undone.`,
         onConfirm: () => confirmRemoveContainer(containerId),
       });
     },

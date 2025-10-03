@@ -54,7 +54,7 @@ export interface DockerNetwork {
 
 export interface DockerContainer {
   id: string;
-  names: string[];
+  name: string;
   image: string;
   image_id: string;
   status: string;

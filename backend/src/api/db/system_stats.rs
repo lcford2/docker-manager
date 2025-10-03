@@ -157,3 +157,14 @@ async fn build_and_execute_count_query(
 
     query.fetch_one(pool).await
 }
+
+/// Fetch the latest system stats for WebSocket broadcasting
+pub async fn fetch_latest_system_stats(
+    pool: &sqlx::PgPool,
+) -> Result<types::db::SystemStat, sqlx::Error> {
+    sqlx::query_as::<_, types::db::SystemStat>(
+        "SELECT * FROM system_info ORDER BY timestamp DESC LIMIT 1",
+    )
+    .fetch_one(pool)
+    .await
+}

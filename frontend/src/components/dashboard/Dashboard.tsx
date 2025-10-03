@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 import { useSharedWebSocket } from "../../hooks/useSharedWebSocket";
 import { dockerAPI } from "../../services/api";
 import { useDockerStore } from "../../store/dockerStore";
-import { DockerContainer } from "../../types/docker";
 import { ContainerStatsWithHistory } from "../../types/metrics";
 import ResourceChart from "../charts/ResourceChart";
 
@@ -53,7 +52,7 @@ const Dashboard: React.FC = React.memo(() => {
           ]);
 
           const runningContainers = apiContainers.filter(
-            (c: any) => c.status === "running",
+            (c: any) => c.state === "running",
           ).length;
           const stoppedContainers = apiContainers.length - runningContainers;
 
@@ -205,7 +204,7 @@ const Dashboard: React.FC = React.memo(() => {
             <RunningContainers
               containers={
                 containers.filter(
-                  (c) => c.status === "running",
+                  (c) => c.state === "running",
                 ) as ContainerStatsWithHistory[]
               }
             />
