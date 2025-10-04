@@ -20,6 +20,9 @@ pub enum AppError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 /// Error response structure for API responses
@@ -48,6 +51,10 @@ impl IntoResponse for AppError {
             AppError::Io(ref e) => {
                 log::error!("IO error: {}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
+            AppError::InvalidInput(ref e) => {
+                log::error!("Invalid input: {}", e);
+                (StatusCode::BAD_REQUEST, self.to_string())
             }
         };
 

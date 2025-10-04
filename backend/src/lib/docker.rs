@@ -129,3 +129,27 @@ pub async fn get_num_networks(state: &AppState) -> usize {
         }
     }
 }
+
+/// Gets the names of all containers on the system
+pub async fn get_container_names(state: &AppState, all: bool) -> Vec<String> {
+    use bollard::query_parameters::ListContainersOptionsBuilder;
+    let opts = Some(ListContainersOptionsBuilder::default().all(all).build());
+
+    let result = state.docker_client.list_containers(opts).await;
+    match result {
+        Ok(containers) => containers
+            .into_iter()
+            .map(|c| {
+                c.names
+                    .unwrap_or_default()
+                    .first()
+                    .unwrap_or(&"".to_string())
+                    .clone()
+            })
+            .collect(),
+        Err(err) => {
+            error!("Failed to get container names: {}", err);
+            Vec::new()
+        }
+    }
+}

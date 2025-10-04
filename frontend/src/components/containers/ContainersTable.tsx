@@ -196,24 +196,30 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                         >
                           Details
                         </MenuItem>
-                        <MenuItem
-                          color="warning"
-                          onClick={() => onContainerStop(container.id)}
-                        >
-                          Stop
-                        </MenuItem>
-                        <MenuItem
-                          color="primary"
-                          onClick={() => onContainerRestart(container.id)}
-                        >
-                          Restart
-                        </MenuItem>
-                        <MenuItem
-                          color="danger"
-                          onClick={() => onContainerRemove(container.id)}
-                        >
-                          Remove
-                        </MenuItem>
+                        {container.state === "running" && (
+                          <MenuItem
+                            color="warning"
+                            onClick={() => onContainerStop(container.id)}
+                          >
+                            Stop
+                          </MenuItem>
+                        )}
+                        {container.state === "running" && (
+                          <MenuItem
+                            color="primary"
+                            onClick={() => onContainerRestart(container.id)}
+                          >
+                            Restart
+                          </MenuItem>
+                        )}
+                        {container.state === "running" && (
+                          <MenuItem
+                            color="danger"
+                            onClick={() => onContainerRemove(container.id)}
+                          >
+                            Remove
+                          </MenuItem>
+                        )}
                       </Menu>
                     </Dropdown>
                   </Box>

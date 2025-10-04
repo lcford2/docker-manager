@@ -1,11 +1,12 @@
 use crate::api::RouteSpec;
 use crate::api::middleware::require_bearer_auth_middleware;
+use crate::api::types;
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Path, State},
     middleware,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use log::{info, trace};
 use std::sync::Arc;
@@ -16,6 +17,10 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         "/docker",
         Router::new()
             .route("/volumes", get(get_volumes))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/volumes/{name}", delete(delete_volume))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/volumes/bulk-delete", post(bulk_delete_volumes))
             .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/volumes/prune", post(prune_volumes))
             .layer(middleware::from_fn(require_bearer_auth_middleware)),
@@ -30,6 +35,14 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
             method: "POST",
             path: "/docker/volumes/prune".to_string(),
         },
+        RouteSpec {
+            method: "DELETE",
+            path: "/docker/volumes".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/volumes/bulk-delete".to_string(),
+        },
     ];
     (r, docs)
 }
@@ -37,8 +50,6 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
 /// API Endpoint for getting a listing of the volumes on the system.
 ///
 /// # Arguments
-/// * `State(state): State<Arc<AppState>>` - The application state.
-///
 /// # Returns
 /// * JSON response with volume listing
 #[utoipa::path(
@@ -97,4 +108,86 @@ pub async fn prune_volumes(
 
     info!("Pruned {} volumes", volumes_deleted);
     Ok(Json(prune_response))
+}
+
+/// API Endpoint for deleting a volume
+///
+/// # Arguments
+/// * Path(volume_name): `Path<String>`
+/// * State(state): `State<Arc<AppState>>`
+///
+/// # Returns
+/// JSON response indicating success or failure
+#[utoipa::path(
+    delete,
+    path = "/api/docker/volume/{volume_name}",
+    params(
+        ("volume_name", description = "Name of the volume to delete"),
+        ("force", description = "Force deletion of the volume")
+    ),
+    responses(
+        (status = 200, description = "Volume deleted successfully", body = types::generic::GenericResponse),
+        (status = 500, description = "Failed to delete volume")
+    )
+)]
+pub async fn delete_volume(
+    Path(volume_name): Path<String>,
+    Path(force): Path<bool>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    trace!("Deleting volume {}", volume_name);
+    use bollard::query_parameters::RemoveVolumeOptionsBuilder;
+    let opts = Some(RemoveVolumeOptionsBuilder::default().force(force).build());
+    state
+        .docker_client
+        .remove_volume(volume_name.as_str(), opts)
+        .await?;
+    info!("Deleted volume {}", volume_name);
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
+}
+
+/// API Endpoint for deleting multiple volumes
+///
+/// # Arguments
+/// * `State(state)` - The application state
+///
+/// # Returns
+/// JSON response with pruning results
+#[utoipa::path(
+    delete,
+    path = "/api/docker/volumes/bulk-delete",
+    params(types::volumes::BulkDeleteVolumesQueryParams),
+    responses(
+        (status = 200, description = "Volumes deleted successfully"),
+        (status = 500, description = "Failed to delete volumes")
+    )
+)]
+pub async fn bulk_delete_volumes(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::volumes::BulkDeleteVolumesQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    let volume_names = match params.volumes {
+        Some(names) => names,
+        None => {
+            return Err(AppError::InvalidInput(
+                "Volume names not provided".to_string(),
+            ));
+        }
+    };
+    let futures = volume_names.into_iter().map(|name| {
+        let state = state.clone();
+        let force = params.force.unwrap_or(false);
+        use bollard::query_parameters::RemoveVolumeOptionsBuilder;
+        let opts = Some(RemoveVolumeOptionsBuilder::default().force(force).build());
+        async move { state.docker_client.remove_volume(name.as_str(), opts).await }
+    });
+
+    futures::future::join_all(futures).await;
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
 }

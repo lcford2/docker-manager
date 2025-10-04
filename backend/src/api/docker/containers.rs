@@ -4,7 +4,7 @@ use crate::api::types;
 use crate::lib::{docker, errors::AppError, state::AppState};
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    extract::{Path, State},
     middleware,
     routing::{delete, get, post},
 };
@@ -27,6 +27,14 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
             .route("/containers/stop/{name}", post(stop_container))
             .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/containers/restart/{name}", post(restart_container))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/containers/bulk-stop", post(bulk_stop_containers))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/containers/bulk-start", post(bulk_start_containers))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/containers/bulk-restart", post(bulk_restart_containers))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/containers/bulk-delete", post(bulk_delete_containers))
             .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/containers/stats", get(get_stats))
             .layer(middleware::from_fn(require_bearer_auth_middleware)),
@@ -52,6 +60,22 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         RouteSpec {
             method: "POST",
             path: "/docker/containers/restart/{name}".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/containers/bulk-stop".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/containers/bulk-start".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/containers/bulk-restart".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/containers/bulk-delete".to_string(),
         },
         RouteSpec {
             method: "GET",
@@ -154,8 +178,8 @@ where
 )]
 pub async fn delete_container(
     Path(name): Path<String>,
-    Query(params): Query<types::containers::RemoveContainerQueryParams>,
     State(state): State<Arc<AppState>>,
+    Json(params): Json<types::containers::RemoveContainerQueryParams>,
 ) -> Result<Json<types::generic::GenericResponse>, AppError> {
     handle_container_operation(name, "delete", |container_name| async move {
         use bollard::query_parameters::RemoveContainerOptionsBuilder;
@@ -184,7 +208,7 @@ pub async fn delete_container(
 /// Returns a JSON response indicating success or failure
 #[utoipa::path(
     post,
-    path = "/api/docker/containers/{name}/start",
+    path = "/api/docker/containers/start/{name}",
     responses(
         (status = 200, description = "Container started successfully", body=types::generic::GenericResponse),
         (status = 500, description = "Internal server error")
@@ -215,7 +239,7 @@ pub async fn start_container(
 /// Returns a JSON response indicating success or failure
 #[utoipa::path(
     post,
-    path = "/api/docker/containers/{name}/stop",
+    path = "/api/docker/containers/stop/{name}",
     responses(
         (status = 200, description = "Container stopped successfully", body=types::generic::GenericResponse),
         (status = 500, description = "Internal server error")
@@ -250,7 +274,7 @@ async fn stop_container(
 /// Returns a JSON response indicating success or failure
 #[utoipa::path(
     post,
-    path = "/api/docker/containers/{name}/restart",
+    path = "/api/docker/containers/restart/{name}",
     responses(
         (status = 200, description = "Container restarted successfully", body=types::generic::GenericResponse),
         (status = 500, description = "Failed to restart container")
@@ -289,8 +313,8 @@ pub async fn restart_container(
     )
 )]
 async fn get_stats(
-    Query(params): Query<types::containers::ContainerStatsQueryParams>,
     State(state): State<Arc<AppState>>,
+    Json(params): Json<types::containers::ContainerStatsQueryParams>,
 ) -> Result<Json<Vec<bollard::secret::ContainerStatsResponse>>, AppError> {
     trace!("Getting container stats.");
 
@@ -316,4 +340,215 @@ async fn get_stats(
 
     let stats = docker::get_stats(&containers, &state).await;
     Ok(Json(stats))
+}
+
+/// API Endpoint for stopping several containers
+///
+/// # Arguments
+/// * `params` - The parameters for the request
+/// * `state` - The application state
+///
+/// # Returns
+/// Returns a JSON response indicating success or failure
+#[utoipa::path(
+    post,
+    path = "/api/docker/containers/bulk-stop",
+    responses(
+        (status = 200, description = "Containers stopped successfully", body=types::generic::GenericResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn bulk_stop_containers(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::containers::BulkStopContainersQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    let container_names: Vec<String> = match params.containers {
+        Some(containers) => containers,
+        None => {
+            return Err(AppError::InvalidInput(
+                "Container names not provided.".to_string(),
+            ));
+        }
+    };
+
+    let signal: String = match params.signal {
+        Some(signal) => signal,
+        None => "SIGTERM".to_string(),
+    };
+
+    let valid_signals = vec!["SIGTERM", "SIGINT", "SIGHUP", "SIGKILL"];
+    if !valid_signals.contains(&signal.as_str()) {
+        return Err(AppError::InvalidInput(
+            "Invalid signal provided".to_string(),
+        ));
+    }
+
+    let futures = container_names.into_iter().map(|container_name| {
+        let signal = signal.clone();
+        let state = state.clone();
+        async move {
+            use bollard::query_parameters::StopContainerOptionsBuilder;
+            let opts = Some(
+                StopContainerOptionsBuilder::default()
+                    .signal(signal.as_str())
+                    .build(),
+            );
+            state
+                .docker_client
+                .stop_container(&container_name, opts)
+                .await
+        }
+    });
+
+    futures::future::join_all(futures).await;
+
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
+}
+
+/// API Endpoint for starting several containers
+///
+/// # Arguments
+/// * `params` - The parameters for the request
+/// * `state` - The application state
+///
+/// # Returns
+/// Returns a JSON response indicating success or failure
+#[utoipa::path(
+    post,
+    path = "/api/docker/containers/bulk-start",
+    responses(
+        (status = 200, description = "Containers started successfully", body=types::generic::GenericResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn bulk_start_containers(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::containers::BulkStartContainersQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    let container_names: Vec<String> = match params.containers {
+        Some(containers) => containers,
+        None => docker::get_container_names(&state.clone(), false).await,
+    };
+
+    let futures = container_names.into_iter().map(|container_name| {
+        let state = state.clone();
+        async move {
+            use bollard::query_parameters::StartContainerOptionsBuilder;
+            let opts = Some(StartContainerOptionsBuilder::default().build());
+            state
+                .docker_client
+                .start_container(&container_name, opts)
+                .await
+        }
+    });
+
+    futures::future::join_all(futures).await;
+
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
+}
+
+/// API Endpoint for restarting several containers
+///
+/// # Arguments
+/// * `params` - The parameters for the request
+/// * `state` - The application state
+///
+/// # Returns
+/// Returns a JSON response indicating success or failure
+#[utoipa::path(
+    post,
+    path = "/api/docker/containers/bulk-restart",
+    responses(
+        (status = 200, description = "Containers restarted successfully", body=types::generic::GenericResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn bulk_restart_containers(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::containers::BulkStartContainersQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    let container_names: Vec<String> = match params.containers {
+        Some(containers) => containers,
+        None => docker::get_container_names(&state.clone(), false).await,
+    };
+
+    let futures = container_names.into_iter().map(|container_name| {
+        let state = state.clone();
+        async move {
+            use bollard::query_parameters::RestartContainerOptionsBuilder;
+            let opts = Some(RestartContainerOptionsBuilder::default().build());
+            state
+                .docker_client
+                .restart_container(&container_name, opts)
+                .await
+        }
+    });
+
+    futures::future::join_all(futures).await;
+
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
+}
+
+/// API Endpoint for deleting several containers
+///
+/// # Arguments
+/// * `params` - The parameters for the request
+/// * `state` - The application state
+///
+/// # Returns
+/// Returns a JSON response indicating success or failure
+#[utoipa::path(
+    post,
+    path = "/api/docker/containers/bulk-delete",
+    responses(
+        (status = 200, description = "Containers deleted successfully", body=types::generic::GenericResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn bulk_delete_containers(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::containers::BulkDeleteContainersQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    let container_names: Vec<String> = match params.containers {
+        Some(containers) => containers,
+        None => docker::get_container_names(&state.clone(), false).await,
+    };
+
+    let force = params.force.unwrap_or(false);
+    let volumes = params.volumes.unwrap_or(false);
+    let links = params.links.unwrap_or(false);
+
+    let futures = container_names.into_iter().map(|container_name| {
+        let state = state.clone();
+        async move {
+            use bollard::query_parameters::RemoveContainerOptionsBuilder;
+            let opts = Some(
+                RemoveContainerOptionsBuilder::default()
+                    .force(force)
+                    .v(volumes)
+                    .link(links)
+                    .build(),
+            );
+            state
+                .docker_client
+                .remove_container(&container_name, opts)
+                .await
+        }
+    });
+
+    futures::future::join_all(futures).await;
+
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
 }

@@ -60,30 +60,32 @@ export const dockerAPI = {
     return response.data;
   },
 
-  getContainer: async (id: string) => {
-    const response = await api.get(`/docker/containers/${id}`);
+  getContainer: async (name: string) => {
+    const response = await api.get(`/docker/containers/${name}`);
     return response.data;
   },
 
-  startContainer: async (id: string) => {
-    const response = await api.post(`/docker/containers/start/${id}`);
+  startContainer: async (name: string) => {
+    const response = await api.post(`/docker/containers/start/${name}`);
     return response.data;
   },
 
-  stopContainer: async (id: string) => {
-    const response = await api.post(`/docker/containers/stop/${id}`);
+  stopContainer: async (name: string) => {
+    const response = await api.post(`/docker/containers/stop/${name}`);
     return response.data;
   },
 
-  restartContainer: async (id: string) => {
-    const response = await api.post(`/docker/containers/restart/${id}`);
+  restartContainer: async (name: string) => {
+    const response = await api.post(`/docker/containers/restart/${name}`);
     return response.data;
   },
 
-  removeContainer: async (id: string, force: boolean = false) => {
-    const response = await api.delete(
-      `/docker/containers/${id}${force ? "?force=true" : ""}`,
-    );
+  removeContainer: async (name: string, force: boolean = false) => {
+    const response = await api.delete(`/docker/containers/${name}`, {
+      params: {
+        force: force,
+      },
+    });
     return response.data;
   },
 
@@ -91,16 +93,16 @@ export const dockerAPI = {
     containerIds: string[],
     force: boolean = false,
   ) => {
-    const response = await api.post("/containers/bulk-stop", {
-      entity_ids: containerIds,
-      force: force,
+    const response = await api.post("/docker/containers/bulk-stop", {
+      containers: containerIds,
+      signal: "SIGTERM",
     });
     return response.data;
   },
 
   bulkRestartContainers: async (containerIds: string[]) => {
-    const response = await api.post("/containers/bulk-restart", {
-      container_ids: containerIds,
+    const response = await api.post("/docker/containers/bulk-restart", {
+      containers: containerIds,
     });
     return response.data;
   },
@@ -109,9 +111,11 @@ export const dockerAPI = {
     containerIds: string[],
     force: boolean = false,
   ) => {
-    const response = await api.post("/containers/bulk-delete", {
-      entity_ids: containerIds,
+    const response = await api.post("/docker/containers/bulk-delete", {
+      containers: containerIds,
       force: force,
+      volumes: false,
+      links: false,
     });
     return response.data;
   },
@@ -136,34 +140,42 @@ export const dockerAPI = {
     minutes: number = 60,
   ) => {
     const response = await api.get(
-      `/containers/${containerId}/metrics/history?minutes=${minutes}`,
+      `/docker/containers/${containerId}/metrics/history?minutes=${minutes}`,
     );
     return response.data;
   },
 
   // Image management
   pullImage: async (imageName: string) => {
-    const response = await api.post("/images/pull", { image: imageName });
+    const response = await api.post(`/docker/images/pull/${imageName}`);
     return response.data;
   },
 
   removeImage: async (imageId: string, force: boolean = false) => {
-    const response = await api.delete(
-      `/images/${imageId}${force ? "?force=true" : ""}`,
-    );
+    const response = await api.delete(`/docker/images/${imageId}`, {
+      params: {
+        force: force,
+      },
+    });
+    return response.data;
+  },
+
+  pruneImages: async () => {
+    const response = await api.post("/docker/images/prune");
     return response.data;
   },
 
   bulkRemoveImages: async (imageIds: string[], force: boolean = false) => {
-    const response = await api.post("/images/bulk-delete", {
-      entity_ids: imageIds,
+    const response = await api.post("/docker/images/bulk-delete", {
+      images: imageIds,
       force: force,
+      noprune: false,
     });
     return response.data;
   },
 
   inspectImage: async (imageId: string) => {
-    const response = await api.get(`/images/${imageId}/inspect`);
+    const response = await api.get(`/docker/images/inspect/${imageId}`);
     return response.data;
   },
 
@@ -173,19 +185,32 @@ export const dockerAPI = {
     driver?: string;
     labels?: Record<string, string>;
   }) => {
-    const response = await api.post("/volumes", volumeData);
+    const response = await api.post("/docker/volumes", volumeData);
     return response.data;
   },
 
   removeVolume: async (volumeName: string, force: boolean = false) => {
     const response = await api.delete(
-      `/volumes/${volumeName}${force ? "?force=true" : ""}`,
+      `/docker/volumes/${volumeName}${force ? "?force=true" : ""}`,
     );
     return response.data;
   },
 
+  pruneVolumes: async () => {
+    const response = await api.post("/docker/volumes/prune");
+    return response.data;
+  },
+
   inspectVolume: async (volumeName: string) => {
-    const response = await api.get(`/volumes/${volumeName}/inspect`);
+    const response = await api.get(`/docker/volumes/inspect/${volumeName}`);
+    return response.data;
+  },
+
+  bulkRemoveVolumes: async (volumeNames: string[], force: boolean = false) => {
+    const response = await api.post("/docker/volumes/bulk-delete", {
+      volumes: volumeNames,
+      force: force,
+    });
     return response.data;
   },
 
@@ -195,22 +220,34 @@ export const dockerAPI = {
     driver?: string;
     labels?: Record<string, string>;
   }) => {
-    const response = await api.post("/networks", networkData);
+    const response = await api.post("/docker/networks", networkData);
     return response.data;
   },
 
   removeNetwork: async (networkId: string) => {
-    const response = await api.delete(`/networks/${networkId}`);
+    const response = await api.delete(`/docker/networks/${networkId}`);
+    return response.data;
+  },
+
+  pruneNetworks: async () => {
+    const response = await api.post("/docker/networks/prune");
     return response.data;
   },
 
   inspectNetwork: async (networkId: string) => {
-    const response = await api.get(`/networks/${networkId}/inspect`);
+    const response = await api.get(`/docker/networks/${networkId}/inspect`);
+    return response.data;
+  },
+
+  bulkRemoveNetworks: async (networkNames: string[]) => {
+    const response = await api.post("/docker/networks/bulk-delete", {
+      networks: networkNames,
+    });
     return response.data;
   },
 
   connectContainerToNetwork: async (networkId: string, containerId: string) => {
-    const response = await api.post(`/networks/${networkId}/connect`, {
+    const response = await api.post(`/docker/networks/${networkId}/connect`, {
       container: containerId,
     });
     return response.data;
@@ -220,9 +257,12 @@ export const dockerAPI = {
     networkId: string,
     containerId: string,
   ) => {
-    const response = await api.post(`/networks/${networkId}/disconnect`, {
-      container: containerId,
-    });
+    const response = await api.post(
+      `/docker/networks/${networkId}/disconnect`,
+      {
+        container: containerId,
+      },
+    );
     return response.data;
   },
 };

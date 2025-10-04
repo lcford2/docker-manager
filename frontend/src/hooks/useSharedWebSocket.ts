@@ -116,7 +116,7 @@ export const useSharedWebSocket = (
         return;
       }
 
-      const response = await fetch("/api/db/system_info", {
+      const response = await fetch("/api/db/system_stats", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

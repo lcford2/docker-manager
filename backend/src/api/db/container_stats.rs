@@ -2,12 +2,7 @@ use crate::api::RouteSpec;
 use crate::api::middleware::require_bearer_auth_middleware;
 use crate::api::types;
 use crate::lib::{errors::AppError, state::AppState};
-use axum::{
-    Json, Router,
-    extract::{Query, State},
-    middleware,
-    routing::get,
-};
+use axum::{Json, Router, extract::State, middleware, routing::get};
 use log::{info, trace};
 use sqlx::Execute;
 use std::sync::Arc;
@@ -59,7 +54,7 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
 )]
 pub async fn get_container_stats(
     State(state): State<Arc<AppState>>,
-    Query(params): Query<types::db::ContainerStatsQuery>,
+    Json(params): Json<types::db::ContainerStatsQuery>,
 ) -> Result<Json<types::db::ContainerStatsResponse>, AppError> {
     let response = fetch_container_stats(&state, params).await?;
     info!("Successfully fetched container stats");

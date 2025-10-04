@@ -54,3 +54,22 @@ pub struct RemoveContainerQueryParams {
 pub struct ContainerStatsQueryParams {
     pub containers: Option<Vec<String>>,
 }
+
+#[derive(Debug, Deserialize, IntoParams, ToSchema)]
+pub struct BulkStopContainersQueryParams {
+    pub containers: Option<Vec<String>>,
+    pub signal: Option<String>,
+}
+
+#[derive(Debug, Deserialize, IntoParams, ToSchema)]
+pub struct BulkStartContainersQueryParams {
+    pub containers: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize, IntoParams, ToSchema)]
+pub struct BulkDeleteContainersQueryParams {
+    pub containers: Option<Vec<String>>,
+    pub force: Option<bool>,
+    pub volumes: Option<bool>,
+    pub links: Option<bool>,
+}

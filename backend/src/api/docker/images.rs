@@ -1,12 +1,13 @@
 use crate::api::RouteSpec;
 use crate::api::middleware::require_bearer_auth_middleware;
 use crate::api::types;
+use crate::api::types::generic::GenericResponse;
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    extract::{Path, State},
     middleware,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use log::{info, trace};
 use std::default::Default;
@@ -20,6 +21,10 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
             .route("/images", get(get_images))
             .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/images/prune", post(prune_images))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/images/{image_name}", delete(delete_image))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/images/bulk-delete", post(bulk_delete_images))
             .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/images/pull/{image_name}", post(pull_image))
             .layer(middleware::from_fn(require_bearer_auth_middleware)),
@@ -37,6 +42,14 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         RouteSpec {
             method: "POST",
             path: "/docker/images/pull/{name}".to_string(),
+        },
+        RouteSpec {
+            method: "DELETE",
+            path: "/docker/images/{image_name}".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/images/bulk-delete".to_string(),
         },
     ];
     (r, docs)
@@ -94,6 +107,111 @@ pub async fn prune_images(
     Ok(Json(prune_response))
 }
 
+/// API Endpoint for deleting an image
+///
+/// # Arguments
+///
+/// * `name` - The name or ID of the image to delete
+/// * `params` - Query parameters controlling deletion behavior:
+///   - `force`: If true, remove image even if a stopped container is using it
+///   - `noprune`: If true, do not remove untagged parents.
+/// * `state` - The application state
+///
+/// # Returns
+///
+/// Returns a JSON response indicating success or failure
+#[utoipa::path(
+    delete,
+    path = "/api/docker/images/{name}",
+    params(types::images::DeleteImageQueryParams),
+    responses(
+        (status = 200, description = "Image deleted successfully", body=types::generic::GenericResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn delete_image(
+    Path(name): Path<String>,
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::images::DeleteImageQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    trace!("Deleting images");
+    use bollard::query_parameters::RemoveImageOptionsBuilder;
+    let opts = Some(
+        RemoveImageOptionsBuilder::default()
+            .force(params.force.unwrap_or(false))
+            .noprune(params.noprune.unwrap_or(false))
+            .build(),
+    );
+    state
+        .docker_client
+        .remove_image(name.as_str(), opts, None)
+        .await?;
+    info!("Successfully deleted image");
+    Ok(Json(GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
+}
+
+/// API Endpoint for deleting several images
+///
+/// # Arguments
+/// * `params` - The parameters for the request
+/// * `state` - The application state
+///
+/// # Returns
+/// Returns a JSON response indicating success or failure
+#[utoipa::path(
+    post,
+    path = "/api/docker/images/bulk-delete",
+    params(types::images::BulkDeleteImagesQueryParams),
+    responses(
+        (status = 200, description = "Images deleted successfully", body=types::generic::GenericResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+async fn bulk_delete_images(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<types::images::BulkDeleteImagesQueryParams>,
+) -> Result<Json<types::generic::GenericResponse>, AppError> {
+    info!("Deleting images: {params}");
+    let image_names: Vec<String> = match params.images {
+        Some(images) => images,
+        None => {
+            return Err(AppError::InvalidInput("Images not provided.".to_string()));
+        }
+    };
+
+    let force = params.force.unwrap_or(false);
+    let noprune = params.noprune.unwrap_or(false);
+
+    let futures = image_names.into_iter().map(|image_name| {
+        let state = state.clone();
+        let force = force.clone();
+        let noprune = noprune.clone();
+        async move {
+            use bollard::query_parameters::RemoveImageOptionsBuilder;
+            let opts = Some(
+                RemoveImageOptionsBuilder::default()
+                    .force(force)
+                    .noprune(noprune)
+                    .build(),
+            );
+            state
+                .docker_client
+                .remove_image(&image_name, opts, None)
+                .await
+        }
+    });
+
+    futures::future::join_all(futures).await;
+
+    Ok(Json(types::generic::GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
+}
+
 /// API Endpoint for pulling an image
 ///
 /// # Arguments
@@ -116,8 +234,8 @@ pub async fn prune_images(
 )]
 async fn pull_image(
     Path(image_name): Path<String>,
-    Query(params): Query<types::images::ImagePullQueryParams>,
     State(state): State<Arc<AppState>>,
+    Json(params): Json<types::images::ImagePullQueryParams>,
 ) -> Result<Json<types::images::PullImageResponse>, AppError> {
     use bollard::query_parameters::CreateImageOptionsBuilder;
     use futures_util::StreamExt;

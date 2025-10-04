@@ -1,6 +1,6 @@
 use crate::api::RouteSpec;
 use crate::api::middleware::require_bearer_auth_middleware;
-use crate::api::types::generic::GenericResponse;
+use crate::api::types::{generic::GenericResponse, networks::BulkDeleteNetworksQueryParams};
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
     Json, Router,
@@ -21,6 +21,8 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
             .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/networks/{name}", delete(delete_network))
             .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/networks/bulk-delete", post(bulk_delete_networks))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
             .route("/networks/prune", post(prune_networks))
             .layer(middleware::from_fn(require_bearer_auth_middleware)),
     );
@@ -37,6 +39,10 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         RouteSpec {
             method: "POST",
             path: "/docker/networks/prune".to_string(),
+        },
+        RouteSpec {
+            method: "POST",
+            path: "/docker/networks/bulk-delete".to_string(),
         },
     ];
     (r, docs)
@@ -129,4 +135,44 @@ pub async fn prune_networks(
     let prune_response = state.docker_client.prune_networks(opts).await?;
     info!("Successfully pruned networks");
     Ok(Json(prune_response))
+}
+
+/// API Endpoint for deleting multiple networks
+///
+/// # Arguments
+/// * `State(state)` - The application state
+///
+/// # Returns
+/// JSON response with pruning results
+#[utoipa::path(
+    delete,
+    path = "/api/docker/networks/bulk-delete",
+    params(BulkDeleteNetworksQueryParams),
+    responses(
+        (status = 200, description = "Networks deleted successfully"),
+        (status = 500, description = "Failed to delete networks")
+    )
+)]
+pub async fn bulk_delete_networks(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<BulkDeleteNetworksQueryParams>,
+) -> Result<Json<GenericResponse>, AppError> {
+    let network_names = match params.networks {
+        Some(names) => names,
+        None => {
+            return Err(AppError::InvalidInput(
+                "Network names not provided".to_string(),
+            ));
+        }
+    };
+    let futures = network_names.into_iter().map(|name| {
+        let state = state.clone();
+        async move { state.docker_client.remove_network(name.as_str()).await }
+    });
+
+    futures::future::join_all(futures).await;
+    Ok(Json(GenericResponse {
+        success: true,
+        error_message: String::new(),
+    }))
 }
