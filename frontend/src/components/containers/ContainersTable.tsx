@@ -25,6 +25,7 @@ interface ContainersTableProps {
   onContainerClick: (containerId: string) => void;
   onContainerStop: (containerId: string) => void;
   onContainerRestart: (containerId: string) => void;
+  onContainerStart: (containerId: string) => void;
   onContainerRemove: (containerId: string) => void;
 }
 
@@ -35,8 +36,14 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
   onContainerClick,
   onContainerStop,
   onContainerRestart,
+  onContainerStart,
   onContainerRemove,
 }) => {
+  const sortedContainers = [...containers].sort((a, b) => {
+    if (a.state === "running" && b.state !== "running") return -1;
+    if (a.state !== "running" && b.state === "running") return 1;
+    return (a.uptime_seconds ?? Infinity) - (b.uptime_seconds ?? Infinity);
+  });
   return (
     <Sheet
       variant="outlined"
@@ -78,7 +85,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {containers.map((container) => {
+          {sortedContainers.map((container) => {
             const handleSelectionChange = (isChecked: boolean) => {
               const newSelected = isChecked
                 ? selected.concat(container.id)
@@ -148,20 +155,32 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                       >
                         Details
                       </Button>
-                      <Button
-                        color="warning"
-                        size="sm"
-                        onClick={() => onContainerStop(container.id)}
-                      >
-                        Stop
-                      </Button>
-                      <Button
-                        color="primary"
-                        size="sm"
-                        onClick={() => onContainerRestart(container.id)}
-                      >
-                        Restart
-                      </Button>
+                      {container.status === "running" ? (
+                        <>
+                          <Button
+                            color="warning"
+                            size="sm"
+                            onClick={() => onContainerStop(container.id)}
+                          >
+                            Stop
+                          </Button>
+                          <Button
+                            color="primary"
+                            size="sm"
+                            onClick={() => onContainerRestart(container.id)}
+                          >
+                            Restart
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          color="success"
+                          size="sm"
+                          onClick={() => onContainerStart(container.id)}
+                        >
+                          Start
+                        </Button>
+                      )}
                       <Button
                         color="danger"
                         size="sm"
@@ -196,30 +215,35 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                         >
                           Details
                         </MenuItem>
-                        {container.state === "running" && (
+                        {container.state === "running" ? (
+                          <>
+                            <MenuItem
+                              color="warning"
+                              onClick={() => onContainerStop(container.id)}
+                            >
+                              Stop
+                            </MenuItem>
+                            <MenuItem
+                              color="primary"
+                              onClick={() => onContainerRestart(container.id)}
+                            >
+                              Restart
+                            </MenuItem>
+                          </>
+                        ) : (
                           <MenuItem
                             color="warning"
-                            onClick={() => onContainerStop(container.id)}
+                            onClick={() => onContainerStart(container.id)}
                           >
-                            Stop
+                            Start
                           </MenuItem>
                         )}
-                        {container.state === "running" && (
-                          <MenuItem
-                            color="primary"
-                            onClick={() => onContainerRestart(container.id)}
-                          >
-                            Restart
-                          </MenuItem>
-                        )}
-                        {container.state === "running" && (
-                          <MenuItem
-                            color="danger"
-                            onClick={() => onContainerRemove(container.id)}
-                          >
-                            Remove
-                          </MenuItem>
-                        )}
+                        <MenuItem
+                          color="danger"
+                          onClick={() => onContainerRemove(container.id)}
+                        >
+                          Remove
+                        </MenuItem>
                       </Menu>
                     </Dropdown>
                   </Box>

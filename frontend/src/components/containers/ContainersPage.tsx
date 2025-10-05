@@ -62,21 +62,15 @@ const ContainersPage: React.FC = () => {
     }
   }, [containers, modalContainer]);
 
-  // Filter containers: only show active containers and apply search term
-  const filteredContainers = containers
-    .filter((container) => {
-      // Only show active containers (filter out deleted ones)
-      const isActive = "is_active" in container ? container.is_active : true;
-      return isActive;
-    })
-    .filter(
-      (container) =>
-        // Apply search filter
-        (container.name &&
-          container.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        container.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        container.state.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+  // Filter containers by search term
+  const filteredContainers = containers.filter(
+    (container) =>
+      // Apply search filter
+      (container.name &&
+        container.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      container.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      container.state.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   const handleContainerClick = useCallback(
     (containerId: string) => {

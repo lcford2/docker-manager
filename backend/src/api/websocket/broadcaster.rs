@@ -137,6 +137,7 @@ impl Broadcaster {
         let containers = container_stats::fetch_latest_stats_with_sparklines(
             &state.database_pool,
             sparkline_points,
+            &state.docker_client,
         )
         .await
         .map_err(|e| format!("DB query failed: {}", e))?;

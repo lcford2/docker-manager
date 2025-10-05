@@ -211,24 +211,60 @@ async fn build_and_execute_count_query(
 
 /// Fetch latest stats for all active containers with sparkline data
 /// This is optimized for WebSocket broadcasting
+/// Cross-references database with Docker API to ensure only existing containers are returned
 pub async fn fetch_latest_stats_with_sparklines(
     pool: &sqlx::PgPool,
     sparkline_points: i64,
+    docker_client: &bollard::Docker,
 ) -> Result<Vec<types::db::ContainerStatWithSparkline>, sqlx::Error> {
-    // Query: Get latest stat per container (only active containers)
-    let latest_stats = sqlx::query_as::<_, types::db::ContainerStat>(
+    // First, get all current container IDs from Docker
+    use bollard::query_parameters::ListContainersOptionsBuilder;
+    let opts = Some(ListContainersOptionsBuilder::default().all(true).build());
+
+    let current_containers = match docker_client.list_containers(opts).await {
+        Ok(containers) => containers,
+        Err(e) => {
+            log::error!("Failed to list containers from Docker: {}", e);
+            return Ok(Vec::new());
+        }
+    };
+
+    let current_container_ids: Vec<String> = current_containers
+        .iter()
+        .filter_map(|c| c.id.clone())
+        .collect();
+
+    if current_container_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Delete stats for containers that no longer exist in Docker
+    delete_non_existent_containers(pool, &current_container_ids).await?;
+
+    // Query: Get latest stat per container, filtered to only current containers
+    let mut query_builder = sqlx::QueryBuilder::new(
         r#"
         SELECT DISTINCT ON (id)
             id, name, state, status, image, cpu_percent, memory_percent,
             memory_usage, memory_limit, network_rx, network_tx,
             block_read, block_write, uptime_seconds, timestamp, is_active, stat_id
         FROM container_stats
-        WHERE is_active = true
-        ORDER BY id, timestamp DESC
+        WHERE id IN (
         "#,
-    )
-    .fetch_all(pool)
-    .await?;
+    );
+
+    let mut separated = query_builder.separated(", ");
+    for id in &current_container_ids {
+        separated.push_bind(id);
+    }
+    separated.push_unseparated(")");
+
+    query_builder.push(" ORDER BY id, timestamp DESC");
+
+    let latest_stats = query_builder
+        .build_query_as::<types::db::ContainerStat>()
+        .fetch_all(pool)
+        .await?;
 
     // For each container, fetch sparkline history
     let mut results = Vec::new();
@@ -242,6 +278,44 @@ pub async fn fetch_latest_stats_with_sparklines(
     }
 
     Ok(results)
+}
+
+/// Delete stats for containers that no longer exist in Docker
+async fn delete_non_existent_containers(
+    pool: &sqlx::PgPool,
+    current_container_ids: &[String],
+) -> Result<(), sqlx::Error> {
+    if current_container_ids.is_empty() {
+        return Ok(());
+    }
+
+    let mut query_builder =
+        sqlx::QueryBuilder::new("DELETE FROM container_stats WHERE id NOT IN (");
+
+    let mut separated = query_builder.separated(", ");
+    for id in current_container_ids {
+        separated.push_bind(id);
+    }
+    separated.push_unseparated(")");
+
+    let query = query_builder.build();
+
+    match query.execute(pool).await {
+        Ok(result) => {
+            let rows_deleted = result.rows_affected();
+            if rows_deleted > 0 {
+                log::info!(
+                    "Deleted {} stats for containers that no longer exist",
+                    rows_deleted
+                );
+            }
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("Failed to delete non-existent container stats: {}", e);
+            Err(e)
+        }
+    }
 }
 
 /// Sparkline row from query
