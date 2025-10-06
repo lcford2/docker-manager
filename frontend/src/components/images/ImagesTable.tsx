@@ -19,9 +19,10 @@ import React from "react";
 import { DockerImage } from "../../types/docker";
 import {
   formatBytes,
-  formatDateTime,
+  formatTimestamp,
   isDanglingImage,
   splitRepoTag,
+  stripSHA,
 } from "../../utils/formatters";
 
 interface ImagesTableProps {
@@ -120,7 +121,7 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 </td>
                 <td>
                   <Typography noWrap level="body-sm">
-                    {image.Id.substring(0, 12)}
+                    {stripSHA(image.Id).substring(0, 12)}
                   </Typography>
                 </td>
                 <td>
@@ -130,7 +131,7 @@ const ImagesTable: React.FC<ImagesTableProps> = ({
                 </td>
                 <td>
                   <Typography level="body-sm">
-                    {formatDateTime(image.Created)}
+                    {formatTimestamp(image.Created)}
                   </Typography>
                 </td>
 

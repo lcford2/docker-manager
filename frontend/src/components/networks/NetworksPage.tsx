@@ -13,12 +13,17 @@ import React, { useState, useEffect, useCallback } from "react";
 import { dockerAPI } from "../../services/api";
 import { DockerNetwork } from "../../types/docker";
 import NetworksTable from "./NetworksTable";
+import NetworkModal from "./NetworkModal";
 
 const NetworksPage: React.FC = () => {
   const [networks, setNetworks] = useState<DockerNetwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedNetwork, setSelectedNetwork] = useState<DockerNetwork | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch networks
   const fetchNetworks = useCallback(async () => {
@@ -46,6 +51,16 @@ const NetworksPage: React.FC = () => {
       network.Driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
       network.Scope.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const handleDetailsClick = (network: DockerNetwork) => {
+    setSelectedNetwork(network);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedNetwork(null);
+  };
 
   if (loading) {
     return (
@@ -132,8 +147,18 @@ const NetworksPage: React.FC = () => {
 
       {/* Networks Table */}
       <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
-        <NetworksTable networks={filteredNetworks} />
+        <NetworksTable
+          networks={filteredNetworks}
+          onDetailsClick={handleDetailsClick}
+        />
       </Box>
+
+      {/* Network Details Modal */}
+      <NetworkModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        network={selectedNetwork}
+      />
     </Box>
   );
 };

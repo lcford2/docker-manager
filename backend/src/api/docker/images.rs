@@ -5,7 +5,7 @@ use crate::api::types::generic::GenericResponse;
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     middleware,
     routing::{delete, get, post},
 };
@@ -132,7 +132,7 @@ pub async fn prune_images(
 pub async fn delete_image(
     Path(name): Path<String>,
     State(state): State<Arc<AppState>>,
-    Json(params): Json<types::images::DeleteImageQueryParams>,
+    Query(params): Query<types::images::DeleteImageQueryParams>,
 ) -> Result<Json<types::generic::GenericResponse>, AppError> {
     trace!("Deleting images");
     use bollard::query_parameters::RemoveImageOptionsBuilder;

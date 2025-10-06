@@ -4,7 +4,7 @@ use crate::api::types;
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     middleware,
     routing::{delete, get, post},
 };
@@ -120,7 +120,7 @@ pub async fn prune_volumes(
 /// JSON response indicating success or failure
 #[utoipa::path(
     delete,
-    path = "/api/docker/volume/{volume_name}",
+    path = "/api/docker/volumes/{volume_name}",
     params(
         ("volume_name", description = "Name of the volume to delete"),
         ("force", description = "Force deletion of the volume")
@@ -132,12 +132,16 @@ pub async fn prune_volumes(
 )]
 pub async fn delete_volume(
     Path(volume_name): Path<String>,
-    Path(force): Path<bool>,
     State(state): State<Arc<AppState>>,
+    Query(params): Query<types::volumes::DeleteVolumeQueryParams>,
 ) -> Result<Json<types::generic::GenericResponse>, AppError> {
     trace!("Deleting volume {}", volume_name);
     use bollard::query_parameters::RemoveVolumeOptionsBuilder;
-    let opts = Some(RemoveVolumeOptionsBuilder::default().force(force).build());
+    let opts = Some(
+        RemoveVolumeOptionsBuilder::default()
+            .force(params.force.unwrap_or(false))
+            .build(),
+    );
     state
         .docker_client
         .remove_volume(volume_name.as_str(), opts)

@@ -155,7 +155,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                       >
                         Details
                       </Button>
-                      {container.status === "running" ? (
+                      {container.state === "running" ? (
                         <>
                           <Button
                             color="warning"
@@ -232,7 +232,7 @@ const ContainersTable: React.FC<ContainersTableProps> = ({
                           </>
                         ) : (
                           <MenuItem
-                            color="warning"
+                            color="success"
                             onClick={() => onContainerStart(container.id)}
                           >
                             Start

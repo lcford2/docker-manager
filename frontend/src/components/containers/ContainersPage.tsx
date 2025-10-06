@@ -123,6 +123,22 @@ const ContainersPage: React.FC = () => {
     [setError],
   );
 
+  const confirmStartContainer = useCallback(
+    async (containerId: string) => {
+      setActionLoading("start");
+      setConfirmDialog((prev) => ({ ...prev, open: false }));
+
+      try {
+        await dockerAPI.startContainer(containerId);
+      } catch (err: any) {
+        setError(err.message || "Failed to start container");
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [setError],
+  );
+
   const confirmRemoveContainer = useCallback(
     async (containerId: string) => {
       setActionLoading("remove");
@@ -167,6 +183,21 @@ const ContainersPage: React.FC = () => {
       });
     },
     [containers, confirmRestartContainer],
+  );
+
+  const handleContainerStart = useCallback(
+    (containerId: string) => {
+      const container = containers.find((c) => c.id === containerId);
+      if (!container) return;
+
+      setConfirmDialog({
+        open: true,
+        title: "Start Container",
+        message: `Are you sure you want to start the container "${container.name}"?`,
+        onConfirm: () => confirmStartContainer(containerId),
+      });
+    },
+    [containers, confirmStartContainer],
   );
 
   const handleContainerRemove = useCallback(
@@ -388,6 +419,7 @@ const ContainersPage: React.FC = () => {
           onContainerClick={handleContainerClick}
           onContainerStop={handleContainerStop}
           onContainerRestart={handleContainerRestart}
+          onContainerStart={handleContainerStart}
           onContainerRemove={handleContainerRemove}
         />
       </Box>

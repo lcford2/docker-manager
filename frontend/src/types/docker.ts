@@ -5,7 +5,7 @@ export interface DockerImage {
   RepoTags: string[];
   RepoDigests: [];
   Size: number;
-  Created: string;
+  Created: number;
   ParentId?: string;
   Labels?: Record<string, string>;
   Containers?: number;

@@ -53,6 +53,41 @@ export const formatDateTime = (dateString: string): string => {
 };
 
 /**
+ * Format timestamp (seconds from epoch) to human readable format
+ */
+export const formatTimestamp = (timestamp: number): string => {
+  if (!timestamp || timestamp <= 0) {
+    return "Unknown";
+  }
+
+  const date = new Date(timestamp * 1000);
+
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    return "Invalid Date";
+  }
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 7) {
+    return date.toLocaleDateString();
+  } else if (diffDays > 0) {
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  } else if (diffHours > 0) {
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+  } else {
+    return "Just now";
+  }
+};
+
+/**
  * Format image repository and tag
  */
 export const formatImageTag = (repository: string, tag: string): string => {
@@ -262,4 +297,12 @@ export const formatUptime = (createdAt: string, status: string): string => {
   } else {
     return `${diffSeconds}s`;
   }
+};
+
+export const stripSHA = (id_with_sha: string): string => {
+  let shaString = "sha256:";
+  if (id_with_sha.startsWith(shaString)) {
+    return id_with_sha.slice(shaString.length);
+  }
+  return id_with_sha;
 };

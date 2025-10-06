@@ -156,6 +156,7 @@ export const dockerAPI = {
       params: {
         force: force,
       },
+      headers: { "Content-Type": "application/json" },
     });
     return response.data;
   },
@@ -190,9 +191,12 @@ export const dockerAPI = {
   },
 
   removeVolume: async (volumeName: string, force: boolean = false) => {
-    const response = await api.delete(
-      `/docker/volumes/${volumeName}${force ? "?force=true" : ""}`,
-    );
+    const response = await api.delete(`/docker/volumes/${volumeName}`, {
+      params: {
+        force: force,
+      },
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   },
 

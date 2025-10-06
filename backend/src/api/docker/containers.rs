@@ -4,7 +4,7 @@ use crate::api::types;
 use crate::lib::{docker, errors::AppError, state::AppState};
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     middleware,
     routing::{delete, get, post},
 };
@@ -179,7 +179,7 @@ where
 pub async fn delete_container(
     Path(name): Path<String>,
     State(state): State<Arc<AppState>>,
-    Json(params): Json<types::containers::RemoveContainerQueryParams>,
+    Query(params): Query<types::containers::RemoveContainerQueryParams>,
 ) -> Result<Json<types::generic::GenericResponse>, AppError> {
     handle_container_operation(name, "delete", |container_name| async move {
         use bollard::query_parameters::RemoveContainerOptionsBuilder;
@@ -314,7 +314,7 @@ pub async fn restart_container(
 )]
 async fn get_stats(
     State(state): State<Arc<AppState>>,
-    Json(params): Json<types::containers::ContainerStatsQueryParams>,
+    Query(params): Query<types::containers::ContainerStatsQueryParams>,
 ) -> Result<Json<Vec<bollard::secret::ContainerStatsResponse>>, AppError> {
     trace!("Getting container stats.");
 

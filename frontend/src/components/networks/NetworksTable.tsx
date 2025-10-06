@@ -21,13 +21,13 @@ import { formatDateTime } from "../../utils/formatters";
 
 interface NetworksTableProps {
   networks: DockerNetwork[];
-  // onNetworkClick: (networkId: string) => void;
+  onDetailsClick?: (network: DockerNetwork) => void;
   // onNetworkRemove: (networkId: string) => void;
 }
 
 const NetworksTable: React.FC<NetworksTableProps> = ({
   networks,
-  // onNetworkClick,
+  onDetailsClick,
   // onNetworkRemove,
 }) => {
   const [selected, setSelected] = React.useState<readonly string[]>([]);
@@ -130,7 +130,11 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
                     size="sm"
                     sx={{ display: { xs: "none", xl: "flex" } }}
                   >
-                    <Button color="neutral" size="sm">
+                    <Button
+                      color="neutral"
+                      size="sm"
+                      onClick={() => onDetailsClick?.(network)}
+                    >
                       Details
                     </Button>
                     <Button color="danger" size="sm">
@@ -152,7 +156,9 @@ const NetworksTable: React.FC<NetworksTableProps> = ({
                         <MoreHoriz />
                       </MenuButton>
                       <Menu>
-                        <MenuItem>Details</MenuItem>
+                        <MenuItem onClick={() => onDetailsClick?.(network)}>
+                          Details
+                        </MenuItem>
                         <MenuItem color="danger">Remove</MenuItem>
                       </Menu>
                     </Dropdown>
