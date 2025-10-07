@@ -28,6 +28,9 @@ const Login: React.FC = () => {
     try {
       const data = await authAPI.login(username, password);
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", data.user);
+      localStorage.setItem("userId", data.user_id);
+      localStorage.setItem("permission", data.permission);
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.detail || "Login failed");

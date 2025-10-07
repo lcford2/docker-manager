@@ -14,6 +14,7 @@ use utoipa_swagger_ui::SwaggerUi;
 pub mod auth;
 pub mod health;
 pub mod middleware;
+pub mod users;
 pub mod websocket;
 pub mod db {
     pub mod container_stats;
@@ -85,6 +86,7 @@ pub struct ApiDoc;
 pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let (auth_router, auth_routes) = auth::router();
     let (health_router, health_routes) = health::router();
+    let (users_router, users_routes) = users::router();
     let (containers_router, containers_routes) = docker::containers::router();
     let (volumes_router, volumes_routes) = docker::volumes::router();
     let (images_router, images_routes) = docker::images::router();
@@ -99,6 +101,7 @@ pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let app_router = Router::new()
         .merge(auth_router)
         .merge(health_router)
+        .merge(users_router)
         .merge(containers_router)
         .merge(volumes_router)
         .merge(networks_router)
@@ -120,6 +123,7 @@ pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let routes = health_routes
         .into_iter()
         .chain(auth_routes)
+        .chain(users_routes)
         .chain(containers_routes)
         .chain(volumes_routes)
         .chain(images_routes)

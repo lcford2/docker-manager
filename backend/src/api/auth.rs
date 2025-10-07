@@ -46,6 +46,8 @@ pub async fn login_form(
                     error_message: "Invalid credentials".to_string(),
                     token: None,
                     user: None,
+                    user_id: None,
+                    permission: None,
                 }),
             );
         }
@@ -57,20 +59,24 @@ pub async fn login_form(
                     error_message: "Internal server error".to_string(),
                     token: None,
                     user: None,
+                    user_id: None,
+                    permission: None,
                 }),
             );
         }
     };
 
     // Generate JWT token
-    match auth::generate_jwt_token(&user.name) {
+    match auth::generate_jwt_token(&user) {
         Ok(token) => (
             StatusCode::OK,
             Json(LoginResponse {
                 success: true,
                 error_message: "".to_string(),
                 token: Some(token),
-                user: Some(user.name),
+                user: Some(user.username.clone()),
+                user_id: Some(user.id),
+                permission: Some(user.permission.clone()),
             }),
         ),
         Err(_) => (
@@ -80,6 +86,8 @@ pub async fn login_form(
                 error_message: "Failed to generate token".to_string(),
                 token: None,
                 user: None,
+                user_id: None,
+                permission: None,
             }),
         ),
     }
@@ -101,6 +109,8 @@ pub async fn login_json(
                     error_message: "Invalid credentials".to_string(),
                     token: None,
                     user: None,
+                    user_id: None,
+                    permission: None,
                 }),
             );
         }
@@ -112,20 +122,24 @@ pub async fn login_json(
                     error_message: "Internal server error".to_string(),
                     token: None,
                     user: None,
+                    user_id: None,
+                    permission: None,
                 }),
             );
         }
     };
 
     // Generate JWT token
-    match auth::generate_jwt_token(&user.name) {
+    match auth::generate_jwt_token(&user) {
         Ok(token) => (
             StatusCode::OK,
             Json(LoginResponse {
                 success: true,
                 error_message: "".to_string(),
                 token: Some(token),
-                user: Some(user.name),
+                user: Some(user.username.clone()),
+                user_id: Some(user.id),
+                permission: Some(user.permission.clone()),
             }),
         ),
         Err(_) => (
@@ -135,6 +149,8 @@ pub async fn login_json(
                 error_message: "Failed to generate token".to_string(),
                 token: None,
                 user: None,
+                user_id: None,
+                permission: None,
             }),
         ),
     }

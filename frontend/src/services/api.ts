@@ -49,6 +49,43 @@ export const authAPI = {
   },
 };
 
+export const usersAPI = {
+  listUsers: async () => {
+    const response = await api.get("/users");
+    return response.data;
+  },
+  getUser: async (id: number) => {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  },
+  createUser: async (userData: {
+    username: string;
+    email: string;
+    password: string;
+    permission: string;
+  }) => {
+    const response = await api.post("/users", userData);
+    return response.data;
+  },
+  updateUser: async (
+    id: number,
+    userData: {
+      username?: string;
+      email?: string;
+      password?: string;
+      permission?: string;
+      is_active?: boolean;
+    },
+  ) => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  },
+  deleteUser: async (id: number) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+};
+
 export const dockerAPI = {
   getSystemInfo: async () => {
     const response = await api.get("/docker-status");

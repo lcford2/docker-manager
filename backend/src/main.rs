@@ -64,15 +64,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store);
 
-    let mut backend = auth::Backend::default();
-    let password_hash: Vec<u8> = auth::hash_password("password");
-    backend.users.insert(
-        "lucas".to_string(),
-        auth::User {
-            name: "Lucas".to_string(),
-            pw_hash: password_hash,
-        },
-    );
+    let backend = auth::Backend {
+        db_pool: app_state.database_pool.clone(),
+    };
     let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
 
     // Try to get Docker version, but don't crash if it fails

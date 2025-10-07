@@ -4,11 +4,16 @@ services:
     image: postgres:16
     environment:
       POSTGRES_DB: docker_manager
-      POSTGRES_USER: docker_manager
-      POSTGRES_PASSWORD: docker_manager
+      POSTGRES_USER: ${POSTGRES_USER:-docker_manager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docker_manager}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/create_users_table.sql:/docker-entrypoint-initdb.d/01_create_users_table.sql
+      - ./database/create_admin_user.sh:/docker-entrypoint-initdb.d/02_create_admin_user.sh
     ports:
       - 5532:5432
     healthcheck:

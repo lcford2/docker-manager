@@ -7,6 +7,7 @@ import { Routes, Route } from "react-router-dom";
 import AuthGuard from "./components/auth/AuthGuard";
 import Login from "./components/auth/Login";
 import Layout from "./components/common/Layout";
+import AdminDashboard from "./components/admin/AdminDashboard";
 import ContainersPage from "./components/containers/ContainersPage";
 import Dashboard from "./components/dashboard/Dashboard";
 import ImagesPage from "./components/images/ImagesPage";
@@ -91,6 +92,16 @@ const App: React.FC = () => {
                 <AuthGuard>
                   <Layout>
                     <NetworksPage />
+                  </Layout>
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AuthGuard requireAdmin>
+                  <Layout>
+                    <AdminDashboard />
                   </Layout>
                 </AuthGuard>
               }

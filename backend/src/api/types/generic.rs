@@ -16,6 +16,8 @@ pub struct LoginResponse {
     pub error_message: String,
     pub token: Option<String>,
     pub user: Option<String>,
+    pub user_id: Option<i32>,
+    pub permission: Option<String>,
 }
 
 /// Response structure for health check endpoint

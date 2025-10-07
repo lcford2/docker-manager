@@ -4,6 +4,7 @@ import {
   Storage,
   Image,
   NetworkCheck,
+  AdminPanelSettings,
   Logout,
   Menu as MenuIcon,
 } from "@mui/icons-material";
@@ -37,8 +38,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("permission");
     navigate("/login");
   };
+
+  const permission = localStorage.getItem("permission");
 
   const menuItems = [
     { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
@@ -47,6 +53,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: "Images", icon: <Image />, path: "/images" },
     { text: "Networks", icon: <NetworkCheck />, path: "/networks" },
   ];
+
+  if (permission === "admin") {
+    menuItems.push({
+      text: "Admin",
+      icon: <AdminPanelSettings />,
+      path: "/admin",
+    });
+  }
 
   const drawer = (
     <Sheet
