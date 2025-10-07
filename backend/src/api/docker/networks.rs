@@ -1,5 +1,5 @@
 use crate::api::RouteSpec;
-use crate::api::middleware::require_bearer_auth_middleware;
+use crate::api::middleware::{require_bearer_auth_middleware, require_write_permission_middleware};
 use crate::api::types::{generic::GenericResponse, networks::BulkDeleteNetworksQueryParams};
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
@@ -14,18 +14,19 @@ use std::sync::Arc;
 
 /// Creates the router for Docker network endpoints
 pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
-    let r = Router::new().nest(
-        "/docker",
-        Router::new()
-            .route("/networks", get(get_networks))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/networks/{name}", delete(delete_network))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/networks/bulk-delete", post(bulk_delete_networks))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/networks/prune", post(prune_networks))
-            .layer(middleware::from_fn(require_bearer_auth_middleware)),
-    );
+    // Read-only routes (any authenticated user)
+    let read_routes = Router::new()
+        .route("/networks", get(get_networks))
+        .layer(middleware::from_fn(require_bearer_auth_middleware));
+
+    // Write routes (readwrite or admin only)
+    let write_routes = Router::new()
+        .route("/networks/{name}", delete(delete_network))
+        .route("/networks/bulk-delete", post(bulk_delete_networks))
+        .route("/networks/prune", post(prune_networks))
+        .layer(middleware::from_fn(require_write_permission_middleware));
+
+    let r = Router::new().nest("/docker", read_routes.merge(write_routes));
 
     let docs = vec![
         RouteSpec {

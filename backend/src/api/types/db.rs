@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 ///
 /// Represents a container's statistics and metadata at a specific point in time.
 ///
@@ -186,4 +186,31 @@ pub struct ContainerStatWithSparkline {
     pub uptime: String,
     /// Historical sparkline data for visualization
     pub sparkline_data: SparklineData,
+}
+
+/// Aggregate metrics data point (sum of all containers at a point in time)
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
+pub struct AggregateMetricsPoint {
+    /// Timestamp of this data point
+    pub timestamp: DateTime<Utc>,
+    /// Total CPU usage across all containers
+    pub total_cpu: f64,
+    /// Total memory usage percentage across all containers
+    pub total_memory: f64,
+}
+
+/// Query parameters for aggregate metrics history
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
+pub struct AggregateMetricsQuery {
+    /// Number of minutes of history to fetch (default: 30)
+    pub minutes: Option<i64>,
+    /// Maximum number of data points to return
+    pub limit: Option<i64>,
+}
+
+/// Response for aggregate metrics history
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AggregateMetricsResponse {
+    pub data: Vec<AggregateMetricsPoint>,
+    pub total_count: i64,
 }

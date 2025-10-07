@@ -32,11 +32,12 @@ const Dashboard: React.FC = React.memo(() => {
   } = useDockerStore();
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [historicalDataLoaded, setHistoricalDataLoaded] = useState(false);
 
   // Hook to manage WebSocket connection and data fetching
   useSharedWebSocket({});
 
-  // Effect for fetching initial REST API data
+  // Effect for fetching initial REST API data and historical metrics
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,12 +45,14 @@ const Dashboard: React.FC = React.memo(() => {
         setDockerStatus(dockerStatusData);
 
         if (dockerStatusData.status === "connected") {
-          const [apiContainers, volumes, images, networks] = await Promise.all([
-            dockerAPI.getContainers(),
-            dockerAPI.getVolumes(),
-            dockerAPI.getImages(),
-            dockerAPI.getNetworks(),
-          ]);
+          const [apiContainers, volumes, images, networks, metricsHistory] =
+            await Promise.all([
+              dockerAPI.getContainers(),
+              dockerAPI.getVolumes(),
+              dockerAPI.getImages(),
+              dockerAPI.getNetworks(),
+              dockerAPI.getAggregateMetricsHistory(30, MAX_CHART_DATA_POINTS),
+            ]);
 
           const runningContainers = apiContainers.filter(
             (c: any) => c.state === "running",
@@ -68,6 +71,22 @@ const Dashboard: React.FC = React.memo(() => {
             },
             loading: false,
           });
+
+          // Load historical chart data
+          if (metricsHistory?.data && metricsHistory.data.length > 0) {
+            const historicalChartData = metricsHistory.data.map(
+              (point: any) => ({
+                time: new Date(point.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                cpu: point.total_cpu,
+                memory: point.total_memory,
+              }),
+            );
+            setChartData(historicalChartData);
+            setHistoricalDataLoaded(true);
+          }
         } else {
           mergeData({ loading: false });
         }
@@ -80,8 +99,11 @@ const Dashboard: React.FC = React.memo(() => {
     fetchData();
   }, [mergeData, setDockerStatus, setError]);
 
-  // Effect for updating chart data when container stats change
+  // Effect for updating chart data when container stats change from WebSocket
   useEffect(() => {
+    // Only process WebSocket updates after historical data has been loaded
+    if (!historicalDataLoaded) return;
+
     if (containers && containers.length > 0) {
       const containerStats = containers.filter(
         (c) => "cpu_percent" in c,
@@ -100,7 +122,6 @@ const Dashboard: React.FC = React.memo(() => {
       const time = new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
-        // second: "2-digit",
       });
 
       const newPoint: ChartDataPoint = {
@@ -110,6 +131,18 @@ const Dashboard: React.FC = React.memo(() => {
       };
 
       setChartData((prevData) => {
+        // Check if this is a duplicate time point (avoid adding same timestamp twice)
+        if (
+          prevData.length > 0 &&
+          prevData[prevData.length - 1].time === time
+        ) {
+          // Update the last point instead of adding a new one
+          const updated = [...prevData];
+          updated[updated.length - 1] = newPoint;
+          return updated;
+        }
+
+        // Add new point and maintain max length
         const updatedData = [...prevData, newPoint];
         if (updatedData.length > MAX_CHART_DATA_POINTS) {
           return updatedData.slice(updatedData.length - MAX_CHART_DATA_POINTS);
@@ -117,7 +150,7 @@ const Dashboard: React.FC = React.memo(() => {
         return updatedData;
       });
     }
-  }, [containers]);
+  }, [containers, historicalDataLoaded]);
 
   if (loading) {
     return (

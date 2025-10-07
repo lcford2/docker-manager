@@ -1,5 +1,5 @@
 use crate::api::RouteSpec;
-use crate::api::middleware::require_bearer_auth_middleware;
+use crate::api::middleware::{require_bearer_auth_middleware, require_write_permission_middleware};
 use crate::api::types;
 use crate::lib::{docker, errors::AppError, state::AppState};
 use axum::{
@@ -15,30 +15,25 @@ use std::sync::Arc;
 
 /// Creates the router for Docker container endpoints
 pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
-    let r = Router::new().nest(
-        "/docker",
-        Router::new()
-            .route("/containers", get(get_containers))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/{name}", delete(delete_container))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/start/{name}", post(start_container))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/stop/{name}", post(stop_container))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/restart/{name}", post(restart_container))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/bulk-stop", post(bulk_stop_containers))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/bulk-start", post(bulk_start_containers))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/bulk-restart", post(bulk_restart_containers))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/bulk-delete", post(bulk_delete_containers))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/containers/stats", get(get_stats))
-            .layer(middleware::from_fn(require_bearer_auth_middleware)),
-    );
+    // Read-only routes (any authenticated user)
+    let read_routes = Router::new()
+        .route("/containers", get(get_containers))
+        .route("/containers/stats", get(get_stats))
+        .layer(middleware::from_fn(require_bearer_auth_middleware));
+
+    // Write routes (readwrite or admin only)
+    let write_routes = Router::new()
+        .route("/containers/{name}", delete(delete_container))
+        .route("/containers/start/{name}", post(start_container))
+        .route("/containers/stop/{name}", post(stop_container))
+        .route("/containers/restart/{name}", post(restart_container))
+        .route("/containers/bulk-stop", post(bulk_stop_containers))
+        .route("/containers/bulk-start", post(bulk_start_containers))
+        .route("/containers/bulk-restart", post(bulk_restart_containers))
+        .route("/containers/bulk-delete", post(bulk_delete_containers))
+        .layer(middleware::from_fn(require_write_permission_middleware));
+
+    let r = Router::new().nest("/docker", read_routes.merge(write_routes));
 
     let docs = vec![
         RouteSpec {

@@ -1,5 +1,5 @@
 use crate::api::RouteSpec;
-use crate::api::middleware::require_bearer_auth_middleware;
+use crate::api::middleware::{require_bearer_auth_middleware, require_write_permission_middleware};
 use crate::api::types;
 use crate::lib::{errors::AppError, state::AppState};
 use axum::{
@@ -13,18 +13,19 @@ use std::sync::Arc;
 
 /// Creates the router for Docker volume endpoints
 pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
-    let r = Router::new().nest(
-        "/docker",
-        Router::new()
-            .route("/volumes", get(get_volumes))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/volumes/{name}", delete(delete_volume))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/volumes/bulk-delete", post(bulk_delete_volumes))
-            .layer(middleware::from_fn(require_bearer_auth_middleware))
-            .route("/volumes/prune", post(prune_volumes))
-            .layer(middleware::from_fn(require_bearer_auth_middleware)),
-    );
+    // Read-only routes (any authenticated user)
+    let read_routes = Router::new()
+        .route("/volumes", get(get_volumes))
+        .layer(middleware::from_fn(require_bearer_auth_middleware));
+
+    // Write routes (readwrite or admin only)
+    let write_routes = Router::new()
+        .route("/volumes/{name}", delete(delete_volume))
+        .route("/volumes/bulk-delete", post(bulk_delete_volumes))
+        .route("/volumes/prune", post(prune_volumes))
+        .layer(middleware::from_fn(require_write_permission_middleware));
+
+    let r = Router::new().nest("/docker", read_routes.merge(write_routes));
 
     let docs = vec![
         RouteSpec {

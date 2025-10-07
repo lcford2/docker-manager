@@ -182,6 +182,16 @@ export const dockerAPI = {
     return response.data;
   },
 
+  getAggregateMetricsHistory: async (
+    minutes: number = 30,
+    limit: number = 100,
+  ) => {
+    const response = await api.get(
+      `/db/aggregate_metrics?minutes=${minutes}&limit=${limit}`,
+    );
+    return response.data;
+  },
+
   // Image management
   pullImage: async (imageName: string) => {
     const response = await api.post(`/docker/images/pull/${imageName}`);

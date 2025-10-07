@@ -2,7 +2,13 @@ use crate::api::RouteSpec;
 use crate::api::middleware::require_bearer_auth_middleware;
 use crate::api::types;
 use crate::lib::{errors::AppError, state::AppState};
-use axum::{Json, Router, extract::State, middleware, routing::get};
+use axum::{
+    Json, Router,
+    extract::{Query, State},
+    middleware,
+    routing::get,
+};
+use chrono::{Duration, Utc};
 use log::{info, trace};
 use sqlx::Execute;
 use std::sync::Arc;
@@ -31,13 +37,21 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
         "/db",
         Router::new()
             .route("/container_stats", get(get_container_stats))
+            .layer(middleware::from_fn(require_bearer_auth_middleware))
+            .route("/aggregate_metrics", get(get_aggregate_metrics))
             .layer(middleware::from_fn(require_bearer_auth_middleware)),
     );
 
-    let docs = vec![RouteSpec {
-        method: "GET",
-        path: "/db/container_stats".to_string(),
-    }];
+    let docs = vec![
+        RouteSpec {
+            method: "GET",
+            path: "/db/container_stats".to_string(),
+        },
+        RouteSpec {
+            method: "GET",
+            path: "/db/aggregate_metrics".to_string(),
+        },
+    ];
     (r, docs)
 }
 
@@ -358,4 +372,51 @@ async fn fetch_sparkline_for_container(
         block_read: rows.iter().rev().filter_map(|r| r.block_read).collect(),
         block_write: rows.iter().rev().filter_map(|r| r.block_write).collect(),
     })
+}
+
+/// API endpoint for retrieving aggregate metrics history
+/// Returns the sum of CPU and memory usage across all containers over time
+#[utoipa::path(
+    get,
+    path="/api/db/aggregate_metrics",
+    params(types::db::AggregateMetricsQuery),
+    responses(
+        (status = 200, description = "Aggregate metrics retrieved successfully", body = types::db::AggregateMetricsResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn get_aggregate_metrics(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<types::db::AggregateMetricsQuery>,
+) -> Result<Json<types::db::AggregateMetricsResponse>, AppError> {
+    let minutes = params.minutes.unwrap_or(30);
+    let limit = params.limit.unwrap_or(100).min(500); // Cap at 500 points
+
+    let since = Utc::now() - Duration::minutes(minutes);
+
+    // Query to get aggregate metrics grouped by timestamp
+    let data = sqlx::query_as::<_, types::db::AggregateMetricsPoint>(
+        r#"
+        SELECT
+            timestamp,
+            COALESCE(SUM(cpu_percent), 0.0) as total_cpu,
+            COALESCE(SUM(memory_percent), 0.0) as total_memory
+        FROM container_stats
+        WHERE timestamp >= $1
+        GROUP BY timestamp
+        ORDER BY timestamp ASC
+        LIMIT $2
+        "#,
+    )
+    .bind(since)
+    .bind(limit)
+    .fetch_all(&state.database_pool)
+    .await?;
+
+    let total_count = data.len() as i64;
+
+    Ok(Json(types::db::AggregateMetricsResponse {
+        data,
+        total_count,
+    }))
 }
