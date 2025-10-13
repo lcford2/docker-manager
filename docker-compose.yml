@@ -31,6 +31,11 @@ services:
       dockerfile: Dockerfile
     environment:
       RUST_ENV: ${RUST_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:

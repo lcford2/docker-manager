@@ -70,6 +70,7 @@ dependencies = [
  "bollard",
  "chrono",
  "config",
+ "dotenvy",
  "futures",
  "futures-util",
  "jsonwebtoken",

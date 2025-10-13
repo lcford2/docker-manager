@@ -1,0 +1,81 @@
+# ============================================
+# Docker Manager - Simplified Configuration
+# ============================================
+# This file contains all configurable settings for the Docker Manager application.
+# Edit values below to customize behavior. Secrets are loaded from .env file.
+
+[server]
+# Server host and port
+host = "127.0.0.1"
+port = 3010
+
+[database]
+# Database connection settings
+host = "127.0.0.1"
+port = 5432
+database_name = "docker_manager"
+username = "docker_manager"
+# password is loaded from .env file (DB_PASSWORD)
+
+[retention]
+# How long to keep historical statistics (hours)
+stats_retention_hours = 24
+
+[limits]
+# Default number of records returned in queries
+default_query_limit = 100
+
+# Maximum query limit to prevent excessive data retrieval
+max_query_limit = 500
+
+# Default history duration when querying stats (minutes)
+default_history_minutes = 30
+
+[workers]
+# Background worker collection intervals (seconds)
+# How often to collect container statistics
+container_stats_interval = 30
+
+# How often to collect system information
+system_info_interval = 15
+
+[websocket]
+# Base broadcast interval (seconds)
+# Container broadcasts use this value
+# System broadcasts use 1.5x this value
+broadcast_interval = 3
+
+# How often the client sends ping messages to keep connection alive (milliseconds)
+ping_interval = 30000
+
+# Time before considering connection stale and reconnecting (milliseconds)
+stale_timeout = 60000
+
+# Maximum number of reconnection attempts before giving up
+max_reconnect_attempts = 10
+
+[auth]
+# JWT token expiration time (hours)
+jwt_expiration_hours = 24
+# jwt_secret is loaded from .env file (JWT_SECRET)
+
+[cache]
+# Cache timeout for fast-changing resources: containers, metrics, system_info, networks (milliseconds)
+default_ttl = 5000
+
+# Cache timeout for slow-changing resources: images, volumes (milliseconds)
+slow_resource_ttl = 20000
+
+# Retry attempts for failed API calls (applies to all resources)
+retry_attempts = 3
+
+[ui]
+# Maximum number of data points to display in charts
+max_chart_data_points = 60
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+
+# Log format: simple, json
+format = "simple"

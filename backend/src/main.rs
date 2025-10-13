@@ -41,6 +41,10 @@ fn with_prefix(prefix: &str, routes: Vec<api::RouteSpec>) -> Vec<api::RouteSpec>
 /// Application entry point
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load .env file if it exists (for development)
+    // In production, environment variables are set by docker-compose
+    dotenvy::dotenv().ok();
+
     // Initialize logger early, but handle errors gracefully
     simple_logger::init_with_level(log::Level::Info)
         .map_err(|e| format!("Failed to initialize logger: {}", e))?;

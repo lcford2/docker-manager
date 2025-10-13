@@ -1,7 +1,7 @@
 import { Box } from "@mui/joy";
 import CssBaseline from "@mui/joy/CssBaseline";
 import { CssVarsProvider } from "@mui/joy/styles";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import AuthGuard from "./components/auth/AuthGuard";
@@ -14,20 +14,56 @@ import ImagesPage from "./components/images/ImagesPage";
 import NetworksPage from "./components/networks/NetworksPage";
 import VolumesPage from "./components/volumes/VolumesPage";
 import { WebSocketProvider } from "./contexts/WebSocketContext";
+import { configService, AppConfig } from "./services/configService";
 
 const App: React.FC = () => {
   const token = localStorage.getItem("token") || "";
-  const wsConfig = useMemo(
-    () => ({
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  // Load configuration on mount
+  useEffect(() => {
+    configService
+      .loadConfig()
+      .then(setConfig)
+      .catch((error) => {
+        console.error("Failed to load configuration:", error);
+        // Use defaults from configService
+        setConfig(configService.getConfig());
+      })
+      .finally(() => setConfigLoading(false));
+  }, []);
+
+  const wsConfig = useMemo(() => {
+    if (!config) return null;
+
+    return {
       url: `ws://${window.location.host}/api/ws`,
-      // url: "ws://172.24.0.3:6500/api/ws/connect",
       token,
-      pingInterval: 30000,
-      staleConnectionTimeout: 60000,
-      maxReconnectionAttempts: 10,
-    }),
-    [token],
-  );
+      pingInterval: config.websocket.pingInterval,
+      staleConnectionTimeout: config.websocket.staleTimeout,
+      maxReconnectionAttempts: config.websocket.maxReconnectAttempts,
+    };
+  }, [token, config]);
+
+  // Show loading state while config is being fetched
+  if (configLoading || !config || !wsConfig) {
+    return (
+      <CssVarsProvider defaultMode="dark">
+        <CssBaseline />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh",
+          }}
+        >
+          Loading configuration...
+        </Box>
+      </CssVarsProvider>
+    );
+  }
 
   return (
     <CssVarsProvider defaultMode="dark">

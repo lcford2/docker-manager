@@ -256,11 +256,14 @@ async fn write_system_info_to_db(system_info: SystemInfo, state: &AppState) {
 /// Deletes statistics older than 24 hours from the database
 async fn delete_old_rows(table: &str, state: &AppState) {
     trace!("Deleting old rows from table {}", table);
+    let retention_hours = state.config.retention.stats_retention_hours;
     let mut qb = sqlx::QueryBuilder::new("DELETE FROM ");
     match table {
         "container_stats" | "system_info" => {
             qb.push(table) // raw push for identifiers
-                .push(" WHERE timestamp < NOW() - interval '24 hours'");
+                .push(" WHERE timestamp < NOW() - interval '")
+                .push(retention_hours.to_string())
+                .push(" hours'");
         }
         _ => {
             error!("Invalid table: {table}");
@@ -351,9 +354,9 @@ async fn cleanup_deleted_container_stats(
     }
 }
 
-/// Background worker that collects container statistics every 30 seconds
+/// Background worker that collects container statistics
 pub async fn container_stats_worker(state: Arc<AppState>) {
-    let interval = Duration::from_secs(30);
+    let interval = Duration::from_secs(state.config.workers.container_stats_interval);
     let mut next_exe_time = Instant::now() + interval;
 
     loop {
@@ -374,9 +377,9 @@ pub async fn container_stats_worker(state: Arc<AppState>) {
     }
 }
 
-/// Background worker that collects system information every 15 seconds
+/// Background worker that collects system information
 pub async fn system_info_worker(state: Arc<AppState>) {
-    let interval = Duration::from_secs(15);
+    let interval = Duration::from_secs(state.config.workers.system_info_interval);
     let mut next_exe_time = Instant::now() + interval;
 
     loop {

@@ -12,6 +12,7 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub mod auth;
+pub mod config;
 pub mod health;
 pub mod middleware;
 pub mod users;
@@ -85,6 +86,7 @@ pub struct ApiDoc;
 /// Creates the main API router combining all sub-routers
 pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let (auth_router, auth_routes) = auth::router();
+    let (config_router, config_routes) = config::router();
     let (health_router, health_routes) = health::router();
     let (users_router, users_routes) = users::router();
     let (containers_router, containers_routes) = docker::containers::router();
@@ -100,6 +102,7 @@ pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
 
     let app_router = Router::new()
         .merge(auth_router)
+        .merge(config_router)
         .merge(health_router)
         .merge(users_router)
         .merge(containers_router)
@@ -123,6 +126,7 @@ pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let routes = health_routes
         .into_iter()
         .chain(auth_routes)
+        .chain(config_routes)
         .chain(users_routes)
         .chain(containers_routes)
         .chain(volumes_routes)

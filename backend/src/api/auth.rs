@@ -2,7 +2,9 @@ use crate::api::RouteSpec;
 use crate::api::types::generic::LoginResponse;
 use crate::lib::auth;
 use crate::lib::state::AppState;
-use axum::{Form, Json, Router, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{
+    Form, Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post,
+};
 use std::sync::Arc;
 
 type AuthSession = axum_login::AuthSession<auth::Backend>;
@@ -34,6 +36,7 @@ pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
 /// Returns a JWT token on successful authentication
 pub async fn login_form(
     auth_session: AuthSession,
+    State(state): State<Arc<AppState>>,
     Form(creds): Form<auth::Credentials>,
 ) -> impl IntoResponse {
     let user = match auth_session.authenticate(creds.clone()).await {
@@ -67,7 +70,7 @@ pub async fn login_form(
     };
 
     // Generate JWT token
-    match auth::generate_jwt_token(&user) {
+    match auth::generate_jwt_token(&user, state.config.auth.jwt_expiration_hours) {
         Ok(token) => (
             StatusCode::OK,
             Json(LoginResponse {
@@ -97,6 +100,7 @@ pub async fn login_form(
 /// Returns a JWT token on successful authentication
 pub async fn login_json(
     auth_session: AuthSession,
+    State(state): State<Arc<AppState>>,
     Json(creds): Json<auth::Credentials>,
 ) -> impl IntoResponse {
     let user = match auth_session.authenticate(creds.clone()).await {
@@ -130,7 +134,7 @@ pub async fn login_json(
     };
 
     // Generate JWT token
-    match auth::generate_jwt_token(&user) {
+    match auth::generate_jwt_token(&user, state.config.auth.jwt_expiration_hours) {
         Ok(token) => (
             StatusCode::OK,
             Json(LoginResponse {

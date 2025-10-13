@@ -130,7 +130,7 @@ async fn fetch_container_stats(
     query_builder.push(" ORDER BY timestamp DESC");
 
     // Add LIMIT and OFFSET
-    let default_limit = 3600 * 24 / 30; // one days worth of data at a 30 seconds collection interval
+    let default_limit = state.config.limits.container_stats_default();
     let limit = params.limit.unwrap_or(default_limit).min(default_limit);
     let offset = params.offset.unwrap_or(0);
 
@@ -389,8 +389,11 @@ pub async fn get_aggregate_metrics(
     State(state): State<Arc<AppState>>,
     Query(params): Query<types::db::AggregateMetricsQuery>,
 ) -> Result<Json<types::db::AggregateMetricsResponse>, AppError> {
-    let minutes = params.minutes.unwrap_or(30);
-    let limit = params.limit.unwrap_or(100).min(500); // Cap at 500 points
+    let minutes = params
+        .minutes
+        .unwrap_or(state.config.limits.default_history_minutes);
+    let max_limit = state.config.limits.max_query_limit;
+    let limit = params.limit.unwrap_or(100).min(max_limit);
 
     let since = Utc::now() - Duration::minutes(minutes);
 

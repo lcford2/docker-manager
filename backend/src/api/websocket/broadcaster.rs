@@ -77,7 +77,9 @@ impl Broadcaster {
     /// Start background task to collect and broadcast container stats
     pub fn start_container_stats_task(self: Arc<Self>, state: Arc<AppState>) {
         tokio::spawn(async move {
-            let mut interval = interval(Duration::from_secs(3));
+            let mut interval = interval(Duration::from_secs(
+                state.config.websocket.container_broadcast_interval(),
+            ));
 
             loop {
                 interval.tick().await;
@@ -103,7 +105,9 @@ impl Broadcaster {
     /// Start background task to collect and broadcast system stats
     pub fn start_system_stats_task(self: Arc<Self>, state: Arc<AppState>) {
         tokio::spawn(async move {
-            let mut interval = interval(Duration::from_secs(5));
+            let mut interval = interval(Duration::from_secs(
+                state.config.websocket.system_broadcast_interval(),
+            ));
 
             loop {
                 interval.tick().await;
@@ -131,8 +135,11 @@ impl Broadcaster {
         &self,
         state: &AppState,
     ) -> Result<ContainerStatsData, String> {
-        // Sparkline points: 30s collection interval, want ~30 minutes of history
-        let sparkline_points = 60;
+        let sparkline_points = state
+            .config
+            .limits
+            .sparkline_points(state.config.workers.container_stats_interval)
+            as i64;
 
         let containers = container_stats::fetch_latest_stats_with_sparklines(
             &state.database_pool,

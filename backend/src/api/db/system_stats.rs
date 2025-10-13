@@ -97,7 +97,7 @@ async fn fetch_system_stats(
     query_builder.push(" ORDER BY timestamp DESC");
 
     // Add LIMIT and OFFSET
-    let default_limit = 3600 * 24 / 15; // one days worth of data at a 30 seconds collection interval
+    let default_limit = state.config.limits.system_stats_default();
     let limit = params.limit.unwrap_or(default_limit).min(default_limit);
     let offset = params.offset.unwrap_or(0);
 

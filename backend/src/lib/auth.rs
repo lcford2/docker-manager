@@ -94,12 +94,19 @@ impl AuthnBackend for Backend {
     }
 }
 
-// JWT secret - in production, this should come from environment variables or config
-const JWT_SECRET: &[u8] = b"your-secret-key";
+/// Get JWT secret from environment variable
+fn get_jwt_secret() -> Vec<u8> {
+    std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET environment variable must be set")
+        .into_bytes()
+}
 
-pub fn generate_jwt_token(user: &User) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn generate_jwt_token(
+    user: &User,
+    jwt_expiration_hours: i64,
+) -> Result<String, jsonwebtoken::errors::Error> {
     let now = Utc::now();
-    let exp = now + Duration::hours(24); // Token expires in 24 hours
+    let exp = now + Duration::hours(jwt_expiration_hours);
 
     let claims = Claims {
         sub: user.username.clone(),
@@ -109,17 +116,19 @@ pub fn generate_jwt_token(user: &User) -> Result<String, jsonwebtoken::errors::E
         iat: now.timestamp() as usize,
     };
 
+    let secret = get_jwt_secret();
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET),
+        &EncodingKey::from_secret(&secret),
     )
 }
 
 pub fn verify_jwt_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
+    let secret = get_jwt_secret();
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(JWT_SECRET),
+        &DecodingKey::from_secret(&secret),
         &Validation::default(),
     )
 }
