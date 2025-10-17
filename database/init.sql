@@ -18,6 +18,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE public.container_stats (
     id character varying NOT NULL,
     name character varying NOT NULL,
+    state character varying NOT NULL,
     status character varying NOT NULL,
     image character varying,
     cpu_percent double precision,

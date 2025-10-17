@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: docker_manager
       POSTGRES_USER: ${POSTGRES_USER:-docker_manager}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docker_manager}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-docker_manager}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-password}
