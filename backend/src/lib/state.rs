@@ -7,8 +7,9 @@ use crate::api::websocket::broadcaster::Broadcaster;
 use crate::lib::{config::Config, errors::AppError};
 use bollard::Docker;
 use chrono::{DateTime, Utc};
-use log::{error, info};
+use log::{error, info, warn};
 use std::sync::Arc;
+use std::time::Duration;
 
 /// Shared application state
 #[derive(Clone)]
@@ -42,10 +43,28 @@ impl AppState {
             "Connecting to database at {}:{}...",
             config.database.host, config.database.port
         );
-        let database_pool = sqlx::PgPool::connect(&database_url).await.map_err(|e| {
-            error!("Failed to connect to database: {}", e);
-            AppError::Database(e)
-        })?;
+
+        // Retry database connection with exponential backoff to handle DNS resolution delays
+        let max_retries = 5;
+        let mut retry_count = 0;
+        let database_pool = loop {
+            match sqlx::PgPool::connect(&database_url).await {
+                Ok(pool) => break pool,
+                Err(e) => {
+                    retry_count += 1;
+                    if retry_count >= max_retries {
+                        error!("Failed to connect to database after {} retries: {}", max_retries, e);
+                        return Err(AppError::Database(e));
+                    }
+                    let wait_time = Duration::from_secs(2u64.pow(retry_count));
+                    warn!(
+                        "Failed to connect to database (attempt {}/{}): {}. Retrying in {:?}...",
+                        retry_count, max_retries, e, wait_time
+                    );
+                    tokio::time::sleep(wait_time).await;
+                }
+            }
+        };
 
         let startup_time = Utc::now();
 
