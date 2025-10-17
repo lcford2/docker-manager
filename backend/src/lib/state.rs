@@ -58,7 +58,10 @@ impl AppState {
                 Err(e) => {
                     retry_count += 1;
                     if retry_count >= max_retries {
-                        error!("Failed to connect to database after {} retries: {}", max_retries, e);
+                        error!(
+                            "Failed to connect to database after {} retries: {}",
+                            max_retries, e
+                        );
                         return Err(AppError::Database(e));
                     }
                     let wait_time = Duration::from_secs(2u64.pow(retry_count));
