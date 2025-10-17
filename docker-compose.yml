@@ -22,8 +22,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      docker-manager-network:
-        ipv4_address: 172.84.32.2
+      - docker-manager-network
 
   backend:
     build:
@@ -49,8 +48,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      docker-manager-network:
-        ipv4_address: 172.84.32.3
+      - docker-manager-network
 
   frontend:
     build:
@@ -61,8 +59,7 @@ services:
     depends_on:
       - backend
     networks:
-      docker-manager-network:
-        ipv4_address: 172.84.32.4
+      - docker-manager-network
 
   nginx:
     build:
@@ -76,8 +73,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     networks:
-      docker-manager-network:
-        ipv4_address: 172.84.32.5
+      - docker-manager-network
 
 volumes:
   postgres_data:
@@ -86,6 +82,3 @@ networks:
   docker-manager-network:
     name: docker-manager-network
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.84.32.0/24

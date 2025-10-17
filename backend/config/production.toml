@@ -7,7 +7,7 @@ level = "info"
 format = "simple"
 
 [database]
-host = "172.84.32.2"
+host = "postgres"
 port = 5432
 database_name = "docker_manager"
 username = "docker_manager"
