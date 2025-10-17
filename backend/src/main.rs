@@ -109,7 +109,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // serve
-    let addr: SocketAddr = app_state.config.server_addr();
+    let addr: SocketAddr = app_state
+        .config
+        .server_addr()
+        .map_err(|e| format!("Failed to parse server address: {}", e))?;
     info!("Listening on http://{addr}");
 
     let listener = tokio::net::TcpListener::bind(addr).await.map_err(|e| {

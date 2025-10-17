@@ -4,8 +4,8 @@
 //! and logging settings with support for environment variables and config files.
 
 use serde::{Deserialize, Serialize};
+use std::net::IpAddr;
 use std::net::SocketAddr;
-use std::net::{IpAddr, Ipv4Addr};
 
 /// Main configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,14 +32,14 @@ pub struct Config {
 /// Server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
-    pub host: IpAddr,
+    pub host: String,
     pub port: u16,
 }
 
 /// Database configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DbConfig {
-    pub host: IpAddr,
+    pub host: String,
     pub port: u16,
     pub database_name: String,
     pub username: String,
@@ -296,7 +296,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             server: ServerConfig {
-                host: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                host: "127.0.0.1".to_string(),
                 port: 3010,
             },
             logging: LoggingConfig {
@@ -304,7 +304,7 @@ impl Default for Config {
                 format: "simple".to_string(),
             },
             database: DbConfig {
-                host: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                host: "127.0.0.1".to_string(),
                 port: 5432,
                 database_name: "docker_manager".to_string(),
                 username: "lucas".to_string(),
@@ -396,8 +396,13 @@ impl Config {
     }
 
     /// Returns the server socket address
-    pub fn server_addr(&self) -> SocketAddr {
-        SocketAddr::new(self.server.host, self.server.port)
+    pub fn server_addr(&self) -> Result<SocketAddr, String> {
+        let ip: IpAddr = self
+            .server
+            .host
+            .parse()
+            .map_err(|_| format!("Invalid IP address: {}", self.server.host))?;
+        Ok(SocketAddr::new(ip, self.server.port))
     }
 
     /// Converts the log level string to a log::Level
