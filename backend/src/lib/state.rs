@@ -8,6 +8,8 @@ use crate::lib::{config::Config, errors::AppError};
 use bollard::Docker;
 use chrono::{DateTime, Utc};
 use log::{error, info, warn};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -30,25 +32,28 @@ impl AppState {
         let docker_client =
             Docker::connect_with_local_defaults().map_err(|e| AppError::Docker(e))?;
 
-        let database_url = format!(
-            "postgres://{}:{}@{}:{}/{}",
-            config.database.username,
-            config.database.password,
-            config.database.host,
-            config.database.port,
-            config.database.database_name
-        );
-
         info!(
             "Connecting to database at {}:{}...",
             config.database.host, config.database.port
         );
 
+        // Build connection options explicitly to have better control over DNS resolution
+        let connect_options = PgConnectOptions::new()
+            .host(&config.database.host)
+            .port(config.database.port)
+            .username(&config.database.username)
+            .password(&config.database.password)
+            .database(&config.database.database_name);
+
         // Retry database connection with exponential backoff to handle DNS resolution delays
         let max_retries = 5;
         let mut retry_count = 0;
         let database_pool = loop {
-            match sqlx::PgPool::connect(&database_url).await {
+            match PgPoolOptions::new()
+                .max_connections(5)
+                .connect_with(connect_options.clone())
+                .await
+            {
                 Ok(pool) => break pool,
                 Err(e) => {
                     retry_count += 1;
