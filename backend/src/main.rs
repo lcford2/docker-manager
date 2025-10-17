@@ -11,7 +11,6 @@ use axum_login::{
     tower_sessions::{MemoryStore, SessionManagerLayer},
 };
 use log::info;
-use simple_logger;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
