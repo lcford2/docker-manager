@@ -11,6 +11,7 @@ use crate::lib::auth;
 #[derive(Clone, Debug)]
 pub struct AuthenticatedUser {
     pub user_id: i32,
+    #[allow(dead_code)]
     pub username: String,
     pub permission: String,
 }

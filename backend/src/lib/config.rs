@@ -151,26 +151,31 @@ impl WebSocketConfig {
     }
 
     /// Stale connection check interval (same as stale_timeout)
+    #[allow(dead_code)]
     pub fn stale_check_interval(&self) -> u64 {
         self.stale_timeout
     }
 
     /// Reconnection base delay (sensible default)
+    #[allow(dead_code)]
     pub fn reconnect_base_delay(&self) -> u64 {
         2000 // 2 seconds
     }
 
     /// Reconnection maximum delay (sensible default)
+    #[allow(dead_code)]
     pub fn reconnect_max_delay(&self) -> u64 {
         120000 // 120 seconds
     }
 
     /// Reconnection jitter (sensible default)
+    #[allow(dead_code)]
     pub fn reconnect_jitter(&self) -> u64 {
         1000 // 1 second
     }
 
     /// Status update interval for UI (sensible default)
+    #[allow(dead_code)]
     pub fn status_update_interval(&self) -> u64 {
         1000 // 1 second
     }

@@ -8,9 +8,11 @@ use sqlx::PgPool;
 pub struct User {
     pub id: i32,
     pub username: String,
+    #[allow(dead_code)]
     pub email: String,
     pub password_hash: String,
     pub permission: String,
+    #[allow(dead_code)]
     pub is_active: bool,
 }
 
