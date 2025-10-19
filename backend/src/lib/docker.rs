@@ -31,19 +31,18 @@ pub async fn get_container_stats(
             .build(),
     );
     let mut stats_stream = docker_client.stats(container_name, opts).take(1);
-    while let Some(stats_result) = stats_stream.next().await {
-        match stats_result {
-            Ok(stats) => {
-                return stats;
-            }
-            Err(e) => {
-                error!("Error fetching container stats: {e}");
-                return ContainerStatsResponse::default();
-            }
+    let stats_result = stats_stream.next().await;
+    match stats_result {
+        Some(Ok(stats)) => stats,
+        Some(Err(e)) => {
+            error!("Error fetching container stats: {e}");
+            ContainerStatsResponse::default()
+        }
+        None => {
+            error!("Error fetching container stats, nothing returned.");
+            ContainerStatsResponse::default()
         }
     }
-    error!("Error handling container stats stream.");
-    ContainerStatsResponse::default()
 }
 
 /// Retrieves statistics for multiple containers concurrently
@@ -54,10 +53,7 @@ pub async fn get_container_stats(
 ///
 /// # Returns
 /// Vector of container statistics responses
-pub async fn get_stats(
-    container_ids: &Vec<String>,
-    state: &AppState,
-) -> Vec<ContainerStatsResponse> {
+pub async fn get_stats(container_ids: &[String], state: &AppState) -> Vec<ContainerStatsResponse> {
     // run this concurrently
     let futures = container_ids
         .iter()

@@ -36,7 +36,7 @@ async fn get_all_container_stats(state: &AppState) -> Vec<ContainerStatsInfo> {
     match state.docker_client.list_containers(opts).await {
         Ok(containers) => {
             let futures = containers.iter().map(async |container| {
-                let c_id: String = container.id.clone().unwrap_or(String::new());
+                let c_id: String = container.id.clone().unwrap_or_default();
                 ContainerStatsInfo {
                     summary: container.clone(),
                     stats: docker::get_container_stats(&c_id, &state.docker_client).await,

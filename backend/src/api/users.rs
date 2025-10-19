@@ -208,8 +208,7 @@ async fn update_user(
     }
 
     query.push_str(
-        &" WHERE id = $1 RETURNING id, username, email, permission::text as permission, is_active"
-            .to_string(),
+        " WHERE id = $1 RETURNING id, username, email, permission::text as permission, is_active",
     );
 
     let mut query_builder = sqlx::query_as::<_, UserResponse>(&query).bind(id);

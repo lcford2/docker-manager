@@ -371,7 +371,7 @@ async fn bulk_stop_containers(
         None => "SIGTERM".to_string(),
     };
 
-    let valid_signals = vec!["SIGTERM", "SIGINT", "SIGHUP", "SIGKILL"];
+    let valid_signals = ["SIGTERM", "SIGINT", "SIGHUP", "SIGKILL"];
     if !valid_signals.contains(&signal.as_str()) {
         return Err(AppError::InvalidInput(
             "Invalid signal provided".to_string(),

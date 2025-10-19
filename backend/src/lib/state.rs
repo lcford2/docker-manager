@@ -28,8 +28,7 @@ impl AppState {
         let config = Config::load().map_err(|e| AppError::Config(e.to_string()))?;
 
         info!("Connecting to Docker...");
-        let docker_client =
-            Docker::connect_with_local_defaults().map_err(|e| AppError::Docker(e))?;
+        let docker_client = Docker::connect_with_local_defaults().map_err(AppError::Docker)?;
 
         info!(
             "Connecting to database at {}:{}...",

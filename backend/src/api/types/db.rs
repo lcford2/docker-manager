@@ -154,7 +154,7 @@ impl From<sqlx::Error> for ApiError {
 }
 
 /// Sparkline data for visualizations
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Default)]
 pub struct SparklineData {
     pub cpu: Vec<f64>,
     pub memory: Vec<f64>,
@@ -162,19 +162,6 @@ pub struct SparklineData {
     pub network_tx: Vec<i64>,
     pub block_read: Vec<i64>,
     pub block_write: Vec<i64>,
-}
-
-impl Default for SparklineData {
-    fn default() -> Self {
-        Self {
-            cpu: Vec::new(),
-            memory: Vec::new(),
-            network_rx: Vec::new(),
-            network_tx: Vec::new(),
-            block_read: Vec::new(),
-            block_write: Vec::new(),
-        }
-    }
 }
 
 /// Container statistics with sparkline data for WebSocket broadcasting
