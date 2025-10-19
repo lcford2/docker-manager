@@ -15,15 +15,12 @@ import {
   WebSocketConnectionStatus,
   WebSocketMessage,
 } from "../types/websocket";
+import { useDockerStore } from "../store/dockerStore"; // Import the Zustand store
 
 interface WebSocketContextType {
   // Connection state
   isConnected: boolean;
   connectionStatus: WebSocketConnectionStatus;
-
-  // Data state
-  containers: any[];
-  systemStats: any;
 
   // Methods
   connect: () => Promise<void>;
@@ -60,10 +57,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       lastDataReceived: null,
     });
 
-  const [containers, setContainers] = useState<any[]>([]);
-  const [systemStats, setSystemStats] = useState<any>(null);
-
   const [service, setService] = useState<WebSocketService | null>(null);
+  const mergeData = useDockerStore((state) => state.mergeData); // Get the mergeData action from the store
 
   // Initialize WebSocket service
   useEffect(() => {
@@ -91,12 +86,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       onMessage: (message: WebSocketMessage) => {
         console.log("WebSocket message received via context:", message.type);
-
-        // Handle different message types
+        // Use Zustand store's mergeData action to update state directly
         if (message.type === "container_stats" && message.data?.containers) {
-          setContainers(message.data.containers);
-        } else if (message.type === "system_stats") {
-          setSystemStats(message.data);
+          mergeData({ containers: message.data.containers });
+        } else if (message.type === "system_stats" && message.data) {
+          mergeData({ systemStats: message.data });
         }
       },
 
@@ -110,7 +104,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     return () => {
       wsService.destroy();
     };
-  }, [config]);
+  }, [config, mergeData]);
 
   // Connect to WebSocket immediately when service is ready
   useEffect(() => {
@@ -120,40 +114,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         .then(() => {
           console.log("WebSocket connected successfully on app load");
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.error("Failed to connect WebSocket on app load:", error);
         });
     }
   }, [service]);
-
-  // Subscribe to container and system stats
-  useEffect(() => {
-    if (service && isConnected) {
-      // Subscribe to container stats
-      const containerSubId = service.subscribe("container_stats", (data) => {
-        if (data?.containers) {
-          setContainers(data.containers);
-        }
-      });
-
-      // Subscribe to system stats
-      const systemSubId = service.subscribe("system_stats", (data) => {
-        setSystemStats(data);
-      });
-
-      // Subscribe to all messages for debugging
-      const allSubId = service.subscribe("*", (data) => {
-        console.log("All WebSocket message received:", data);
-      });
-
-      // Cleanup subscriptions
-      return () => {
-        service.unsubscribe(containerSubId);
-        service.unsubscribe(systemSubId);
-        service.unsubscribe(allSubId);
-      };
-    }
-  }, [service, isConnected]);
 
   // Update connection status periodically
   useEffect(() => {
@@ -217,8 +182,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const contextValue: WebSocketContextType = {
     isConnected,
     connectionStatus,
-    containers,
-    systemStats,
     connect,
     disconnect,
     reconnect,

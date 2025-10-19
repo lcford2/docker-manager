@@ -1,5 +1,5 @@
 import { Close } from "@mui/icons-material";
-import { Modal, Box, IconButton, useTheme, useMediaQuery } from "@mui/material";
+import { Modal, Box, IconButton } from "@mui/joy";
 import React from "react";
 
 interface ModalManagerProps {
@@ -19,13 +19,7 @@ const ModalManager: React.FC<ModalManagerProps> = ({
   fullScreen = false,
   title,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
-  // Use fullscreen on mobile or when explicitly requested
-  const shouldUseFullScreen = fullScreen || isMobile;
-
-  const modalStyle = shouldUseFullScreen
+  const modalStyle = fullScreen
     ? {
         position: "absolute" as const,
         top: 0,
@@ -37,15 +31,16 @@ const ModalManager: React.FC<ModalManagerProps> = ({
       }
     : {
         position: "absolute" as const,
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "95%",
-        maxWidth: maxWidth,
-        maxHeight: "90vh",
+        top: { xs: 0, md: "50%" },
+        left: { xs: 0, md: "50%" },
+        transform: { xs: "none", md: "translate(-50%, -50%)" },
+        width: { xs: "100%", md: "95%" },
+        height: { xs: "100%", md: "auto" },
+        maxWidth: { xs: "100%", md: maxWidth },
+        maxHeight: { xs: "100%", md: "90vh" },
         bgcolor: "background.paper",
-        borderRadius: 2,
-        boxShadow: 24,
+        borderRadius: { xs: 0, md: "lg" },
+        boxShadow: { xs: "none", md: "lg" },
         overflow: "auto",
       };
 
@@ -55,7 +50,6 @@ const ModalManager: React.FC<ModalManagerProps> = ({
       onClose={onClose}
       aria-labelledby={title ? `modal-title-${title}` : "modal"}
       aria-describedby="modal-content"
-      closeAfterTransition
       slotProps={{
         backdrop: {
           timeout: 500,
@@ -74,18 +68,18 @@ const ModalManager: React.FC<ModalManagerProps> = ({
             display: "flex",
             justifyContent: "flex-end",
             p: 1,
-            backgroundColor: shouldUseFullScreen
+            backgroundColor: fullScreen
               ? "background.paper"
-              : "transparent",
+              : { xs: "background.paper", md: "transparent" },
           }}
         >
           <IconButton
             onClick={onClose}
-            size="small"
+            size="sm"
             sx={{
               color: "text.secondary",
               backgroundColor: "background.paper",
-              boxShadow: 1,
+              boxShadow: "sm",
               "&:hover": {
                 backgroundColor: "action.hover",
               },
@@ -96,7 +90,9 @@ const ModalManager: React.FC<ModalManagerProps> = ({
         </Box>
 
         {/* Modal content */}
-        <Box sx={{ p: shouldUseFullScreen ? 2 : 3, pt: 0 }}>{children}</Box>
+        <Box sx={{ p: fullScreen ? 2 : { xs: 2, md: 3 }, pt: 0 }}>
+          {children}
+        </Box>
       </Box>
     </Modal>
   );

@@ -2,6 +2,8 @@
  * Utility functions for formatting data across Docker resource pages
  */
 
+import { ColorPaletteProp } from "@mui/joy";
+
 /**
  * Format bytes to human readable format
  */
@@ -51,6 +53,41 @@ export const formatDateTime = (dateString: string): string => {
 };
 
 /**
+ * Format timestamp (seconds from epoch) to human readable format
+ */
+export const formatTimestamp = (timestamp: number): string => {
+  if (!timestamp || timestamp <= 0) {
+    return "Unknown";
+  }
+
+  const date = new Date(timestamp * 1000);
+
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    return "Invalid Date";
+  }
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 7) {
+    return date.toLocaleDateString();
+  } else if (diffDays > 0) {
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  } else if (diffHours > 0) {
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+  } else {
+    return "Just now";
+  }
+};
+
+/**
  * Format image repository and tag
  */
 export const formatImageTag = (repository: string, tag: string): string => {
@@ -64,13 +101,20 @@ export const formatImageTag = (repository: string, tag: string): string => {
   return `${repository}:${tag}`;
 };
 
+export const splitRepoTag = (repotag: string): [string, string] => {
+  if (!repotag) return ["<none>", "<none>"];
+  console.log("splitRepoTag", repotag);
+  const [repository, tag] = repotag.split(":");
+  return [repository, tag];
+};
+
 /**
  * Get status color for different resource types
  */
 export const getStatusColor = (
   status: string,
   type: "container" | "image" | "volume" | "network",
-): "success" | "error" | "warning" | "info" | "default" => {
+): ColorPaletteProp => {
   const normalizedStatus = status.toLowerCase();
 
   switch (type) {
@@ -80,18 +124,18 @@ export const getStatusColor = (
           return "success";
         case "stopped":
         case "exited":
-          return "error";
+          return "danger";
         case "paused":
           return "warning";
         case "restarting":
-          return "info";
+          return "primary";
         default:
-          return "default";
+          return "neutral";
       }
 
     case "image":
       // Images don't have traditional status, but we can use this for other indicators
-      return "info";
+      return "primary";
 
     case "volume":
       switch (normalizedStatus) {
@@ -100,7 +144,7 @@ export const getStatusColor = (
         case "unused":
           return "warning";
         default:
-          return "info";
+          return "primary";
       }
 
     case "network":
@@ -108,13 +152,13 @@ export const getStatusColor = (
         case "active":
           return "success";
         case "inactive":
-          return "error";
+          return "danger";
         default:
-          return "info";
+          return "primary";
       }
 
     default:
-      return "default";
+      return "neutral";
   }
 };
 
@@ -218,8 +262,14 @@ export const formatLabels = (labels?: Record<string, string>): string => {
 /**
  * Check if an image is dangling (untagged)
  */
-export const isDanglingImage = (repository: string, tag: string): boolean => {
-  return repository === "<none>" || tag === "<none>";
+export const isDanglingImage = (repotags: string[]): boolean => {
+  for (const repotag of repotags) {
+    const [repository, tag] = repotag.split(":");
+    if (repository !== "<none>" || tag !== "<none>") {
+      return false;
+    }
+  }
+  return true;
 };
 
 /**
@@ -247,4 +297,12 @@ export const formatUptime = (createdAt: string, status: string): string => {
   } else {
     return `${diffSeconds}s`;
   }
+};
+
+export const stripSHA = (id_with_sha: string): string => {
+  let shaString = "sha256:";
+  if (id_with_sha.startsWith(shaString)) {
+    return id_with_sha.slice(shaString.length);
+  }
+  return id_with_sha;
 };

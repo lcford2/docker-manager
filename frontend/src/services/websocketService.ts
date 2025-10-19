@@ -93,7 +93,9 @@ export class WebSocketService {
 
       try {
         this.updateConnectionStatus("connecting");
-        const wsUrl = `${this.config.url}?token=${encodeURIComponent(this.config.token)}`;
+        const wsUrl = `${this.config.url}?token=${encodeURIComponent(
+          this.config.token,
+        )}`;
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
@@ -164,7 +166,9 @@ export class WebSocketService {
    * Subscribe to specific message types
    */
   public subscribe(type: string, callback: (data: any) => void): string {
-    const id = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `${type}_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
     this.subscriptions.set(id, { id, type, callback });
     return id;
   }
@@ -207,6 +211,7 @@ export class WebSocketService {
     this.disconnect();
     this.subscriptions.clear();
     this.reconnectionStrategy.reset();
+    this.removeNetworkListeners();
 
     if (WebSocketService.instance === this) {
       WebSocketService.instance = null as any;
@@ -222,9 +227,7 @@ export class WebSocketService {
       this.lastDataReceived = Date.now();
 
       // Update connection status
-      if (this.connectionStatus.lastDataReceived === null) {
-        this.connectionStatus.lastDataReceived = new Date();
-      }
+      this.connectionStatus.lastDataReceived = new Date();
 
       // Notify subscribers
       this.subscriptions.forEach((subscription) => {
@@ -354,24 +357,42 @@ export class WebSocketService {
    */
   private setupNetworkListeners(): void {
     // Reconnect when network comes back online
-    window.addEventListener("online", () => {
-      if (this.connectionStatus.state === "disconnected") {
-        this.connect();
-      }
-    });
+    window.addEventListener("online", this.handleOnline);
 
     // Reconnect when tab becomes visible
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && this.connectionStatus.state === "disconnected") {
-        this.connect();
-      }
-    });
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
 
     // Reconnect when window regains focus
-    window.addEventListener("focus", () => {
-      if (this.connectionStatus.state === "disconnected") {
-        this.connect();
-      }
-    });
+    window.addEventListener("focus", this.handleFocus);
   }
+
+  /**
+   * Remove network event listeners
+   */
+  private removeNetworkListeners(): void {
+    window.removeEventListener("online", this.handleOnline);
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange,
+    );
+    window.removeEventListener("focus", this.handleFocus);
+  }
+
+  private handleOnline = (): void => {
+    if (this.connectionStatus.state === "disconnected") {
+      this.connect();
+    }
+  };
+
+  private handleVisibilityChange = (): void => {
+    if (!document.hidden && this.connectionStatus.state === "disconnected") {
+      this.connect();
+    }
+  };
+
+  private handleFocus = (): void => {
+    if (this.connectionStatus.state === "disconnected") {
+      this.connect();
+    }
+  };
 }

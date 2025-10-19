@@ -1,4 +1,4 @@
-import { Chip, ChipProps } from "@mui/material";
+import { Chip, ChipProps } from "@mui/joy";
 import React from "react";
 
 import { getStatusColor } from "../../utils/formatters";
@@ -19,13 +19,14 @@ const StatusChip: React.FC<StatusChipProps> = ({
 
   return (
     <Chip
-      label={status}
       color={color}
-      icon={icon}
-      size="small"
+      startDecorator={icon}
+      size="sm"
       variant="outlined"
       {...chipProps}
-    />
+    >
+      {status}
+    </Chip>
   );
 };
 

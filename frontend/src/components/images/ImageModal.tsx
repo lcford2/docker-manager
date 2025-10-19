@@ -1,166 +1,312 @@
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
+  Close,
+  Image as ImageIcon,
+  Storage,
+  CalendarToday,
+  LocalOffer,
+  Warning,
+  Fingerprint,
+} from "@mui/icons-material";
+import {
   Box,
   Chip,
-  Divider,
-} from "@mui/material";
+  DialogTitle,
+  Grid,
+  IconButton,
+  Modal,
+  ModalDialog,
+  Sheet,
+  Table,
+  Typography,
+} from "@mui/joy";
 import React from "react";
 
 import { ImageModalProps } from "../../types/docker";
 import {
   formatBytes,
-  formatDateTime,
+  formatTimestamp,
   formatImageTag,
   isDanglingImage,
+  splitRepoTag,
+  stripSHA,
 } from "../../utils/formatters";
+import MetricCard from "../common/MetricCard";
+
+// A utility function to simplify the verbose Docker label keys
+const simplifyLabelKey = (key: string): string => {
+  if (key.startsWith("com.docker.compose.")) {
+    return key.replace("com.docker.compose.", "");
+  }
+  return key;
+};
 
 const ImageModal: React.FC<ImageModalProps> = ({ open, onClose, image }) => {
   if (!image) return null;
 
-  const isDangling = isDanglingImage(image.repository, image.tag);
-  const displayName = formatImageTag(image.repository, image.tag);
+  const isDangling = isDanglingImage(image.RepoTags);
+  const [repository, tag] = splitRepoTag(image.RepoTags[0]);
+  const displayName = formatImageTag(repository, tag);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Image Details: {displayName}</DialogTitle>
-
-      <DialogContent>
-        <Box sx={{ py: 2 }}>
-          {/* Basic Information */}
-          <Typography variant="h6" gutterBottom>
-            Basic Information
-          </Typography>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Image ID: {image.id}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Repository: {image.repository}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Tag: {image.tag}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Size: {formatBytes(image.size)}
-            </Typography>
-            {image.virtual_size && (
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Virtual Size: {formatBytes(image.virtual_size)}
-              </Typography>
-            )}
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Created: {formatDateTime(image.created)}
-            </Typography>
-          </Box>
-
-          {/* Status */}
-          {isDangling && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Status
-              </Typography>
-              <Chip label="Dangling Image" color="warning" variant="outlined" />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                This image is not tagged or referenced by any repository.
-              </Typography>
-            </Box>
-          )}
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Repository Tags */}
-          {image.repo_tags && image.repo_tags.length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Repository Tags
-              </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {image.repo_tags.map((tag, index) => (
-                  <Chip
-                    key={index}
-                    label={tag}
-                    variant="outlined"
-                    size="small"
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {/* Repository Digests */}
-          {image.repo_digests && image.repo_digests.length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Repository Digests
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {image.repo_digests.map((digest, index) => (
-                  <Typography
-                    key={index}
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}
-                  >
-                    {digest}
-                  </Typography>
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {/* Parent Image */}
-          {image.parent_id && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Parent Image
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontFamily: "monospace" }}
+    <Modal open={open} onClose={onClose}>
+      <ModalDialog layout="fullscreen">
+        <DialogTitle>
+          Image Details: {displayName}
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            flexGrow: 1,
+            overflow: "auto",
+          }}
+        >
+          <Grid container spacing={2} sx={{ flexGrow: 1 }}>
+            {/* Basic Information */}
+            <Grid xs={12} md={6}>
+              <Sheet
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: "sm",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
               >
-                {image.parent_id}
-              </Typography>
-            </Box>
-          )}
+                <Typography level="title-md">Basic Information</Typography>
+                <Grid container spacing={2} sx={{ flexGrow: 1 }}>
+                  <Grid xs={12}>
+                    <MetricCard
+                      label="Image ID"
+                      icon={<Fingerprint />}
+                      primaryValue={
+                        <Typography
+                          level="body-sm"
+                          sx={{ wordBreak: "break-all" }}
+                        >
+                          {stripSHA(image.Id)}
+                        </Typography>
+                      }
+                      color="neutral"
+                    />
+                  </Grid>
+                  <Grid xs={12}>
+                    <MetricCard
+                      label="Repository"
+                      icon={<ImageIcon />}
+                      primaryValue={
+                        <Typography level="h4" fontWeight="xl">
+                          {repository}
+                        </Typography>
+                      }
+                      secondaryValue={`Tag: ${tag}`}
+                      color="primary"
+                    />
+                  </Grid>
+                  <Grid xs={6}>
+                    <MetricCard
+                      label="Size"
+                      icon={<Storage />}
+                      primaryValue={
+                        <Typography level="h4" fontWeight="xl">
+                          {formatBytes(image.Size)}
+                        </Typography>
+                      }
+                      color="neutral"
+                    />
+                  </Grid>
+                  <Grid xs={6}>
+                    <MetricCard
+                      label="Created"
+                      icon={<CalendarToday />}
+                      primaryValue={
+                        <Typography level="body-sm">
+                          {formatTimestamp(image.Created)}
+                        </Typography>
+                      }
+                      color="neutral"
+                    />
+                  </Grid>
+                  {isDangling && (
+                    <Grid xs={12}>
+                      <MetricCard
+                        label="Status"
+                        icon={<Warning />}
+                        primaryValue={
+                          <Typography
+                            level="h4"
+                            color="warning"
+                            fontWeight="xl"
+                          >
+                            Dangling Image
+                          </Typography>
+                        }
+                        secondaryValue="Not tagged or referenced by any repository"
+                        color="warning"
+                      />
+                    </Grid>
+                  )}
+                </Grid>
+              </Sheet>
+            </Grid>
 
-          {/* Labels */}
-          {image.labels && Object.keys(image.labels).length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Labels
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {Object.entries(image.labels).map(([key, value]) => (
-                  <Box key={key} sx={{ display: "flex", gap: 2 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight="medium"
-                      sx={{ minWidth: "120px" }}
-                    >
-                      {key}:
+            {/* Repository Tags & Digests */}
+            <Grid xs={12} md={6}>
+              <Sheet
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: "sm",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <Typography level="title-md">Repository Information</Typography>
+                {image.RepoTags && image.RepoTags.length > 0 && (
+                  <Box>
+                    <Typography level="body-sm" fontWeight="md" sx={{ mb: 1 }}>
+                      <LocalOffer sx={{ fontSize: "sm", mr: 0.5 }} />
+                      Tags
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {value}
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                      {image.RepoTags.map((tag, index) => (
+                        <Chip key={index} variant="outlined" size="sm">
+                          {tag}
+                        </Chip>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+                {image.RepoDigests && image.RepoDigests.length > 0 && (
+                  <Box>
+                    <Typography level="body-sm" fontWeight="md" sx={{ mb: 1 }}>
+                      Digests
+                    </Typography>
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                    >
+                      {image.RepoDigests.map((digest, index) => (
+                        <Typography
+                          key={index}
+                          level="body-xs"
+                          color="neutral"
+                          sx={{
+                            fontFamily: "monospace",
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {digest}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+                {image.ParentId && (
+                  <Box>
+                    <Typography level="body-sm" fontWeight="md" sx={{ mb: 1 }}>
+                      Parent Image
+                    </Typography>
+                    <Typography
+                      level="body-xs"
+                      color="neutral"
+                      sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+                    >
+                      {image.ParentId}
                     </Typography>
                   </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
-        </Box>
-      </DialogContent>
+                )}
+              </Sheet>
+            </Grid>
 
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+            {/* Labels */}
+            {image.Labels && Object.keys(image.Labels).length > 0 && (
+              <Grid xs={12}>
+                <Sheet variant="outlined" sx={{ p: 2, borderRadius: "sm" }}>
+                  <Typography level="title-md" mb={2}>
+                    Labels
+                  </Typography>
+                  <Table
+                    size="sm"
+                    sx={{
+                      "--TableCell-paddingY": "0.5rem",
+                      "--TableCell-paddingX": "0px",
+                      "& tr > *:first-of-type": {
+                        pl: 0,
+                        minWidth: "180px", // Give the keys a minimum useful amount of space
+                      },
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(image.Labels).map(([key, value]) => (
+                        <tr key={key}>
+                          <td>
+                            <Typography
+                              level="body-sm"
+                              fontWeight="md"
+                              textColor="text.primary"
+                              // Use the simplified key for display
+                              title={key} // Keep the original key in a tooltip
+                            >
+                              {simplifyLabelKey(key)}
+                            </Typography>
+                          </td>
+                          <td>
+                            <Typography
+                              level="body-sm"
+                              textColor="text.secondary"
+                            >
+                              {value}
+                            </Typography>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                  {/*<Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                  >
+                    {Object.entries(image.Labels).map(([key, value]) => (
+                      <Box key={key} sx={{ display: "flex", gap: 2 }}>
+                        <Typography
+                          level="body-sm"
+                          fontWeight="xl"
+                          color="primary"
+                          sx={{ minWidth: "120px" }}
+                        >
+                          {key}:
+                        </Typography>
+                        <Typography level="body-sm" color="neutral">
+                          {value}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>*/}
+                </Sheet>
+              </Grid>
+            )}
+          </Grid>
+        </Box>
+      </ModalDialog>
+    </Modal>
   );
 };
 

@@ -1,26 +1,25 @@
 // Docker resource type definitions
 
 export interface DockerImage {
-  id: string;
-  repository: string;
-  tag: string;
-  size: number;
-  created: string;
-  virtual_size: number;
-  repo_tags: string[];
-  repo_digests: string[];
-  parent_id?: string;
-  labels?: Record<string, string>;
+  Id: string;
+  RepoTags: string[];
+  RepoDigests: [];
+  Size: number;
+  Created: number;
+  ParentId?: string;
+  Labels?: Record<string, string>;
+  Containers?: number;
+  Descriptor?: Record<string, string>;
 }
 
 export interface DockerVolume {
-  name: string;
-  driver: string;
-  mountpoint: string;
-  scope: string;
-  created: string;
-  labels?: Record<string, string>;
-  options?: Record<string, string>;
+  Name: string;
+  Driver: string;
+  Mountpoint: string;
+  Scope: string;
+  CreatedAt: string;
+  Labels?: Record<string, string>;
+  Options?: Record<string, string>;
   usage_data?: {
     size: number;
     ref_count: number;
@@ -28,44 +27,45 @@ export interface DockerVolume {
 }
 
 export interface DockerNetwork {
-  id: string;
-  name: string;
-  driver: string;
-  scope: string;
-  created: string;
-  ipam: {
-    driver: string;
-    config: Array<{
-      subnet?: string;
-      gateway?: string;
+  Id: string;
+  Name: string;
+  Driver: string;
+  Scope: string;
+  Created: string;
+  IPAM: {
+    Driver: string;
+    Config: Array<{
+      Subnet?: string;
+      Gateway?: string;
     }>;
   };
-  containers: Record<
+  Containers: Record<
     string,
     {
-      name: string;
-      endpoint_id: string;
-      ipv4_address?: string;
-      ipv6_address?: string;
+      Name: string;
+      Endpoint_id: string;
+      IPv4_address?: string;
+      IPv6_address?: string;
     }
   >;
-  labels?: Record<string, string>;
-  options?: Record<string, string>;
+  Labels?: Record<string, string>;
+  Options?: Record<string, string>;
 }
 
 export interface DockerContainer {
   id: string;
   name: string;
   image: string;
+  image_id: string;
   status: string;
   state: string;
-  created: string;
-  ports: Array<{
-    private_port: number;
-    public_port?: number;
-    type: string;
-  }>;
-  labels?: Record<string, string>;
+  created: number;
+  // ports: Array<{
+  //   private_port: number;
+  //   public_port?: number;
+  //   type: string;
+  // }>;
+  // labels?: Record<string, string>;
   command?: string;
   size_rw?: number;
   size_root_fs?: number;

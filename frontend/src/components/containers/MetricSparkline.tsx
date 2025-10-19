@@ -1,5 +1,7 @@
-import { Box, Typography } from "@mui/material";
-import React from "react";
+import { Box, Typography } from "@mui/joy";
+import { useTheme } from "@mui/joy/styles";
+import { ColorPaletteProp } from "@mui/joy/styles";
+import React, { useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 
 import { MetricSparklineProps } from "../../types/metrics";
@@ -12,14 +14,17 @@ const MetricSparkline: React.FC<MetricSparklineProps> = ({
   height = 50,
   width = 120,
 }) => {
+  const theme = useTheme();
   // Prepare data for Recharts
-  const chartData = data.map((value, index) => ({
-    index,
-    value: typeof value === "number" ? value : 0,
-  }));
+  const chartData = useMemo(() => {
+    return data.map((value, index) => ({
+      index,
+      value: typeof value === "number" ? value : 0,
+    }));
+  }, [data]);
 
   // Get current value (latest data point)
-  const currentValue = data.length > 0 ? data[data.length - 1] : 0;
+  const currentValue = data && data.length > 0 ? data[data.length - 1] : 0;
 
   // Format the current value based on unit
   const formatValue = (value: number): string => {
@@ -48,40 +53,28 @@ const MetricSparkline: React.FC<MetricSparklineProps> = ({
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        p: 1,
-      }}
-    >
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ mb: 0.5, fontSize: "0.7rem" }}
-      >
+    <Box sx={{ width: "100%", height, textAlign: "center" }}>
+      <Typography level="body-sm" color="neutral" gutterBottom>
         {label}
       </Typography>
-
-      <Box
-        sx={{ position: "relative", width: "100%", maxWidth: width, height }}
-      >
-        {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <YAxis hide domain={["dataMin", "dataMax"]} />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke={color}
-                strokeWidth={2}
-                dot={false}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="80%">
+        {data && data.length > 0 ? (
+          <LineChart data={chartData}>
+            <YAxis hide domain={["dataMin", "dataMax"]} />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={
+                theme.palette[color as ColorPaletteProp]?.[500] ||
+                theme.palette.primary[500]
+              }
+              strokeWidth={2}
+              dot={false}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              isAnimationActive={false}
+            />
+          </LineChart>
         ) : (
           <Box
             sx={{
@@ -97,10 +90,9 @@ const MetricSparkline: React.FC<MetricSparklineProps> = ({
             No Data
           </Box>
         )}
-      </Box>
-
+      </ResponsiveContainer>
       <Typography
-        variant="body2"
+        level="body-sm"
         sx={{
           mt: 0.5,
           fontWeight: "bold",

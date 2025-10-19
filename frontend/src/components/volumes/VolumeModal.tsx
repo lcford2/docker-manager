@@ -1,142 +1,253 @@
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
+  Close,
+  Storage,
+  FolderOpen,
+  CalendarToday,
+  Settings,
+  Info,
+} from "@mui/icons-material";
+import {
   Box,
-  Chip,
-  Divider,
-} from "@mui/material";
+  DialogTitle,
+  Grid,
+  IconButton,
+  Modal,
+  ModalDialog,
+  Sheet,
+  Table,
+  Typography,
+} from "@mui/joy";
 import React from "react";
 
 import { VolumeModalProps } from "../../types/docker";
 import { formatDateTime, getVolumeDriverDisplay } from "../../utils/formatters";
+import MetricCard from "../common/MetricCard";
 
 const VolumeModal: React.FC<VolumeModalProps> = ({ open, onClose, volume }) => {
   if (!volume) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Volume Details: {volume.name}</DialogTitle>
-
-      <DialogContent>
-        <Box sx={{ py: 2 }}>
-          {/* Basic Information */}
-          <Typography variant="h6" gutterBottom>
-            Basic Information
-          </Typography>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Name: {volume.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Driver: {getVolumeDriverDisplay(volume.driver)}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Scope: {volume.scope || "local"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Mount Point: {volume.mountpoint || "Not available"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Created: {formatDateTime(volume.created)}
-            </Typography>
-          </Box>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Status */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Status
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Chip
-                label={`Driver: ${getVolumeDriverDisplay(volume.driver)}`}
+    <Modal open={open} onClose={onClose}>
+      <ModalDialog layout="fullscreen">
+        <DialogTitle>
+          Volume Details: {volume.Name}
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            flexGrow: 1,
+            overflow: "auto",
+          }}
+        >
+          <Grid container spacing={2} sx={{ flexGrow: 1 }}>
+            {/* Basic Information */}
+            <Grid xs={12} md={6}>
+              <Sheet
                 variant="outlined"
-                size="small"
-              />
-              <Chip
-                label={`Scope: ${volume.scope || "local"}`}
+                sx={{
+                  p: 2,
+                  borderRadius: "sm",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <Typography level="title-md">Basic Information</Typography>
+                <Grid container spacing={2} sx={{ flexGrow: 1 }}>
+                  <Grid xs={12}>
+                    <MetricCard
+                      label="Volume Name"
+                      icon={<FolderOpen />}
+                      primaryValue={
+                        <Typography
+                          level="h4"
+                          fontWeight="xl"
+                          sx={{ wordBreak: "break-all" }}
+                        >
+                          {volume.Name}
+                        </Typography>
+                      }
+                      color="primary"
+                    />
+                  </Grid>
+                  <Grid xs={6}>
+                    <MetricCard
+                      label="Driver"
+                      icon={<Storage />}
+                      primaryValue={
+                        <Typography level="h4" fontWeight="xl">
+                          {getVolumeDriverDisplay(volume.Driver)}
+                        </Typography>
+                      }
+                      color="neutral"
+                    />
+                  </Grid>
+                  <Grid xs={6}>
+                    <MetricCard
+                      label="Scope"
+                      icon={<Info />}
+                      primaryValue={
+                        <Typography level="h4" fontWeight="xl">
+                          {volume.Scope || "local"}
+                        </Typography>
+                      }
+                      color="neutral"
+                    />
+                  </Grid>
+                  <Grid xs={12}>
+                    <MetricCard
+                      label="Created"
+                      icon={<CalendarToday />}
+                      primaryValue={
+                        <Typography level="body-sm">
+                          {formatDateTime(volume.CreatedAt)}
+                        </Typography>
+                      }
+                      color="neutral"
+                    />
+                  </Grid>
+                </Grid>
+              </Sheet>
+            </Grid>
+
+            {/* Mount Point & Usage */}
+            <Grid xs={12} md={6}>
+              <Sheet
                 variant="outlined"
-                size="small"
-              />
-            </Box>
-          </Box>
+                sx={{
+                  p: 2,
+                  borderRadius: "sm",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <Typography level="title-md">Usage Information</Typography>
+                <Box>
+                  <Typography level="body-sm" fontWeight="md" sx={{ mb: 1 }}>
+                    Mount Point
+                  </Typography>
+                  <Typography
+                    level="body-sm"
+                    color="neutral"
+                    sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
+                  >
+                    {volume.Mountpoint || "Not specified"}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography level="body-xs" color="neutral">
+                    This volume can be mounted by containers to persist data
+                    beyond the container lifecycle.
+                  </Typography>
+                </Box>
+              </Sheet>
+            </Grid>
 
-          {/* Labels */}
-          {volume.labels && Object.keys(volume.labels).length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Labels
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {Object.entries(volume.labels).map(([key, value]) => (
-                  <Box key={key} sx={{ display: "flex", gap: 2 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight="medium"
-                      sx={{ minWidth: "120px" }}
-                    >
-                      {key}:
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {value || "(empty)"}
-                    </Typography>
+            {/* Options */}
+            {volume.Options && Object.keys(volume.Options).length > 0 && (
+              <Grid xs={12} md={6}>
+                <Sheet variant="outlined" sx={{ p: 2, borderRadius: "sm" }}>
+                  <Typography level="title-md" mb={2}>
+                    <Settings sx={{ fontSize: "sm", mr: 0.5 }} />
+                    Options
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                  >
+                    {Object.entries(volume.Options).map(([key, value]) => (
+                      <Box key={key} sx={{ display: "flex", gap: 2 }}>
+                        <Typography
+                          level="body-sm"
+                          fontWeight="md"
+                          sx={{ minWidth: "120px" }}
+                        >
+                          {key}:
+                        </Typography>
+                        <Typography level="body-sm" color="neutral">
+                          {value}
+                        </Typography>
+                      </Box>
+                    ))}
                   </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
+                </Sheet>
+              </Grid>
+            )}
 
-          {/* Options */}
-          {volume.options && Object.keys(volume.options).length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Options
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {Object.entries(volume.options).map(([key, value]) => (
-                  <Box key={key} sx={{ display: "flex", gap: 2 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight="medium"
-                      sx={{ minWidth: "120px" }}
-                    >
-                      {key}:
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {value}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {/* Usage Information */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Usage Information
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Mount Point: {volume.mountpoint || "Not specified"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              This volume can be mounted by containers to persist data beyond
-              the container lifecycle.
-            </Typography>
-          </Box>
+            {/* Labels */}
+            {volume.Labels && Object.keys(volume.Labels).length > 0 && (
+              <Grid
+                xs={12}
+                md={
+                  volume.Options && Object.keys(volume.Options).length > 0
+                    ? 6
+                    : 12
+                }
+              >
+                <Sheet variant="outlined" sx={{ p: 2, borderRadius: "sm" }}>
+                  <Typography level="title-md" mb={2}>
+                    Labels
+                  </Typography>
+                  <Table
+                    size="sm"
+                    sx={{
+                      "--TableCell-paddingY": "0.5rem",
+                      "--TableCell-paddingX": "0px",
+                      "& tr > *:first-of-type": {
+                        pl: 0,
+                        minWidth: "180px", // Give the keys a minimum useful amount of space
+                      },
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(volume.Labels).map(([key, value]) => (
+                        <tr key={key}>
+                          <td>
+                            <Typography
+                              level="body-sm"
+                              fontWeight="md"
+                              textColor="text.primary"
+                            >
+                              {key}
+                            </Typography>
+                          </td>
+                          <td>
+                            <Typography
+                              level="body-sm"
+                              textColor="text.secondary"
+                            >
+                              {value || "(empty)"}
+                            </Typography>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </Sheet>
+              </Grid>
+            )}
+          </Grid>
         </Box>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+      </ModalDialog>
+    </Modal>
   );
 };
 

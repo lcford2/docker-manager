@@ -1,13 +1,13 @@
-import { Refresh, Add, Search } from "@mui/icons-material";
+import { Refresh, Add, Search, Report } from "@mui/icons-material";
 import {
   Box,
   Typography,
   Alert,
   CircularProgress,
   Button,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
+  Input,
+  IconButton,
+} from "@mui/joy";
 import React, { useState, useEffect, useCallback } from "react";
 
 import { dockerAPI } from "../../services/api";
@@ -15,7 +15,7 @@ import { DockerVolume } from "../../types/docker";
 import ConfirmDialog from "../common/ConfirmDialog";
 
 import CreateVolumeModal from "./CreateVolumeModal";
-import VolumeGrid from "./VolumeGrid";
+import VolumesTable from "./VolumesTable";
 import VolumeModal from "./VolumeModal";
 
 const VolumesPage: React.FC = () => {
@@ -25,7 +25,6 @@ const VolumesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modal states
-  const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
   const [modalVolume, setModalVolume] = useState<DockerVolume | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -50,7 +49,7 @@ const VolumesPage: React.FC = () => {
 
     try {
       const response = await dockerAPI.getVolumes();
-      setVolumes(response);
+      setVolumes(response.Volumes);
     } catch (err: any) {
       setError(err.message || "Failed to fetch volumes");
     } finally {
@@ -65,8 +64,7 @@ const VolumesPage: React.FC = () => {
   // Handle volume selection
   const handleVolumeClick = useCallback(
     (volumeName: string) => {
-      setSelectedVolume(volumeName);
-      const volume = volumes.find((v) => v.name === volumeName);
+      const volume = volumes.find((v) => v.Name === volumeName);
       if (volume) {
         setModalVolume(volume);
       }
@@ -76,7 +74,6 @@ const VolumesPage: React.FC = () => {
 
   // Handle close modal
   const handleCloseModal = useCallback(() => {
-    setSelectedVolume(null);
     setModalVolume(null);
   }, []);
 
@@ -100,13 +97,13 @@ const VolumesPage: React.FC = () => {
   // Handle volume removal
   const handleVolumeRemove = useCallback(
     (volumeName: string) => {
-      const volume = volumes.find((v) => v.name === volumeName);
+      const volume = volumes.find((v) => v.Name === volumeName);
       if (!volume) return;
 
       setConfirmDialog({
         open: true,
         title: "Remove Volume",
-        message: `Are you sure you want to remove the volume "${volume.name}"? This action cannot be undone and will delete all data in the volume.`,
+        message: `Are you sure you want to remove the volume "${volume.Name}"? This action cannot be undone and will delete all data in the volume.`,
         onConfirm: () => confirmRemoveVolume(volumeName),
       });
     },
@@ -114,11 +111,15 @@ const VolumesPage: React.FC = () => {
   );
 
   // Filter volumes based on search term
-  const filteredVolumes = volumes.filter(
-    (volume) =>
-      volume.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      volume.driver.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredVolumes = volumes.filter((volume) => {
+    console.log(volume);
+    console.log(volume.Name.toLowerCase().includes(searchTerm.toLowerCase()));
+    console.log(volume.Driver.toLowerCase().includes(searchTerm.toLowerCase()));
+    return (
+      volume.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      volume.Driver.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   if (loading) {
     return (
@@ -134,7 +135,7 @@ const VolumesPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <Box
         sx={{
@@ -144,21 +145,21 @@ const VolumesPage: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography level="h2" component="h1">
           Docker Volumes
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<Add />}
+            startDecorator={<Add />}
             onClick={() => setCreateModalOpen(true)}
           >
             Create Volume
           </Button>
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
+            startDecorator={<Refresh />}
             onClick={fetchVolumes}
             disabled={loading}
           >
@@ -169,35 +170,44 @@ const VolumesPage: React.FC = () => {
 
       {/* Search */}
       <Box sx={{ mb: 3 }}>
-        <TextField
+        <Input
           fullWidth
           placeholder="Search volumes by name or driver..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
+          startDecorator={<Search />}
         />
       </Box>
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert
+          color="danger"
+          sx={{ mb: 2 }}
+          startDecorator={<Report />}
+          endDecorator={
+            <IconButton
+              variant="plain"
+              size="sm"
+              color="danger"
+              onClick={() => setError(null)}
+            >
+              X
+            </IconButton>
+          }
+        >
           {error}
         </Alert>
       )}
 
-      {/* Volumes Grid */}
-      <VolumeGrid
-        volumes={filteredVolumes}
-        onVolumeClick={handleVolumeClick}
-        onVolumeRemove={handleVolumeRemove}
-        selectedVolume={selectedVolume}
-      />
+      {/* Volumes Table */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+        <VolumesTable
+          volumes={filteredVolumes}
+          onVolumeClick={handleVolumeClick}
+          onVolumeRemove={handleVolumeRemove}
+        />
+      </Box>
 
       {/* Volume Details Modal */}
       <VolumeModal

@@ -1,0 +1,40 @@
+# This file contains all configurable settings for the Docker Manager application.
+# Edit values below to customize behavior. Secrets are loaded from .env file.
+
+[server]
+host = "127.0.0.1"
+port = 3010
+
+[database]
+host = "127.0.0.1"
+port = 5432
+database_name = "docker_manager"
+username = "docker_manager"
+
+[retention]
+stats_retention_hours = 24
+
+[limits]
+default_query_limit = 100
+max_query_limit = 500
+default_history_minutes = 30
+
+[workers]
+container_stats_interval = 30
+system_info_interval = 15
+
+[websocket]
+broadcast_interval = 3
+ping_interval = 30000
+stale_timeout = 60000
+max_reconnect_attempts = 10
+
+[auth]
+jwt_expiration_hours = 24
+
+[ui]
+max_chart_data_points = 60
+
+[logging]
+level = "info"
+format = "simple"

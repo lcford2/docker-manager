@@ -10,8 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -93,7 +91,6 @@ out/
 .dynamodb/
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 .docker/
 
@@ -180,10 +177,6 @@ jspm_packages/
 .nuxt
 dist
 
-# Gatsby files
-.cache/
-public
-
 # Storybook build outputs
 .out
 .storybook-out
@@ -222,3 +215,7 @@ Thumbs.db
 # Local development
 .local/
 local_settings.py
+
+backend/target
+
+CLAUDE.md

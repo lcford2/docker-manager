@@ -1,4 +1,4 @@
-import Typography from "@mui/material/Typography";
+import { Typography } from "@mui/joy";
 import React from "react";
 
 import { DockerStatus } from "../../types/docker";
@@ -12,14 +12,14 @@ export default function SystemSummary({ dockerStatus }: SystemSummaryProps) {
   return (
     <React.Fragment>
       <Title>System Health</Title>
-      <Typography component="p" variant="h4">
+      <Typography level="h4" component="p">
         {dockerStatus?.status === "connected" ? "Online" : "Offline"}
       </Typography>
-      <Typography color="text.secondary" sx={{ flex: 1 }}>
+      <Typography color="neutral" sx={{ flex: 1 }}>
         Docker version: {dockerStatus?.docker_version || "N/A"}
       </Typography>
       <div>
-        <Typography color="text.secondary">
+        <Typography color="neutral">
           API status:{" "}
           {dockerStatus?.status === "connected" ? "Connected" : "Disconnected"}
         </Typography>
