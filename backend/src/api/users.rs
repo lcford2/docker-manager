@@ -173,10 +173,10 @@ async fn update_user(
     require_admin(&user)?;
 
     // Validate permission level if provided
-    if let Some(ref permission) = payload.permission {
-        if !["readonly", "readwrite", "admin"].contains(&permission.as_str()) {
-            return Err(StatusCode::BAD_REQUEST);
-        }
+    if let Some(ref permission) = payload.permission
+        && !["readonly", "readwrite", "admin"].contains(&permission.as_str())
+    {
+        return Err(StatusCode::BAD_REQUEST);
     }
 
     // Build dynamic update query
@@ -207,9 +207,10 @@ async fn update_user(
         query.push_str(&format!(", is_active = ${}", param_count));
     }
 
-    query.push_str(&format!(
-        " WHERE id = $1 RETURNING id, username, email, permission::text as permission, is_active"
-    ));
+    query.push_str(
+        &" WHERE id = $1 RETURNING id, username, email, permission::text as permission, is_active"
+            .to_string(),
+    );
 
     let mut query_builder = sqlx::query_as::<_, UserResponse>(&query).bind(id);
 

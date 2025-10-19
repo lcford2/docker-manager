@@ -50,10 +50,10 @@ impl Broadcaster {
 
     /// Send a message to a specific client
     pub async fn send_to_client(&self, client_id: ClientId, message: WebSocketMessage) {
-        if let Some(tx) = self.clients.read().await.get(&client_id) {
-            if let Ok(json) = serde_json::to_string(&message) {
-                let _ = tx.send(Message::Text(json.into()));
-            }
+        if let Some(tx) = self.clients.read().await.get(&client_id)
+            && let Ok(json) = serde_json::to_string(&message)
+        {
+            let _ = tx.send(Message::Text(json.into()));
         }
     }
 

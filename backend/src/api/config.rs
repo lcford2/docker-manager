@@ -1,5 +1,5 @@
 use crate::api::RouteSpec;
-use crate::lib::config::{CacheConfig, UIConfig, WebSocketConfig};
+use crate::lib::config::{UIConfig, WebSocketConfig};
 use crate::lib::state::AppState;
 use axum::{Json, Router, extract::State, routing::get};
 use serde::Serialize;
@@ -10,7 +10,6 @@ use std::sync::Arc;
 #[serde(rename_all = "camelCase")]
 pub struct FrontendConfig {
     pub websocket: WebSocketConfig,
-    pub cache: CacheConfig,
     pub ui: UIConfig,
 }
 
@@ -19,7 +18,6 @@ pub struct FrontendConfig {
 pub async fn get_config(State(state): State<Arc<AppState>>) -> Json<FrontendConfig> {
     Json(FrontendConfig {
         websocket: state.config.websocket.clone(),
-        cache: state.config.cache.clone(),
         ui: state.config.ui.clone(),
     })
 }

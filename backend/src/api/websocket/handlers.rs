@@ -61,15 +61,14 @@ async fn handle_socket(socket: WebSocket, username: String, broadcaster: Arc<Bro
         user: username.clone(),
     });
 
-    if let Ok(json) = serde_json::to_string(&connection_msg) {
-        if let Err(e) = sender
+    if let Ok(json) = serde_json::to_string(&connection_msg)
+        && let Err(e) = sender
             .send(axum::extract::ws::Message::Text(json.into()))
             .await
-        {
-            error!("Failed to send connection message: {}", e);
-            broadcaster.unsubscribe(client_id).await;
-            return;
-        }
+    {
+        error!("Failed to send connection message: {}", e);
+        broadcaster.unsubscribe(client_id).await;
+        return;
     }
 
     // Spawn task to forward messages from broadcaster to client

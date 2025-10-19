@@ -1,6 +1,5 @@
 import { useCallback, useEffect } from "react";
 import { useWebSocketContext } from "../contexts/WebSocketContext";
-import { apiCacheService } from "../services/apiCacheService";
 import { ContainerStatsWithHistory } from "../types/metrics";
 import { DockerContainer } from "../types/docker";
 import { SystemStats, useDockerStore } from "../store/dockerStore";
@@ -75,13 +74,6 @@ export const useSharedWebSocket = (
     setError(null);
 
     try {
-      const cachedContainers =
-        apiCacheService.get<ContainerStatsWithHistory[]>("containers");
-      if (cachedContainers) {
-        mergeData({ containers: cachedContainers, loading: false });
-        return;
-      }
-
       const response = await fetch("/api/db/container_stats", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -95,7 +87,6 @@ export const useSharedWebSocket = (
       const data = await response.json();
 
       if (Array.isArray(data)) {
-        apiCacheService.setWithConfig("containers", data, "containers");
         mergeData({ containers: data, loading: false });
       } else {
         throw new Error("Invalid container data format received from API");
@@ -110,12 +101,6 @@ export const useSharedWebSocket = (
     if (!enableRestFallback) return;
 
     try {
-      const cachedSystemInfo = apiCacheService.get<SystemStats>("systemInfo");
-      if (isValidSystemStats(cachedSystemInfo)) {
-        setSystemStats(cachedSystemInfo);
-        return;
-      }
-
       const response = await fetch("/api/db/system_stats", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -125,7 +110,6 @@ export const useSharedWebSocket = (
       if (response.ok) {
         const data = await response.json();
         if (isValidSystemStats(data)) {
-          apiCacheService.setWithConfig("systemInfo", data, "systemInfo");
           setSystemStats(data);
         }
       } else {
@@ -144,9 +128,6 @@ export const useSharedWebSocket = (
   }, [isConnected, enableRestFallback, fetchInitialData, fetchSystemInfo]);
 
   const refresh = useCallback(async () => {
-    apiCacheService.delete("containers");
-    apiCacheService.delete("systemInfo");
-
     if (!isConnected) {
       await fetchInitialData();
       await fetchSystemInfo();

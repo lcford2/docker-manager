@@ -32,11 +32,6 @@ max_reconnect_attempts = 10
 [auth]
 jwt_expiration_hours = 24
 
-[cache]
-default_ttl = 5000
-slow_resource_ttl = 20000
-retry_attempts = 3
-
 [ui]
 max_chart_data_points = 60
 

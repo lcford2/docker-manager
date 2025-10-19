@@ -55,18 +55,17 @@ pub async fn require_bearer_auth_middleware(
         .get(AUTHORIZATION)
         .and_then(|header| header.to_str().ok());
 
-    if let Some(auth_header) = auth_header {
-        if auth_header.starts_with("Bearer ") {
-            let token = &auth_header[7..]; // Remove "Bearer " prefix
-            match auth::verify_jwt_token(token) {
-                Ok(token_data) => {
-                    let username = &token_data.claims.sub;
-                    request.extensions_mut().insert(username.clone());
-                    return Ok(next.run(request).await);
-                }
-                Err(_) => {
-                    return Err(StatusCode::UNAUTHORIZED);
-                }
+    if let Some(auth_header) = auth_header
+        && let Some(token) = auth_header.strip_prefix("Bearer ")
+    {
+        match auth::verify_jwt_token(token) {
+            Ok(token_data) => {
+                let username = &token_data.claims.sub;
+                request.extensions_mut().insert(username.clone());
+                return Ok(next.run(request).await);
+            }
+            Err(_) => {
+                return Err(StatusCode::UNAUTHORIZED);
             }
         }
     }
@@ -86,25 +85,24 @@ pub async fn require_write_permission_middleware(
         .get(AUTHORIZATION)
         .and_then(|header| header.to_str().ok());
 
-    if let Some(auth_header) = auth_header {
-        if auth_header.starts_with("Bearer ") {
-            let token = &auth_header[7..]; // Remove "Bearer " prefix
-            match auth::verify_jwt_token(token) {
-                Ok(token_data) => {
-                    // Check if user has write permissions (readwrite or admin)
-                    let permission = &token_data.claims.permission;
-                    if permission == "readwrite" || permission == "admin" {
-                        let username = &token_data.claims.sub;
-                        request.extensions_mut().insert(username.clone());
-                        return Ok(next.run(request).await);
-                    } else {
-                        // User is authenticated but lacks write permissions
-                        return Err(StatusCode::FORBIDDEN);
-                    }
+    if let Some(auth_header) = auth_header
+        && let Some(token) = auth_header.strip_prefix("Bearer ")
+    {
+        match auth::verify_jwt_token(token) {
+            Ok(token_data) => {
+                // Check if user has write permissions (readwrite or admin)
+                let permission = &token_data.claims.permission;
+                if permission == "readwrite" || permission == "admin" {
+                    let username = &token_data.claims.sub;
+                    request.extensions_mut().insert(username.clone());
+                    return Ok(next.run(request).await);
+                } else {
+                    // User is authenticated but lacks write permissions
+                    return Err(StatusCode::FORBIDDEN);
                 }
-                Err(_) => {
-                    return Err(StatusCode::UNAUTHORIZED);
-                }
+            }
+            Err(_) => {
+                return Err(StatusCode::UNAUTHORIZED);
             }
         }
     }

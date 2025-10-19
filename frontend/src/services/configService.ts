@@ -18,26 +18,6 @@ export interface WebSocketConfig {
   statusUpdateInterval: number;
 }
 
-export interface CacheConfig {
-  defaultTtl: number;
-  slowResourceTtl: number;
-  retryAttempts: number;
-  // Derived values (calculated from base config)
-  containersTtl: number;
-  systemInfoTtl: number;
-  metricsTtl: number;
-  volumesTtl: number;
-  imagesTtl: number;
-  networksTtl: number;
-  cleanupInterval: number;
-  retryContainers: number;
-  retrySystemInfo: number;
-  retryMetrics: number;
-  retryVolumes: number;
-  retryImages: number;
-  retryNetworks: number;
-}
-
 export interface UIConfig {
   maxChartDataPoints: number;
   drawerWidth: number;
@@ -45,7 +25,6 @@ export interface UIConfig {
 
 export interface AppConfig {
   websocket: WebSocketConfig;
-  cache: CacheConfig;
   ui: UIConfig;
 }
 
@@ -126,9 +105,6 @@ class ConfigService {
    */
   private getDefaults(): AppConfig {
     const broadcastInterval = 3;
-    const defaultTtl = 5000;
-    const slowResourceTtl = 20000;
-    const retryAttempts = 3;
 
     return {
       websocket: {
@@ -144,25 +120,6 @@ class ConfigService {
         reconnectMaxDelay: 120000,
         reconnectJitter: 1000,
         statusUpdateInterval: 1000,
-      },
-      cache: {
-        defaultTtl,
-        slowResourceTtl,
-        retryAttempts,
-        // Derived values
-        containersTtl: defaultTtl,
-        systemInfoTtl: defaultTtl,
-        metricsTtl: defaultTtl,
-        networksTtl: defaultTtl,
-        volumesTtl: slowResourceTtl,
-        imagesTtl: slowResourceTtl,
-        cleanupInterval: defaultTtl * 6,
-        retryContainers: retryAttempts,
-        retrySystemInfo: retryAttempts,
-        retryMetrics: retryAttempts,
-        retryVolumes: retryAttempts,
-        retryImages: retryAttempts,
-        retryNetworks: retryAttempts,
       },
       ui: {
         maxChartDataPoints: 60,

@@ -24,8 +24,6 @@ pub struct Config {
     #[serde(default)]
     pub auth: AuthConfig,
     #[serde(default)]
-    pub cache: CacheConfig,
-    #[serde(default)]
     pub ui: UIConfig,
 }
 
@@ -195,86 +193,6 @@ impl Default for AuthConfig {
     }
 }
 
-/// Cache configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CacheConfig {
-    pub default_ttl: u64,       // milliseconds - for fast-changing resources
-    pub slow_resource_ttl: u64, // milliseconds - for slow-changing resources
-    pub retry_attempts: u32,    // retry count for failed API calls
-}
-
-impl Default for CacheConfig {
-    fn default() -> Self {
-        Self {
-            default_ttl: 5000,
-            slow_resource_ttl: 20000,
-            retry_attempts: 3,
-        }
-    }
-}
-
-impl CacheConfig {
-    /// Cache TTL for containers (fast-changing)
-    pub fn containers_ttl(&self) -> u64 {
-        self.default_ttl
-    }
-
-    /// Cache TTL for system info (fast-changing)
-    pub fn system_info_ttl(&self) -> u64 {
-        self.default_ttl
-    }
-
-    /// Cache TTL for metrics (fast-changing)
-    pub fn metrics_ttl(&self) -> u64 {
-        self.default_ttl
-    }
-
-    /// Cache TTL for networks (fast-changing)
-    pub fn networks_ttl(&self) -> u64 {
-        self.default_ttl
-    }
-
-    /// Cache TTL for volumes (slow-changing)
-    pub fn volumes_ttl(&self) -> u64 {
-        self.slow_resource_ttl
-    }
-
-    /// Cache TTL for images (slow-changing)
-    pub fn images_ttl(&self) -> u64 {
-        self.slow_resource_ttl
-    }
-
-    /// Cache cleanup interval (6x default_ttl)
-    pub fn cleanup_interval(&self) -> u64 {
-        self.default_ttl * 6
-    }
-
-    /// Retry attempts for all resources
-    pub fn retry_containers(&self) -> u32 {
-        self.retry_attempts
-    }
-
-    pub fn retry_system_info(&self) -> u32 {
-        self.retry_attempts
-    }
-
-    pub fn retry_metrics(&self) -> u32 {
-        self.retry_attempts
-    }
-
-    pub fn retry_volumes(&self) -> u32 {
-        self.retry_attempts
-    }
-
-    pub fn retry_images(&self) -> u32 {
-        self.retry_attempts
-    }
-
-    pub fn retry_networks(&self) -> u32 {
-        self.retry_attempts
-    }
-}
-
 /// UI configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UIConfig {
@@ -291,6 +209,7 @@ impl Default for UIConfig {
 
 impl UIConfig {
     /// Drawer width (hardcoded, rarely needs changing)
+    #[allow(dead_code)]
     pub fn drawer_width(&self) -> u32 {
         240
     }
@@ -320,7 +239,6 @@ impl Default for Config {
             workers: WorkersConfig::default(),
             websocket: WebSocketConfig::default(),
             auth: AuthConfig::default(),
-            cache: CacheConfig::default(),
             ui: UIConfig::default(),
         }
     }

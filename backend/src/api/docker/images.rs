@@ -187,8 +187,8 @@ async fn bulk_delete_images(
 
     let futures = image_names.into_iter().map(|image_name| {
         let state = state.clone();
-        let force = force.clone();
-        let noprune = noprune.clone();
+        // let force = force.clone();
+        // let noprune = noprune.clone();
         async move {
             use bollard::query_parameters::RemoveImageOptionsBuilder;
             let opts = Some(
