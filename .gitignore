@@ -217,3 +217,5 @@ Thumbs.db
 local_settings.py
 
 backend/target
+
+CLAUDE.md
