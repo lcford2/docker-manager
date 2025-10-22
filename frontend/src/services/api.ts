@@ -32,8 +32,6 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: async (username: string, password: string) => {
-    console.log(API_BASE_URL);
-    console.log(process.env.REACT_APP_API_URL);
     const formData = new URLSearchParams();
     formData.append("user_name", username);
     formData.append("password", password);

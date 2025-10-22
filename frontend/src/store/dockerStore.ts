@@ -63,8 +63,6 @@ export const useDockerStore = create<DockerState & DockerActions>(
 
     mergeData: (newData) =>
       set((state) => {
-        console.log("Original data:", state);
-        console.log("New data:", newData);
         const newState = { ...state, ...newData };
 
         // Smart merging for systemStats (prefer REST for totals, WS for real-time running)
@@ -85,7 +83,6 @@ export const useDockerStore = create<DockerState & DockerActions>(
 
         // Handle other merges as needed
         // e.g., if newData.dockerStatus is more recent
-        console.log("Merging data:", newData);
         return newState;
       }),
   }),

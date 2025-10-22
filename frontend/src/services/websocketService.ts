@@ -99,7 +99,7 @@ export class WebSocketService {
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
-          console.log("WebSocket connected");
+          console.debug("WebSocket connected");
           this.updateConnectionStatus("connected");
           this.startHealthMonitoring();
           this.events.onConnect?.();
@@ -111,7 +111,7 @@ export class WebSocketService {
         };
 
         this.ws.onclose = (event: CloseEvent) => {
-          console.log("WebSocket disconnected:", event.code, event.reason);
+          console.debug("WebSocket disconnected:", event.code, event.reason);
           this.handleDisconnect(event);
           reject(
             new Error(`WebSocket closed: ${event.reason || "Unknown reason"}`),
@@ -314,7 +314,7 @@ export class WebSocketService {
         Date.now() - this.lastDataReceived >
           (this.config.staleConnectionTimeout || 60000)
       ) {
-        console.log("WebSocket connection appears stale, reconnecting...");
+        console.debug("WebSocket connection appears stale, reconnecting...");
         this.ws?.close(1000, "Stale connection");
       }
     }, 60000);

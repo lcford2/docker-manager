@@ -103,7 +103,6 @@ export const formatImageTag = (repository: string, tag: string): string => {
 
 export const splitRepoTag = (repotag: string): [string, string] => {
   if (!repotag) return ["<none>", "<none>"];
-  console.log("splitRepoTag", repotag);
   const [repository, tag] = repotag.split(":");
   return [repository, tag];
 };

@@ -70,7 +70,7 @@ class ConfigService {
       }
 
       const config = await response.json();
-      console.log("Configuration loaded:", config);
+      console.debug("Configuration loaded:", config);
       return config;
     } catch (error) {
       console.error("Failed to load configuration:", error);

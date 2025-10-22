@@ -112,9 +112,6 @@ const VolumesPage: React.FC = () => {
 
   // Filter volumes based on search term
   const filteredVolumes = volumes.filter((volume) => {
-    console.log(volume);
-    console.log(volume.Name.toLowerCase().includes(searchTerm.toLowerCase()));
-    console.log(volume.Driver.toLowerCase().includes(searchTerm.toLowerCase()));
     return (
       volume.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       volume.Driver.toLowerCase().includes(searchTerm.toLowerCase())

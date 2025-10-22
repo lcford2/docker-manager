@@ -68,13 +68,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // Set up event handlers
     wsService.setEvents({
       onConnect: () => {
-        console.log("WebSocket connected via context");
+        console.debug("WebSocket connected via context");
         setIsConnected(true);
         setConnectionStatus(wsService.getConnectionStatus());
       },
 
       onDisconnect: () => {
-        console.log("WebSocket disconnected via context");
+        console.debug("WebSocket disconnected via context");
         setIsConnected(false);
         setConnectionStatus(wsService.getConnectionStatus());
       },
@@ -85,7 +85,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       },
 
       onMessage: (message: WebSocketMessage) => {
-        console.log("WebSocket message received via context:", message.type);
+        console.debug("WebSocket message received via context:", message.type);
         // Use Zustand store's mergeData action to update state directly
         if (message.type === "container_stats" && message.data?.containers) {
           mergeData({ containers: message.data.containers });
@@ -95,7 +95,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       },
 
       onReconnecting: (attempt: number, delay: number) => {
-        console.log(`WebSocket reconnecting attempt ${attempt} in ${delay}ms`);
+        console.debug(`WebSocket reconnecting attempt ${attempt} in ${delay}ms`);
         setConnectionStatus(wsService.getConnectionStatus());
       },
     });
@@ -112,7 +112,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       service
         .connect()
         .then(() => {
-          console.log("WebSocket connected successfully on app load");
+          console.debug("WebSocket connected successfully on app load");
         })
         .catch((error: any) => {
           console.error("Failed to connect WebSocket on app load:", error);

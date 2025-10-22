@@ -40,13 +40,13 @@ export const useWebSocket = ({
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
-        console.log("WebSocket connected");
+        console.debug("WebSocket connected");
         setIsConnected(true);
         setError(null);
         reconnectCount.current = 0;
 
         // Initial data will be sent automatically by server
-        console.log("WebSocket connected, waiting for initial data...");
+        console.debug("WebSocket connected, waiting for initial data...");
       };
 
       ws.current.onmessage = (event: MessageEvent) => {
@@ -67,17 +67,17 @@ export const useWebSocket = ({
               previousContainers.current = containerStats;
               setContainers(containerStats);
               onContainerStats?.(containerStats);
-              console.log(
+              console.debug(
                 "Container stats updated via WebSocket:",
                 containerStats.length,
                 "containers",
               );
             }
           } else if (message.type === "system_stats") {
-            console.log("System stats received via WebSocket:", message.data);
+            console.debug("System stats received via WebSocket:", message.data);
             // System stats are handled by the Dashboard component directly if needed
           } else if (message.type === "connection") {
-            console.log("WebSocket connection confirmed:", message.data);
+            console.debug("WebSocket connection confirmed:", message.data);
           }
         } catch (err: any) {
           console.error("Failed to parse WebSocket message:", err);
@@ -85,7 +85,7 @@ export const useWebSocket = ({
       };
 
       ws.current.onclose = () => {
-        console.log("WebSocket disconnected");
+        console.debug("WebSocket disconnected");
         setIsConnected(false);
 
         // Attempt reconnection if we haven't exceeded max attempts
@@ -94,7 +94,7 @@ export const useWebSocket = ({
           const delay =
             reconnectInterval * Math.pow(1.5, reconnectCount.current - 1);
 
-          console.log(
+          console.debug(
             `Attempting to reconnect in ${delay}ms (attempt ${reconnectCount.current}/${reconnectAttempts})`,
           );
 
