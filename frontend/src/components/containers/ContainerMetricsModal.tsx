@@ -28,6 +28,7 @@ import React from "react";
 import { ContainerStatsWithHistory } from "../../types/metrics";
 import { formatBytes, formatDateTime } from "../../utils/formatters";
 import MetricSparkline from "./MetricSparkline";
+import LogsViewer from "./LogsViewer";
 import MetricCard from "../common/MetricCard";
 
 interface ContainerMetricsModalProps {
@@ -70,7 +71,7 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
           <Tabs aria-label="Container details tabs" defaultValue={0}>
             <TabList>
               <Tab>Overview</Tab>
-              <Tab>Metrics History</Tab>
+              <Tab>Logs</Tab>
             </TabList>
             <TabPanel value={0}>
               <Grid container spacing={2} sx={{ flexGrow: 1 }}>
@@ -277,11 +278,11 @@ const ContainerMetricsModal: React.FC<ContainerMetricsModalProps> = ({
                 </Grid>
               </Grid>
             </TabPanel>
-            <TabPanel value={1}>
-              {/* This is a placeholder for a more detailed historical chart */}
-              <Typography>
-                Historical charts would be implemented here.
-              </Typography>
+            <TabPanel value={1} sx={{ height: '500px', overflow: 'hidden' }}>
+              <LogsViewer
+                containerId={container.id}
+                containerState={container.state}
+              />
             </TabPanel>
           </Tabs>
         </Box>

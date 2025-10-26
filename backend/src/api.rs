@@ -96,9 +96,9 @@ pub fn router(state: Arc<AppState>) -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let (c_stats_router, c_stats_routes) = db::container_stats::router();
     let (s_stats_router, s_stats_routes) = db::system_stats::router();
 
-    // WebSocket router uses broadcaster from state
+    // WebSocket router uses full app state for log streaming
     let (ws_router, ws_routes) = websocket::router();
-    let ws_router = ws_router.with_state(state.broadcaster.clone());
+    let ws_router = ws_router.with_state(state.clone());
 
     let app_router = Router::new()
         .merge(auth_router)

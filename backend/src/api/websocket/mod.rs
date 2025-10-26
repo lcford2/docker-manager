@@ -8,13 +8,13 @@ pub mod handlers;
 pub mod messages;
 
 use crate::api::RouteSpec;
+use crate::lib::state::AppState;
 use axum::{Router, routing::get};
-use broadcaster::Broadcaster;
 use handlers::ws_handler;
 use std::sync::Arc;
 
 /// Creates the WebSocket router
-pub fn router() -> (Router<Arc<Broadcaster>>, Vec<RouteSpec>) {
+pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) {
     let r = Router::new().route("/ws", get(ws_handler));
 
     let docs = vec![RouteSpec {
