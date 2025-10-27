@@ -253,9 +253,11 @@ impl Broadcaster {
         use bollard::query_parameters::LogsOptionsBuilder;
         use futures_util::StreamExt;
 
-        const MAX_TAIL_LINES: usize = 5000;
-        const STREAMING_BUFFER_MS: u64 = 100;
-        const STREAMING_MAX_BATCH: usize = 100;
+        // Load configuration values from AppState
+        let max_tail_lines = state.config.websocket.max_tail_lines;
+        let streaming_buffer_ms = state.config.websocket.streaming_buffer_ms;
+        let streaming_max_batch = state.config.websocket.streaming_max_batch;
+        let initial_timeout_ms = state.config.websocket.initial_timeout_ms;
 
         info!(
             "Starting log stream for client {} (container: {}, tail: {}, follow: {})",
@@ -263,7 +265,7 @@ impl Broadcaster {
         );
 
         // Enforce max tail limit
-        let tail = request.tail.min(MAX_TAIL_LINES);
+        let tail = request.tail.min(max_tail_lines);
 
         // Build log options using builder pattern
         let tail_str = tail.to_string();
@@ -287,11 +289,13 @@ impl Broadcaster {
 
         // Buffer for batching streaming updates
         let mut buffer = Vec::new();
-        let mut interval = tokio::time::interval(Duration::from_millis(STREAMING_BUFFER_MS));
+        let mut interval = tokio::time::interval(Duration::from_millis(streaming_buffer_ms));
 
         // Timeout for detecting when initial logs have been fully loaded
         // If no logs arrive for this duration, we assume we've got all historical logs
-        let mut initial_timeout = Box::pin(tokio::time::sleep(Duration::from_millis(200)));
+        let mut initial_timeout = Box::pin(tokio::time::sleep(Duration::from_millis(
+            initial_timeout_ms,
+        )));
 
         loop {
             tokio::select! {
@@ -368,7 +372,7 @@ impl Broadcaster {
                                 // For non-follow mode, keep collecting until stream ends
                                 if request.follow {
                                     // Reset the initial timeout since we're still receiving historical logs
-                                    initial_timeout = Box::pin(tokio::time::sleep(Duration::from_millis(200)));
+                                    initial_timeout = Box::pin(tokio::time::sleep(Duration::from_millis(initial_timeout_ms)));
 
                                     // If we've collected a reasonable batch, send it early
                                     if initial_lines.len() >= tail.min(1000) && !initial_sent {
@@ -388,7 +392,7 @@ impl Broadcaster {
                                 buffer.push(log_line);
 
                                 // Send immediately if buffer is full
-                                if buffer.len() >= STREAMING_MAX_BATCH {
+                                if buffer.len() >= streaming_max_batch {
                                     broadcaster.send_to_client(
                                         client_id,
                                         WebSocketMessage::ContainerLogs(ContainerLogsData {

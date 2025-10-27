@@ -117,6 +117,26 @@ impl Default for WorkersConfig {
     }
 }
 
+/// Helper function for serde default - max tail lines
+fn default_max_tail_lines() -> usize {
+    5000
+}
+
+/// Helper function for serde default - streaming buffer interval
+fn default_streaming_buffer_ms() -> u64 {
+    100
+}
+
+/// Helper function for serde default - streaming max batch size
+fn default_streaming_max_batch() -> usize {
+    100
+}
+
+/// Helper function for serde default - initial timeout
+fn default_initial_timeout_ms() -> u64 {
+    200
+}
+
 /// WebSocket configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebSocketConfig {
@@ -124,6 +144,16 @@ pub struct WebSocketConfig {
     pub ping_interval: u64,      // milliseconds
     pub stale_timeout: u64,      // milliseconds
     pub max_reconnect_attempts: u32,
+
+    // Log streaming configuration
+    #[serde(default = "default_max_tail_lines")]
+    pub max_tail_lines: usize,
+    #[serde(default = "default_streaming_buffer_ms")]
+    pub streaming_buffer_ms: u64,
+    #[serde(default = "default_streaming_max_batch")]
+    pub streaming_max_batch: usize,
+    #[serde(default = "default_initial_timeout_ms")]
+    pub initial_timeout_ms: u64,
 }
 
 impl Default for WebSocketConfig {
@@ -133,6 +163,10 @@ impl Default for WebSocketConfig {
             ping_interval: 30000,
             stale_timeout: 60000,
             max_reconnect_attempts: 10,
+            max_tail_lines: default_max_tail_lines(),
+            streaming_buffer_ms: default_streaming_buffer_ms(),
+            streaming_max_batch: default_streaming_max_batch(),
+            initial_timeout_ms: default_initial_timeout_ms(),
         }
     }
 }
@@ -313,6 +347,36 @@ impl Config {
         }
         if self.limits.default_history_minutes < 1 {
             return Err("limits.default_history_minutes must be >= 1".to_string());
+        }
+
+        // Validate log streaming configuration
+        if self.websocket.max_tail_lines == 0 {
+            return Err("websocket.max_tail_lines must be > 0".to_string());
+        }
+        if self.websocket.max_tail_lines > 100_000 {
+            return Err("websocket.max_tail_lines must be <= 100,000 (memory safety)".to_string());
+        }
+        if self.websocket.streaming_buffer_ms == 0 {
+            return Err("websocket.streaming_buffer_ms must be > 0".to_string());
+        }
+        if self.websocket.streaming_buffer_ms > 10_000 {
+            return Err(
+                "websocket.streaming_buffer_ms must be <= 10,000 (max 10s latency)".to_string(),
+            );
+        }
+        if self.websocket.streaming_max_batch == 0 {
+            return Err("websocket.streaming_max_batch must be > 0".to_string());
+        }
+        if self.websocket.streaming_max_batch > 10_000 {
+            return Err(
+                "websocket.streaming_max_batch must be <= 10,000 (message size safety)".to_string(),
+            );
+        }
+        if self.websocket.initial_timeout_ms == 0 {
+            return Err("websocket.initial_timeout_ms must be > 0".to_string());
+        }
+        if self.websocket.initial_timeout_ms > 30_000 {
+            return Err("websocket.initial_timeout_ms must be <= 30,000 (max 30s)".to_string());
         }
 
         Ok(())

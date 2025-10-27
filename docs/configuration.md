@@ -79,10 +79,17 @@ How often background workers collect data.
 
 ```toml
 [websocket]
+# Stats broadcasting
 broadcast_interval = 3         # Base broadcast interval (seconds)
 ping_interval = 30000          # Keepalive ping (milliseconds)
 stale_timeout = 60000          # Connection stale detection (milliseconds)
 max_reconnect_attempts = 10    # Max reconnection tries
+
+# Log streaming configuration
+max_tail_lines = 5000          # Maximum log lines to return
+streaming_buffer_ms = 100      # Batch buffer flush interval (milliseconds)
+streaming_max_batch = 100      # Maximum lines per batch message
+initial_timeout_ms = 200       # Timeout to detect end of historical logs (milliseconds)
 ```
 
 **Auto-calculated:**
@@ -94,6 +101,23 @@ max_reconnect_attempts = 10    # Max reconnection tries
 - `reconnect_max_delay` = 120000ms
 - `reconnect_jitter` = 1000ms
 - `status_update_interval` = 1000ms
+
+**Log Streaming Tuning:**
+
+| Setting | Min | Max | Description |
+|---------|-----|-----|-------------|
+| `max_tail_lines` | 1 | 100,000 | Maximum number of log lines to return when tailing |
+| `streaming_buffer_ms` | 1 | 10,000 | Milliseconds to buffer logs before sending batch |
+| `streaming_max_batch` | 1 | 10,000 | Maximum log lines per WebSocket message |
+| `initial_timeout_ms` | 1 | 30,000 | Timeout to detect end of historical logs |
+
+**Tuning Guidelines:**
+
+- **Low-traffic containers**: Increase `streaming_buffer_ms` (e.g., 500ms) to reduce message overhead
+- **High-traffic containers**: Decrease `streaming_buffer_ms` (e.g., 50ms) for lower latency
+- **Large log requests**: Increase `max_tail_lines` (e.g., 10000) for debugging
+- **Memory constraints**: Decrease `max_tail_lines` and `streaming_max_batch`
+- **Slow networks**: Increase `streaming_max_batch` to reduce number of messages
 
 ---
 
@@ -192,6 +216,10 @@ Any value can be overridden:
 APP_SERVER_PORT=8080
 APP_CACHE_DEFAULT_TTL=10000
 APP_WEBSOCKET_BROADCAST_INTERVAL=5
+APP_WEBSOCKET_MAX_TAIL_LINES=10000
+APP_WEBSOCKET_STREAMING_BUFFER_MS=50
+APP_WEBSOCKET_STREAMING_MAX_BATCH=200
+APP_WEBSOCKET_INITIAL_TIMEOUT_MS=500
 ```
 
 Format: `APP_<SECTION>_<KEY>=value`
@@ -207,5 +235,10 @@ On startup, configuration is validated:
 - Limits must be >= 1
 - JWT expiration must be > 0
 - Retention must be >= 1 hour
+- Log streaming settings:
+  - `max_tail_lines`: 1 to 100,000 (memory safety)
+  - `streaming_buffer_ms`: 1 to 10,000 ms (max 10s latency)
+  - `streaming_max_batch`: 1 to 10,000 lines (message size safety)
+  - `initial_timeout_ms`: 1 to 30,000 ms (max 30s)
 
 Invalid configuration prevents startup with clear error message.

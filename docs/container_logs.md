@@ -2,13 +2,14 @@
 
 ## Overview
 
-This document explains the implementation of real-time container log streaming functionality added to the Docker Manager application. The feature enables users to view and stream container logs in real-time through WebSocket connections, providing a terminal-like experience directly in the web interface.
+This document explains the implementation of real-time container log streaming functionality added to the Docker Manager application.
+The feature enables users to view and stream container logs in real-time through WebSocket connections, providing a terminal-like experience directly in the web interface.
 
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-2. [Backend Changes](#backend-changes)
-3. [Frontend Changes](#frontend-changes)
+2. [Backend](#backend)
+3. [Frontend](#frontend)
 4. [Communication Flow](#communication-flow)
 5. [Design Decisions](#design-decisions)
 6. [Performance Considerations](#performance-considerations)
@@ -50,7 +51,7 @@ graph TB
 
 ---
 
-## Backend Changes
+## Backend
 
 ### 1. WebSocket Message Types (`backend/src/api/websocket/messages.rs`)
 
@@ -73,26 +74,6 @@ pub enum WebSocketMessage {
 - **`ContainerLogsData`**: Batched log lines with `is_initial` flag to distinguish historical from streaming logs
 - **`ContainerLogsEndData`**: Signals stream completion
 - **`ContainerLogsErrorData`**: Communicates errors during log streaming
-
-**Design Decision - Serde Defaults:**
-
-```rust
-fn default_tail() -> usize { 100 }
-fn default_true() -> bool { true }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContainerLogsRequestData {
-    #[serde(default = "default_tail")]
-    pub tail: usize,
-    #[serde(default)]
-    pub follow: bool,
-    #[serde(default = "default_true")]
-    pub stdout: bool,
-    // ...
-}
-```
-
-**Rationale:** Default values ensure backward compatibility and sensible defaults when clients don't specify all parameters.
 
 ---
 
@@ -154,18 +135,21 @@ sequenceDiagram
 
 **Core Streaming Logic:**
 
-The `stream_logs` function implements a sophisticated state machine with three phases:
+The `stream_logs` function implements a state machine with three phases:
 
 1. **Initial Load Phase**: Collects historical logs
 2. **Timeout Detection**: Detects when historical logs are fully loaded (200ms silence)
 3. **Streaming Phase**: Buffers and sends new logs as they arrive
 
-**Constants & Their Rationale:**
+**Configuration Values:**
+
+These values are now configurable via the configuration system (see [Configuration](#configuration)):
 
 ```rust
-const MAX_TAIL_LINES: usize = 5000;          // Prevent memory exhaustion
-const STREAMING_BUFFER_MS: u64 = 100;        // Balance latency vs message overhead
-const STREAMING_MAX_BATCH: usize = 100;      // Prevent single messages from being too large
+let max_tail_lines = state.config.websocket.max_tail_lines;           // Default: 5000
+let streaming_buffer_ms = state.config.websocket.streaming_buffer_ms; // Default: 100
+let streaming_max_batch = state.config.websocket.streaming_max_batch; // Default: 100
+let initial_timeout_ms = state.config.websocket.initial_timeout_ms;   // Default: 200
 ```
 
 **Dual-Mode Batching:**
@@ -193,99 +177,9 @@ if buffer.len() >= STREAMING_MAX_BATCH {
 - **Time-based**: Ensures low latency even with slow-logging containers
 - **Size-based**: Prevents message size explosion during log bursts
 
-**Timestamp Parsing:**
-
-```rust
-let (timestamp, clean_line) = if request.timestamps && line.len() > 30 {
-    if let Some(space_idx) = line.find(' ') {
-        let ts = line[..space_idx].to_string();
-        let rest = line[space_idx + 1..].to_string();
-        (Some(ts), rest)
-    } else {
-        (None, line)
-    }
-} else {
-    (None, line)
-};
-```
-
-Docker timestamp format: `2024-01-01T12:00:00.000000000Z message`
-
-**Impact:** Separating timestamps from log content allows frontend to style them differently and enables cleaner log exports.
-
 ---
 
-### 3. Handler Updates (`backend/src/api/websocket/handlers.rs`)
-
-**State Change:**
-
-```rust
-// BEFORE
-pub async fn ws_handler(
-    State(broadcaster): State<Arc<Broadcaster>>,
-) -> impl IntoResponse { ... }
-
-// AFTER
-pub async fn ws_handler(
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse { ... }
-```
-
-**Why the Change?**
-
-Log streaming requires access to `docker_client` (for fetching logs), which is only available in `AppState`. Previously, the WebSocket handler only needed the `Broadcaster`, but now it needs the full state.
-
-**Message Handling:**
-
-```rust
-async fn handle_client_message(
-    msg: axum::extract::ws::Message,
-    client_id: usize,
-    broadcaster: &Broadcaster,
-    state: &Arc<AppState>,  // NEW parameter
-) -> Result<(), String> {
-    match msg {
-        axum::extract::ws::Message::Text(text) => {
-            let ws_msg: WebSocketMessage = serde_json::from_str(&text)?;
-            match ws_msg {
-                WebSocketMessage::Ping(_) => { /* ... */ }
-                WebSocketMessage::ContainerLogsRequest(request) => {
-                    // NEW handler
-                    broadcaster.start_log_stream(client_id, request, state.clone()).await?;
-                }
-                _ => { /* ... */ }
-            }
-        }
-        // ...
-    }
-}
-```
-
----
-
-### 4. Router State Change (`backend/src/api/websocket/mod.rs` & `backend/src/api.rs`)
-
-```rust
-// mod.rs - BEFORE
-pub fn router() -> (Router<Arc<Broadcaster>>, Vec<RouteSpec>) { ... }
-
-// mod.rs - AFTER
-pub fn router() -> (Router<Arc<AppState>>, Vec<RouteSpec>) { ... }
-```
-
-```rust
-// api.rs - BEFORE
-let ws_router = ws_router.with_state(state.broadcaster.clone());
-
-// api.rs - AFTER
-let ws_router = ws_router.with_state(state.clone());
-```
-
-**Impact:** The WebSocket router now has access to the full `AppState`, enabling log streaming while maintaining access to the broadcaster for stats broadcasting.
-
----
-
-## Frontend Changes
+## Frontend
 
 ### 1. Type Definitions (`frontend/src/types/websocket.ts`)
 
@@ -432,61 +326,8 @@ useEffect(() => {
 
 **Pattern:** Multiple subscriptions for different message types with proper cleanup to prevent memory leaks.
 
-5. **Log Export**
-
-```typescript
-const handleDownload = () => {
-  const logText = logs
-    .map((log) => {
-      const ts = log.timestamp ? `${log.timestamp} ` : '';
-      return `${ts}${log.line}`;
-    })
-    .join('\n');
-
-  const blob = new Blob([logText], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${containerId.substring(0, 12)}_logs.txt`;
-  // ... trigger download and cleanup
-};
-```
-
-**UX Enhancement:** Allows users to export logs for offline analysis or sharing.
-
 ---
 
-### 3. UI Integration (`frontend/src/components/containers/ContainerMetricsModal.tsx`)
-
-**Tab Structure Change:**
-
-```typescript
-// BEFORE
-<TabList>
-  <Tab>Overview</Tab>
-  <Tab>Metrics History</Tab>
-</TabList>
-
-// AFTER
-<TabList>
-  <Tab>Overview</Tab>
-  <Tab>Logs</Tab>
-</TabList>
-```
-
-```typescript
-// NEW Logs Tab
-<TabPanel value={1} sx={{ height: '500px', overflow: 'hidden' }}>
-  <LogsViewer
-    containerId={container.id}
-    containerState={container.state}
-  />
-</TabPanel>
-```
-
-**Design Decision:** Replace unused "Metrics History" tab with functional "Logs" tab, providing immediate value to users.
-
----
 
 ## Communication Flow
 
@@ -565,16 +406,16 @@ flowchart TD
 
 ### 1. Why WebSocket Instead of REST Polling?
 
-**WebSocket Advantages:**
-- ✅ Real-time updates with minimal latency
-- ✅ Efficient bidirectional communication
-- ✅ Lower bandwidth overhead (no HTTP headers on every message)
-- ✅ Server can push updates without client requests
+#### WebSocket **Advantages**
+- Real-time updates with minimal latency
+- Efficient bidirectional communication
+- Lower bandwidth overhead (no HTTP headers on every message)
+- Server can push updates without client requests
 
-**REST Polling Disadvantages:**
-- ❌ Increased latency (poll interval)
-- ❌ Higher server load (repeated HTTP requests)
-- ❌ Inefficient for live following
+#### REST Polling **Disadvantagesa**
+- Increased latency (poll interval)
+- Higher server load (repeated HTTP requests)
+- Inefficient for live following
 
 ### 2. Batching Strategy
 
@@ -623,13 +464,90 @@ tokio::select! {
 ```
 
 **Why oneshot channels?**
-- ✅ Zero-cost when not triggered
-- ✅ Cooperative cancellation (clean shutdown)
-- ✅ Type-safe (channel consumed after one send)
+- Zero-cost when not triggered
+- Cooperative cancellation (clean shutdown)
+- Type-safe (channel consumed after one send)
 
 Alternative (rejected): `tokio::task::JoinHandle::abort()`
-- ❌ Abrupt termination (may leave resources in inconsistent state)
-- ❌ No cleanup opportunity
+- Abrupt termination (may leave resources in inconsistent state)
+- No cleanup opportunity
+
+---
+
+## Configuration
+
+The log streaming feature uses configurable parameters that can be tuned for different environments and use cases. These settings are part of the `[websocket]` configuration section.
+
+### Configuration Settings
+
+```toml
+[websocket]
+# Log streaming configuration
+max_tail_lines = 5000          # Maximum log lines to return
+streaming_buffer_ms = 100      # Batch buffer flush interval (milliseconds)
+streaming_max_batch = 100      # Maximum lines per batch message
+initial_timeout_ms = 200       # Timeout to detect end of historical logs (milliseconds)
+```
+
+### Parameter Details
+
+| Setting | Default | Min | Max | Description |
+|---------|---------|-----|-----|-------------|
+| `max_tail_lines` | 5000 | 1 | 100,000 | Maximum number of log lines to return when tailing. Prevents memory exhaustion. |
+| `streaming_buffer_ms` | 100 | 1 | 10,000 | Milliseconds to buffer logs before sending batch. Balances latency vs message overhead. |
+| `streaming_max_batch` | 100 | 1 | 10,000 | Maximum log lines per WebSocket message. Prevents single messages from being too large. |
+| `initial_timeout_ms` | 200 | 1 | 30,000 | Timeout to detect when historical logs are fully loaded (no new logs for this duration). |
+
+### Environment Variable Overrides
+
+```bash
+export APP_WEBSOCKET_MAX_TAIL_LINES=10000
+export APP_WEBSOCKET_STREAMING_BUFFER_MS=50
+export APP_WEBSOCKET_STREAMING_MAX_BATCH=200
+export APP_WEBSOCKET_INITIAL_TIMEOUT_MS=500
+```
+
+### Tuning Guidelines
+
+#### For Low-Traffic Containers
+```toml
+streaming_buffer_ms = 500      # Higher latency acceptable, reduce message overhead
+streaming_max_batch = 50       # Smaller batches since logs are infrequent
+```
+
+#### For High-Traffic Containers
+```toml
+streaming_buffer_ms = 50       # Lower latency for real-time feel
+streaming_max_batch = 200      # Larger batches to handle burst traffic
+initial_timeout_ms = 500       # More time to collect historical logs
+```
+
+#### For Debugging with Large Log History
+```toml
+max_tail_lines = 10000         # Allow more historical context
+initial_timeout_ms = 500       # Give more time to load historical logs
+```
+
+#### For Memory-Constrained Environments
+```toml
+max_tail_lines = 1000          # Reduce memory usage
+streaming_max_batch = 50       # Smaller batches reduce memory per message
+```
+
+#### For Production Deployments
+```toml
+max_tail_lines = 10000         # More history for debugging
+streaming_buffer_ms = 50       # Lower latency
+streaming_max_batch = 200      # Handle busy containers
+initial_timeout_ms = 500       # More reliable on slower systems
+```
+
+### Validation
+
+All configuration values are validated on startup:
+- Values must be within the specified min/max ranges
+- Invalid configuration will prevent startup with a clear error message
+- Example error: `"websocket.max_tail_lines must be <= 100,000 (memory safety)"`
 
 ---
 
@@ -637,9 +555,9 @@ Alternative (rejected): `tokio::task::JoinHandle::abort()`
 
 ### Backend
 
-1. **Memory**: Max 5000 tail lines per stream prevents unbounded growth
+1. **Memory**: Configurable max tail lines per stream (default 5000) prevents unbounded growth
 2. **CPU**: Minimal parsing (only timestamp extraction if requested)
-3. **Network**: Batching reduces WebSocket frame overhead
+3. **Network**: Configurable batching reduces WebSocket frame overhead
 4. **Concurrency**: Each stream runs in isolated async task
 
 ### Frontend
@@ -651,13 +569,13 @@ Alternative (rejected): `tokio::task::JoinHandle::abort()`
 
 ### Scalability
 
-| Metric | Current Limit | Notes |
-|--------|--------------|-------|
-| **Concurrent streams per client** | 1 | Old stream auto-cancelled |
-| **Max tail lines** | 5000 | Server-enforced |
-| **Client buffer** | 10000 lines | Frontend limit |
-| **Batch size** | 100 lines or 100ms | Whichever comes first |
-| **Message overhead** | ~200 bytes per batch | JSON + WebSocket frame |
+| Metric | Default Limit | Configurable | Notes |
+|--------|---------------|--------------|-------|
+| **Concurrent streams per client** | 1 | No | Old stream auto-cancelled |
+| **Max tail lines** | 5000 | Yes (1-100,000) | Server-enforced via `max_tail_lines` |
+| **Client buffer** | 10000 lines | No | Frontend limit |
+| **Batch size** | 100 lines or 100ms | Yes | Via `streaming_max_batch` and `streaming_buffer_ms` |
+| **Message overhead** | ~200 bytes per batch | N/A | JSON + WebSocket frame |
 
 **Estimated Bandwidth:**
 
@@ -692,6 +610,10 @@ Alternative (rejected): `tokio::task::JoinHandle::abort()`
 
 ## Future Enhancements
 
+### Implemented
+
+- ✅ **Configuration**: Log streaming parameters are now configurable (v0.2+)
+
 ### Potential Improvements
 
 1. **Search/Filter**: Add text search within logs
@@ -702,26 +624,6 @@ Alternative (rejected): `tokio::task::JoinHandle::abort()`
 6. **Regex Filtering**: Server-side regex filtering to reduce bandwidth
 7. **Compression**: gzip compress log batches before sending
 8. **Reconnection**: Auto-resume streaming after WebSocket reconnection
-
-### Code Quality
-
-- ✅ **Type Safety**: Full type coverage (Rust + TypeScript)
-- ✅ **Error Handling**: Comprehensive error paths
-- ✅ **Resource Cleanup**: Proper task cancellation and unsubscription
-- ✅ **Logging**: Detailed logging for debugging
-- ⚠️ **Testing**: Unit tests needed for stream logic
-- ⚠️ **Documentation**: API docs for WebSocket messages
-
----
-
-## Summary
-
-This implementation adds production-ready container log streaming to Docker Manager with:
-
-- **Real-time WebSocket streaming** with efficient batching
-- **Robust lifecycle management** with proper cleanup
-- **Memory-bounded** operation on both frontend and backend
-- **User-friendly controls** (follow mode, filtering, export)
-- **Graceful error handling** with clear user feedback
-
-The architecture is scalable, type-safe, and maintains separation of concerns between presentation (frontend) and business logic (backend).
+9. **Dynamic Config Reload**: Hot-reload configuration without restart
+10. ⚠️ **Testing**: Unit tests needed for stream logic
+11. ⚠️ **Documentation**: API docs for WebSocket messages
