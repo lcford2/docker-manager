@@ -12,3 +12,13 @@ port = 5432
 database_name = "docker_manager"
 username = "docker_manager"
 password = "test_db_password"
+
+[websocket]
+# Stats broadcasting interval (seconds)
+broadcast_interval = 3
+
+# Log streaming configuration
+max_tail_lines = 5000           # Maximum number of log lines to return
+streaming_buffer_ms = 100       # Batch buffer flush interval (milliseconds)
+streaming_max_batch = 100       # Maximum lines per batch message
+initial_timeout_ms = 200        # Timeout to detect end of historical logs (milliseconds)

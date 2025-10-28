@@ -5,6 +5,7 @@
 use super::broadcaster::Broadcaster;
 use super::messages::*;
 use crate::lib::auth;
+use crate::lib::state::AppState;
 use axum::{
     extract::{
         Query, State,
@@ -28,7 +29,7 @@ pub struct WebSocketQuery {
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     Query(query): Query<WebSocketQuery>,
-    State(broadcaster): State<Arc<Broadcaster>>,
+    State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     // Verify JWT token
     let username = match auth::verify_jwt_token(&query.token) {
@@ -39,13 +40,15 @@ pub async fn ws_handler(
     };
 
     // Upgrade the connection
-    ws.on_upgrade(move |socket| handle_socket(socket, username, broadcaster))
+    ws.on_upgrade(move |socket| handle_socket(socket, username, state))
         .into_response()
 }
 
 /// Handle individual WebSocket connection
-async fn handle_socket(socket: WebSocket, username: String, broadcaster: Arc<Broadcaster>) {
+async fn handle_socket(socket: WebSocket, username: String, state: Arc<AppState>) {
     let (mut sender, mut receiver) = socket.split();
+
+    let broadcaster = state.broadcaster.clone();
 
     // Subscribe to broadcaster
     let (client_id, mut rx) = broadcaster.subscribe().await;
@@ -82,9 +85,12 @@ async fn handle_socket(socket: WebSocket, username: String, broadcaster: Arc<Bro
 
     // Spawn task to handle messages from client
     let broadcaster_clone = broadcaster.clone();
+    let state_clone = state.clone();
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(msg)) = receiver.next().await {
-            if let Err(e) = handle_client_message(msg, client_id, &broadcaster_clone).await {
+            if let Err(e) =
+                handle_client_message(msg, client_id, &broadcaster_clone, &state_clone).await
+            {
                 warn!("Error handling client message: {}", e);
             }
         }
@@ -113,6 +119,7 @@ async fn handle_client_message(
     msg: axum::extract::ws::Message,
     client_id: usize,
     broadcaster: &Broadcaster,
+    state: &Arc<AppState>,
 ) -> Result<(), String> {
     match msg {
         axum::extract::ws::Message::Text(text) => {
@@ -125,6 +132,28 @@ async fn handle_client_message(
                     // Respond with pong
                     let pong_msg = WebSocketMessage::Pong(PongData {});
                     broadcaster.send_to_client(client_id, pong_msg).await;
+                }
+                WebSocketMessage::ContainerLogsRequest(request) => {
+                    // Start streaming logs
+                    info!(
+                        "Client {} requested logs for container {}",
+                        client_id, request.container_id
+                    );
+                    if let Err(e) = broadcaster
+                        .start_log_stream(client_id, request.clone(), state.clone())
+                        .await
+                    {
+                        error!("Failed to start log stream: {}", e);
+                        broadcaster
+                            .send_to_client(
+                                client_id,
+                                WebSocketMessage::ContainerLogsError(ContainerLogsErrorData {
+                                    container_id: request.container_id,
+                                    error: e,
+                                }),
+                            )
+                            .await;
+                    }
                 }
                 _ => {
                     // Ignore other message types from client for now

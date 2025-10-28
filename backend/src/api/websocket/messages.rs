@@ -21,6 +21,14 @@ pub enum WebSocketMessage {
     Ping(PingData),
     /// Pong response to ping
     Pong(PongData),
+    /// Request container logs
+    ContainerLogsRequest(ContainerLogsRequestData),
+    /// Container logs data (batched)
+    ContainerLogs(ContainerLogsData),
+    /// Container logs stream ended
+    ContainerLogsEnd(ContainerLogsEndData),
+    /// Container logs error
+    ContainerLogsError(ContainerLogsErrorData),
 }
 
 /// Connection message data
@@ -57,3 +65,58 @@ pub struct PingData {}
 /// Pong message data (empty)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PongData {}
+
+/// Helper function for serde default
+fn default_tail() -> usize {
+    100
+}
+
+/// Helper function for serde default
+fn default_true() -> bool {
+    true
+}
+
+/// Individual log line
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogLine {
+    pub line: String,
+    pub stream: String, // "stdout" or "stderr"
+    pub timestamp: Option<String>,
+}
+
+/// Container logs request data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerLogsRequestData {
+    pub container_id: String,
+    #[serde(default = "default_tail")]
+    pub tail: usize,
+    #[serde(default)]
+    pub follow: bool,
+    #[serde(default)]
+    pub timestamps: bool,
+    #[serde(default = "default_true")]
+    pub stdout: bool,
+    #[serde(default = "default_true")]
+    pub stderr: bool,
+}
+
+/// Container logs message data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerLogsData {
+    pub container_id: String,
+    pub lines: Vec<LogLine>,
+    pub is_initial: bool,
+}
+
+/// Container logs end message data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerLogsEndData {
+    pub container_id: String,
+}
+
+/// Container logs error message data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerLogsErrorData {
+    pub container_id: String,
+    pub error: String,
+}
