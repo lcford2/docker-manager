@@ -205,11 +205,8 @@ const LogsViewer: React.FC<LogsViewerProps> = ({ containerId, containerState }) 
             onChange={(e) => {
               const newFollow = e.target.checked;
               setFollow(newFollow);
-              // When enabling follow mode, request new logs with the new setting
-              if (newFollow) {
-                // Request with follow mode enabled - don't clear logs yet
-                requestLogs(true); // Pass true to override follow state
-              }
+              // Send new request with updated follow mode setting
+              requestLogs(newFollow); // Pass new value to override follow state
             }}
             disabled={containerState !== 'running'}
             size="sm"
