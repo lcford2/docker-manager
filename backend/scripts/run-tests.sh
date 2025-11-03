@@ -45,6 +45,20 @@ setup_env() {
     export RUST_BACKTRACE="${RUST_BACKTRACE:-1}"
 }
 
+# Check for sqlx-cli
+check_sqlx_cli() {
+    if ! command -v sqlx &> /dev/null; then
+        print_warn "sqlx-cli not installed - database fixture tests will be skipped"
+        echo "  To enable all 52 tests, install with:"
+        echo "  cargo install sqlx-cli --no-default-features --features postgres"
+        echo ""
+        return 1
+    else
+        print_info "sqlx-cli detected - all database tests will run"
+        return 0
+    fi
+}
+
 # Start test database
 start_test_db() {
     print_info "Starting test database..."
@@ -206,6 +220,8 @@ main() {
     if [ "$WITH_DB" = "true" ]; then
         start_test_db
         echo ""
+        # Check for sqlx-cli
+        check_sqlx_cli
     fi
 
     # Print summary

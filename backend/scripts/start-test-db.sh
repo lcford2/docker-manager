@@ -86,6 +86,9 @@ start_db() {
     print_info "Initializing database schema..."
     initialize_schema
 
+    # Run sqlx migrations if available
+    run_migrations
+
     print_info "Test database started successfully!"
     print_connection_info
 }
@@ -151,6 +154,37 @@ CREATE INDEX IF NOT EXISTS idx_system_stats_timestamp ON system_stats(timestamp)
 EOF
 
     print_info "Database schema initialized"
+}
+
+# Run sqlx migrations
+run_migrations() {
+    # Check if migrations directory exists
+    if [ ! -d "migrations" ]; then
+        print_warn "No migrations directory found, skipping sqlx migrations"
+        return 0
+    fi
+
+    # Check if sqlx-cli is installed
+    if ! command -v sqlx &> /dev/null; then
+        print_warn "sqlx-cli not installed. Database tests with fixtures will be skipped."
+        print_warn "To enable all tests, install with: cargo install sqlx-cli --no-default-features --features postgres"
+        return 0
+    fi
+
+    print_info "Running sqlx migrations..."
+
+    # Set DATABASE_URL for migrations
+    export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${HOST_PORT}/${POSTGRES_DB}"
+
+    # Create database if it doesn't exist (sqlx migrate needs this)
+    sqlx database create 2>/dev/null || true
+
+    # Run migrations
+    if sqlx migrate run; then
+        print_info "Migrations completed successfully"
+    else
+        print_warn "Migrations failed or had issues (this is OK if database already has schema)"
+    fi
 }
 
 # Stop the database
