@@ -404,3 +404,272 @@ impl Config {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config_values() {
+        let config = Config::default();
+        assert_eq!(config.server.host, "127.0.0.1");
+        assert_eq!(config.server.port, 3010);
+        assert_eq!(config.database.port, 5432);
+        assert_eq!(config.logging.level, "info");
+        assert_eq!(config.retention.stats_retention_hours, 24);
+        assert_eq!(config.limits.default_query_limit, 100);
+        assert_eq!(config.limits.max_query_limit, 500);
+    }
+
+    #[test]
+    fn test_retention_config_default() {
+        let retention = RetentionConfig::default();
+        assert_eq!(retention.stats_retention_hours, 24);
+    }
+
+    #[test]
+    fn test_limits_config_default() {
+        let limits = LimitsConfig::default();
+        assert_eq!(limits.default_query_limit, 100);
+        assert_eq!(limits.max_query_limit, 500);
+        assert_eq!(limits.default_history_minutes, 30);
+    }
+
+    #[test]
+    fn test_limits_sparkline_points() {
+        let limits = LimitsConfig::default(); // 30 minutes default
+        let interval = 30; // 30 second interval
+        let points = limits.sparkline_points(interval);
+        // (30 * 60) / 30 = 60 points
+        assert_eq!(points, 60);
+    }
+
+    #[test]
+    fn test_limits_sparkline_minimum() {
+        let limits = LimitsConfig {
+            default_history_minutes: 1,
+            ..Default::default()
+        };
+        let interval = 60;
+        let points = limits.sparkline_points(interval);
+        // Should be at least 10 points
+        assert!(points >= 10);
+    }
+
+    #[test]
+    fn test_limits_container_stats_default() {
+        let limits = LimitsConfig::default();
+        assert_eq!(limits.container_stats_default(), 100);
+    }
+
+    #[test]
+    fn test_limits_system_stats_default() {
+        let limits = LimitsConfig::default();
+        assert_eq!(limits.system_stats_default(), 100);
+    }
+
+    #[test]
+    fn test_workers_config_default() {
+        let workers = WorkersConfig::default();
+        assert_eq!(workers.container_stats_interval, 30);
+        assert_eq!(workers.system_info_interval, 15);
+    }
+
+    #[test]
+    fn test_websocket_config_default() {
+        let ws = WebSocketConfig::default();
+        assert_eq!(ws.broadcast_interval, 3);
+        assert_eq!(ws.ping_interval, 30000);
+        assert_eq!(ws.stale_timeout, 60000);
+        assert_eq!(ws.max_reconnect_attempts, 10);
+        assert_eq!(ws.max_tail_lines, 5000);
+        assert_eq!(ws.streaming_buffer_ms, 100);
+        assert_eq!(ws.streaming_max_batch, 100);
+        assert_eq!(ws.initial_timeout_ms, 200);
+    }
+
+    #[test]
+    fn test_websocket_broadcast_intervals() {
+        let ws = WebSocketConfig::default();
+        assert_eq!(ws.container_broadcast_interval(), 3);
+        // System is 1.5x container: 3 * 1.5 = 4.5, rounds to 5
+        assert_eq!(ws.system_broadcast_interval(), 5);
+    }
+
+    #[test]
+    fn test_auth_config_default() {
+        let auth = AuthConfig::default();
+        assert_eq!(auth.jwt_expiration_hours, 24);
+    }
+
+    #[test]
+    fn test_ui_config_default() {
+        let ui = UIConfig::default();
+        assert_eq!(ui.max_chart_data_points, 60);
+        assert_eq!(ui.drawer_width(), 240);
+    }
+
+    #[test]
+    fn test_validate_valid_config() {
+        let config = Config::default();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validate_zero_container_stats_interval() {
+        let mut config = Config::default();
+        config.workers.container_stats_interval = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "workers.container_stats_interval must be > 0"
+        );
+    }
+
+    #[test]
+    fn test_validate_zero_system_info_interval() {
+        let mut config = Config::default();
+        config.workers.system_info_interval = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "workers.system_info_interval must be > 0"
+        );
+    }
+
+    #[test]
+    fn test_validate_zero_server_port() {
+        let mut config = Config::default();
+        config.server.port = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(config.validate().unwrap_err(), "server.port must be > 0");
+    }
+
+    #[test]
+    fn test_validate_zero_database_port() {
+        let mut config = Config::default();
+        config.database.port = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(config.validate().unwrap_err(), "database.port must be > 0");
+    }
+
+    #[test]
+    fn test_validate_zero_jwt_expiration() {
+        let mut config = Config::default();
+        config.auth.jwt_expiration_hours = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "auth.jwt_expiration_hours must be > 0"
+        );
+    }
+
+    #[test]
+    fn test_validate_invalid_retention() {
+        let mut config = Config::default();
+        config.retention.stats_retention_hours = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "retention.stats_retention_hours must be >= 1"
+        );
+    }
+
+    #[test]
+    fn test_validate_invalid_max_query_limit() {
+        let mut config = Config::default();
+        config.limits.max_query_limit = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "limits.max_query_limit must be >= 1"
+        );
+    }
+
+    #[test]
+    fn test_validate_invalid_default_query_limit() {
+        let mut config = Config::default();
+        config.limits.default_query_limit = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "limits.default_query_limit must be >= 1"
+        );
+    }
+
+    #[test]
+    fn test_validate_invalid_default_history_minutes() {
+        let mut config = Config::default();
+        config.limits.default_history_minutes = 0;
+        assert!(config.validate().is_err());
+        assert_eq!(
+            config.validate().unwrap_err(),
+            "limits.default_history_minutes must be >= 1"
+        );
+    }
+
+    #[test]
+    fn test_validate_max_tail_lines_too_large() {
+        let mut config = Config::default();
+        config.websocket.max_tail_lines = 150_000;
+        assert!(config.validate().is_err());
+        assert!(
+            config
+                .validate()
+                .unwrap_err()
+                .contains("max_tail_lines must be <= 100,000")
+        );
+    }
+
+    #[test]
+    fn test_validate_streaming_buffer_too_large() {
+        let mut config = Config::default();
+        config.websocket.streaming_buffer_ms = 15_000;
+        assert!(config.validate().is_err());
+        assert!(
+            config
+                .validate()
+                .unwrap_err()
+                .contains("streaming_buffer_ms must be <= 10,000")
+        );
+    }
+
+    #[test]
+    fn test_server_addr_valid() {
+        let config = Config::default();
+        let addr = config.server_addr().unwrap();
+        assert_eq!(addr.port(), 3010);
+        assert_eq!(addr.ip().to_string(), "127.0.0.1");
+    }
+
+    #[test]
+    fn test_server_addr_invalid_ip() {
+        let mut config = Config::default();
+        config.server.host = "not-an-ip".to_string();
+        assert!(config.server_addr().is_err());
+    }
+
+    #[test]
+    fn test_log_level_parsing() {
+        let mut config = Config::default();
+
+        config.logging.level = "trace".to_string();
+        assert_eq!(config.log_level(), log::Level::Trace);
+
+        config.logging.level = "debug".to_string();
+        assert_eq!(config.log_level(), log::Level::Debug);
+
+        config.logging.level = "info".to_string();
+        assert_eq!(config.log_level(), log::Level::Info);
+
+        config.logging.level = "warn".to_string();
+        assert_eq!(config.log_level(), log::Level::Warn);
+
+        config.logging.level = "error".to_string();
+        assert_eq!(config.log_level(), log::Level::Error);
+
+        // Invalid defaults to info
+        config.logging.level = "invalid".to_string();
+        assert_eq!(config.log_level(), log::Level::Info);
+    }
+}

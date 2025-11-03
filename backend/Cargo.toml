@@ -29,3 +29,12 @@ thiserror = "2.0.17"
 sha2 = "0.10.9"
 jsonwebtoken = { version = "10.0.0", features = ["aws_lc_rs"] }
 bcrypt = "0.16"
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util", "macros"] }
+axum-test = "16"
+tokio-tungstenite = "0.26"
+pretty_assertions = "1"
+http-body-util = "0.1"
+async-trait = "0.1"

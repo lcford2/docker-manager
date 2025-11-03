@@ -19,6 +19,7 @@ mod lib {
     pub mod auth;
     pub mod config;
     pub mod docker;
+    pub mod docker_trait;
     pub mod errors;
     pub mod macros;
     pub mod state;
