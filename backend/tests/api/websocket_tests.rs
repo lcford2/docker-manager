@@ -96,7 +96,7 @@ async fn test_concurrent_message_handling() {
     let (tx, mut _rx) = broadcast::channel::<i32>(16);
 
     // Keep a receiver alive so sends don't fail
-    let mut rx_keeper = tx.subscribe();
+    let rx_keeper = tx.subscribe();
 
     // Spawn multiple tasks that send messages
     let handles: Vec<_> = (0..10)

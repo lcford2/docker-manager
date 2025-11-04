@@ -2,6 +2,9 @@
 //!
 //! Provides common test data builders and utilities used across integration tests.
 
+// Allow unused code warnings for test helper functions that may not be used in all test suites yet
+#![allow(dead_code)]
+
 use bollard::models::{ContainerSummary, ImageSummary};
 use chrono::Utc;
 use jsonwebtoken::{EncodingKey, Header, encode};

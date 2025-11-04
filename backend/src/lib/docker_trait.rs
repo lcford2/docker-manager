@@ -4,22 +4,26 @@
 //! mocking in tests. This follows the Rust best practice of programming to
 //! traits rather than concrete types.
 
+// Allow dead code warnings for mock implementation that may not be fully used yet
+#![allow(dead_code)]
+// Allow unused imports warnings for testing-related imports
+#![allow(unused_imports)]
+
 use async_trait::async_trait;
 use bollard::{
     Docker,
-    container::{
-        Config, CreateContainerOptions, InspectContainerOptions, ListContainersOptions,
-        RemoveContainerOptions, StartContainerOptions, StopContainerOptions,
-    },
     errors::Error as BollardError,
-    image::{ListImagesOptions, RemoveImageOptions},
     models::{
-        ContainerInspectResponse, ContainerSummary, ImageInspect, ImageSummary, Network,
-        SystemVersion,
+        ContainerCreateBody, ContainerInspectResponse, ContainerSummary, ImageInspect,
+        ImageSummary, Network, NetworkCreateRequest, SystemVersion, VolumeCreateOptions,
     },
-    network::{CreateNetworkOptions, InspectNetworkOptions, ListNetworksOptions},
+    query_parameters::{
+        CreateContainerOptions, InspectContainerOptions, InspectNetworkOptions,
+        ListContainersOptions, ListImagesOptions, ListNetworksOptions, ListVolumesOptions,
+        RemoveContainerOptions, RemoveImageOptions, RemoveVolumeOptions, StartContainerOptions,
+        StopContainerOptions,
+    },
     secret::Secret,
-    volume::{CreateVolumeOptions, ListVolumesOptions, RemoveVolumeOptions},
 };
 use std::sync::Mutex;
 
@@ -32,7 +36,7 @@ pub trait DockerClient: Send + Sync {
     /// List containers with optional filters
     async fn list_containers(
         &self,
-        options: Option<ListContainersOptions<String>>,
+        options: Option<ListContainersOptions>,
     ) -> Result<Vec<ContainerSummary>, BollardError>;
 
     /// Inspect a container
@@ -46,7 +50,7 @@ pub trait DockerClient: Send + Sync {
     async fn start_container(
         &self,
         name: &str,
-        options: Option<StartContainerOptions<String>>,
+        options: Option<StartContainerOptions>,
     ) -> Result<(), BollardError>;
 
     /// Stop a container
@@ -66,14 +70,14 @@ pub trait DockerClient: Send + Sync {
     /// Create a container
     async fn create_container(
         &self,
-        options: Option<CreateContainerOptions<String>>,
-        config: Config<String>,
+        options: Option<CreateContainerOptions>,
+        config: ContainerCreateBody,
     ) -> Result<bollard::models::ContainerCreateResponse, BollardError>;
 
     /// List images
     async fn list_images(
         &self,
-        options: Option<ListImagesOptions<String>>,
+        options: Option<ListImagesOptions>,
     ) -> Result<Vec<ImageSummary>, BollardError>;
 
     /// Inspect an image
@@ -89,13 +93,13 @@ pub trait DockerClient: Send + Sync {
     /// List volumes
     async fn list_volumes(
         &self,
-        options: Option<ListVolumesOptions<String>>,
+        options: Option<ListVolumesOptions>,
     ) -> Result<bollard::models::VolumeListResponse, BollardError>;
 
     /// Create a volume
     async fn create_volume(
         &self,
-        config: CreateVolumeOptions<String>,
+        config: VolumeCreateOptions,
     ) -> Result<bollard::models::Volume, BollardError>;
 
     /// Remove a volume
@@ -108,20 +112,20 @@ pub trait DockerClient: Send + Sync {
     /// List networks
     async fn list_networks(
         &self,
-        options: Option<ListNetworksOptions<String>>,
+        options: Option<ListNetworksOptions>,
     ) -> Result<Vec<Network>, BollardError>;
 
     /// Create a network
     async fn create_network(
         &self,
-        config: CreateNetworkOptions<String>,
+        config: NetworkCreateRequest,
     ) -> Result<bollard::models::NetworkCreateResponse, BollardError>;
 
     /// Inspect a network
     async fn inspect_network(
         &self,
         name: &str,
-        options: Option<InspectNetworkOptions<String>>,
+        options: Option<InspectNetworkOptions>,
     ) -> Result<Network, BollardError>;
 
     /// Get Docker version
@@ -136,7 +140,7 @@ pub trait DockerClient: Send + Sync {
 impl DockerClient for Docker {
     async fn list_containers(
         &self,
-        options: Option<ListContainersOptions<String>>,
+        options: Option<ListContainersOptions>,
     ) -> Result<Vec<ContainerSummary>, BollardError> {
         self.list_containers(options).await
     }
@@ -152,7 +156,7 @@ impl DockerClient for Docker {
     async fn start_container(
         &self,
         name: &str,
-        options: Option<StartContainerOptions<String>>,
+        options: Option<StartContainerOptions>,
     ) -> Result<(), BollardError> {
         self.start_container(name, options).await
     }
@@ -175,15 +179,15 @@ impl DockerClient for Docker {
 
     async fn create_container(
         &self,
-        options: Option<CreateContainerOptions<String>>,
-        config: Config<String>,
+        options: Option<CreateContainerOptions>,
+        config: ContainerCreateBody,
     ) -> Result<bollard::models::ContainerCreateResponse, BollardError> {
         self.create_container(options, config).await
     }
 
     async fn list_images(
         &self,
-        options: Option<ListImagesOptions<String>>,
+        options: Option<ListImagesOptions>,
     ) -> Result<Vec<ImageSummary>, BollardError> {
         self.list_images(options).await
     }
@@ -202,14 +206,14 @@ impl DockerClient for Docker {
 
     async fn list_volumes(
         &self,
-        options: Option<ListVolumesOptions<String>>,
+        options: Option<ListVolumesOptions>,
     ) -> Result<bollard::models::VolumeListResponse, BollardError> {
         self.list_volumes(options).await
     }
 
     async fn create_volume(
         &self,
-        config: CreateVolumeOptions<String>,
+        config: VolumeCreateOptions,
     ) -> Result<bollard::models::Volume, BollardError> {
         self.create_volume(config).await
     }
@@ -224,14 +228,14 @@ impl DockerClient for Docker {
 
     async fn list_networks(
         &self,
-        options: Option<ListNetworksOptions<String>>,
+        options: Option<ListNetworksOptions>,
     ) -> Result<Vec<Network>, BollardError> {
         self.list_networks(options).await
     }
 
     async fn create_network(
         &self,
-        config: CreateNetworkOptions<String>,
+        config: NetworkCreateRequest,
     ) -> Result<bollard::models::NetworkCreateResponse, BollardError> {
         self.create_network(config).await
     }
@@ -239,7 +243,7 @@ impl DockerClient for Docker {
     async fn inspect_network(
         &self,
         name: &str,
-        options: Option<InspectNetworkOptions<String>>,
+        options: Option<InspectNetworkOptions>,
     ) -> Result<Network, BollardError> {
         self.inspect_network(name, options).await
     }
@@ -318,7 +322,7 @@ impl Default for MockDockerClient {
 impl DockerClient for MockDockerClient {
     async fn list_containers(
         &self,
-        _options: Option<ListContainersOptions<String>>,
+        _options: Option<ListContainersOptions>,
     ) -> Result<Vec<ContainerSummary>, BollardError> {
         self.record_operation("list_containers");
         Ok(self.containers.clone())
@@ -340,7 +344,7 @@ impl DockerClient for MockDockerClient {
     async fn start_container(
         &self,
         name: &str,
-        _options: Option<StartContainerOptions<String>>,
+        _options: Option<StartContainerOptions>,
     ) -> Result<(), BollardError> {
         self.record_operation(&format!("start_container:{}", name));
         Ok(())
@@ -366,8 +370,8 @@ impl DockerClient for MockDockerClient {
 
     async fn create_container(
         &self,
-        _options: Option<CreateContainerOptions<String>>,
-        _config: Config<String>,
+        _options: Option<CreateContainerOptions>,
+        _config: ContainerCreateBody,
     ) -> Result<bollard::models::ContainerCreateResponse, BollardError> {
         self.record_operation("create_container");
         Ok(bollard::models::ContainerCreateResponse {
@@ -378,7 +382,7 @@ impl DockerClient for MockDockerClient {
 
     async fn list_images(
         &self,
-        _options: Option<ListImagesOptions<String>>,
+        _options: Option<ListImagesOptions>,
     ) -> Result<Vec<ImageSummary>, BollardError> {
         self.record_operation("list_images");
         Ok(self.images.clone())
@@ -403,7 +407,7 @@ impl DockerClient for MockDockerClient {
 
     async fn list_volumes(
         &self,
-        _options: Option<ListVolumesOptions<String>>,
+        _options: Option<ListVolumesOptions>,
     ) -> Result<bollard::models::VolumeListResponse, BollardError> {
         self.record_operation("list_volumes");
         Ok(bollard::models::VolumeListResponse {
@@ -414,7 +418,7 @@ impl DockerClient for MockDockerClient {
 
     async fn create_volume(
         &self,
-        _config: CreateVolumeOptions<String>,
+        _config: VolumeCreateOptions,
     ) -> Result<bollard::models::Volume, BollardError> {
         self.record_operation("create_volume");
         Ok(bollard::models::Volume {
@@ -434,7 +438,7 @@ impl DockerClient for MockDockerClient {
 
     async fn list_networks(
         &self,
-        _options: Option<ListNetworksOptions<String>>,
+        _options: Option<ListNetworksOptions>,
     ) -> Result<Vec<Network>, BollardError> {
         self.record_operation("list_networks");
         Ok(self.networks.clone())
@@ -442,7 +446,7 @@ impl DockerClient for MockDockerClient {
 
     async fn create_network(
         &self,
-        _config: CreateNetworkOptions<String>,
+        _config: NetworkCreateRequest,
     ) -> Result<bollard::models::NetworkCreateResponse, BollardError> {
         self.record_operation("create_network");
         Ok(bollard::models::NetworkCreateResponse {
@@ -454,7 +458,7 @@ impl DockerClient for MockDockerClient {
     async fn inspect_network(
         &self,
         name: &str,
-        _options: Option<InspectNetworkOptions<String>>,
+        _options: Option<InspectNetworkOptions>,
     ) -> Result<Network, BollardError> {
         self.record_operation(&format!("inspect_network:{}", name));
         Ok(Network {
