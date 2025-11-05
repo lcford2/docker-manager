@@ -127,6 +127,7 @@ jobs:
 
       - name: Run tests (no database tests on macOS/Windows)
         working-directory: ./backend
+        shell: bash
         env:
           JWT_SECRET: test_jwt_secret_for_ci_only_not_production
         run: |
