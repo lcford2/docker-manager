@@ -73,12 +73,14 @@ jobs:
           JWT_SECRET: test_jwt_secret_for_ci_only_not_production
         run: cargo nextest run --all-features --workspace
 
-      - name: Run doctests
-        working-directory: ./backend
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
-          JWT_SECRET: test_jwt_secret_for_ci_only_not_production
-        run: cargo test --doc --all-features --workspace
+      # Doctests are skipped because this is a binary-only crate (no lib.rs)
+      # If you add a library target in the future, uncomment this step:
+      # - name: Run doctests
+      #   working-directory: ./backend
+      #   env:
+      #     DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      #     JWT_SECRET: test_jwt_secret_for_ci_only_not_production
+      #   run: cargo test --doc --all-features --workspace
 
       - name: Generate coverage with llvm-cov
         working-directory: ./backend
