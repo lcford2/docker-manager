@@ -195,8 +195,8 @@ impl Broadcaster {
             volumes: db_stats.volumes_count as i64,
             networks: db_stats.networks_count as i64,
             server_version: version.version.unwrap_or_else(|| "unknown".to_string()),
-            total_memory: info.mem_total.unwrap_or(0) as i64,
-            cpus: info.ncpu.unwrap_or(0) as i64,
+            total_memory: info.mem_total.unwrap_or(0),
+            cpus: info.ncpu.unwrap_or(0),
         })
     }
 
